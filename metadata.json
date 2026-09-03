@@ -1,0 +1,6 @@
+{
+  "name": "地下探索型・持ち帰りローグライト",
+  "description": "地下30階の暗黒迷宮に挑む持ち帰り型ローグライト。階を進むか、地上へ生還して戦利品を持ち帰るかの緊張感ある探索ゲーム。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
