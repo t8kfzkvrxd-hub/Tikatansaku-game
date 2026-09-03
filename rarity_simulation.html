@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ABYSS DELVER rarity simulation</title>
+<iframe id="game" src="/"></iframe>
+<pre id="results">RUNNING 500,000 ROLLS...</pre>
+<script>
+window.addEventListener('load', () => setTimeout(() => {
+  const w = document.getElementById('game').contentWindow;
+  let seed = 20260904;
+  const rng = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const cases = [
+    ['Normal G0 / B30', {floor:30, source:'normal', greed:0, luck:0}],
+    ['GREED3 / B30', {floor:30, source:'normal', greed:3, luck:0}],
+    ['Luck100 / B30', {floor:30, source:'normal', greed:0, luck:100}],
+    ['Elite G3 / B30', {floor:30, source:'elite', greed:3, luck:100}],
+    ['Normal chest / B15', {floor:15, source:'normal', greed:0, luck:0}]
+  ];
+  const order = ['Common','Rare','Epic','Legendary','Mythic','Abyssal'];
+  const lines = [];
+  for (const [name, options] of cases) {
+    const counts = Object.fromEntries(order.map(r => [r, 0]));
+    for (let i=0; i<100000; i++) counts[w.rollItemRarity({...options, trackPity:false, rng})]++;
+    lines.push(name);
+    lines.push(order.map(r => `${r}: ${(counts[r] / 1000).toFixed(3)}% (${counts[r]})`).join(' | '));
+  }
+  lines.push('TOTAL: 500,000 simulated drops');
+  document.getElementById('results').textContent = lines.join('\n');
+}, 300));
+</script>

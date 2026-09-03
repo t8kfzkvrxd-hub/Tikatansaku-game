@@ -108,6 +108,27 @@ window.addEventListener('load', () => setTimeout(() => {
     w.Math.random = originalRandom;
     check(greedAtk > normalAtk && greedAtk >= 11, 'GREED Lv3で敵基礎攻撃力へ+45%補正');
 
+    w.setTimeout = () => 0;
+    game.state.equipped.armor = {...game.AREAS[0].boss, key:'mythic_sky_shield', name:'天城の絶対盾', type:'armor', rarity:'Mythic', archetype:'shield', baseDef:10, hp:0};
+    game.state.currentEnemy = {name:'訓練巨人',icon:'🗿',hp:200,maxHp:200,atk:50,def:0,actionType:'heavy',nextMult:1,isBoss:false};
+    game.state.hp = 100; game.state.guardFatigue = 1; game.state.guardStamina = 90; game.state.guardBroken = false;
+    const guardHp = game.state.hp; const guardEnemyHp = game.state.currentEnemy.hp;
+    w.enemyTurn(true);
+    check(guardHp - game.state.hp <= 10 && game.state.currentEnemy.hp < guardEnemyHp, '大技を読むとJUST GUARDと確定反撃が発動');
+    game.state.currentEnemy.actionType = 'normal'; game.state.currentEnemy.nextMult = 1; game.state.guardFatigue = 3; game.state.guardBroken = false;
+    const tiredHp = game.state.hp; w.enemyTurn(true);
+    check(tiredHp - game.state.hp >= 12, '連続防御で軽減率が低下する');
+    w.setTimeout = nativeTimeout;
+
+    game.state.rarityProgress.mythicPity = 249;
+    check(w.rollItemRarity({floor:30,source:'normal',greed:0,luck:0,rng:()=>1}) === 'Mythic', 'Mythic 250回Hard Pity');
+    game.state.rarityProgress.abyssalPity = 1499;
+    check(w.rollItemRarity({floor:30,source:'normal',greed:0,luck:0,rng:()=>1}) === 'Abyssal', 'Abyssal 1500回Hard Pity');
+    const upper = {key:'test_mythic',name:'試験用神話装備',icon:'💠',type:'weapon',rarity:'Mythic',baseAtk:1,desc:'test',dropSource:'test'};
+    w.giveItemToBag(upper);
+    check(upper.locked && game.state.rarityProgress.upperDropHistory.some(h => h.itemName === upper.name), '超希少装備を自動ロックし初発見情報を記録');
+    w.closeGenericModal();
+
     game.state.screen = 'town'; game.state.floor = 0; game.state.camp.tavern = 1; w.render();
     check(d.getElementById('viewport').textContent.includes('酒場Lv2で討伐依頼を解放'), '酒場Lv1では討伐依頼をロック表示');
 

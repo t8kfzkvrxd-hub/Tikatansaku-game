@@ -29,6 +29,8 @@
       --r-rare: #38bdf8;
       --r-epic: #c084fc;
       --r-legendary: #fbbf24;
+      --r-mythic: #f43f9e;
+      --r-abyssal: #22d3ee;
       --r-curse: #f43f5e;
     }
     body {
@@ -283,6 +285,8 @@
     .item-row.r-Rare { border-left: 3.5px solid var(--r-rare); }
     .item-row.r-Epic { border-left: 3.5px solid var(--r-epic); }
     .item-row.r-Legendary { border-left: 4px solid var(--r-legendary); box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+    .item-row.r-Mythic { border-left:4px solid var(--r-mythic); box-shadow:0 0 16px rgba(244,63,158,.38); background:linear-gradient(90deg,rgba(88,28,135,.32),rgba(30,41,59,.7)); }
+    .item-row.r-Abyssal { border-left:4px solid var(--r-abyssal); box-shadow:0 0 22px rgba(34,211,238,.45); background:linear-gradient(90deg,rgba(8,47,73,.55),rgba(49,12,74,.5)); }
     .item-row.r-Curse { border-left: 4px solid var(--r-curse); box-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
 
     .item-name { font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
@@ -290,6 +294,8 @@
     .r-Rare .item-name { color: var(--r-rare); }
     .r-Epic .item-name { color: var(--r-epic); }
     .r-Legendary .item-name { color: var(--r-legendary); }
+    .r-Mythic .item-name { color:var(--r-mythic); text-shadow:0 0 8px rgba(244,63,158,.6); }
+    .r-Abyssal .item-name { color:var(--r-abyssal); text-shadow:0 0 10px rgba(34,211,238,.8); }
     .r-Curse .item-name { color: var(--r-curse); }
     .item-stats { font-size: 10.5px; color: #94a3b8; }
     .item-curse-note { font-size: 10.5px; color: #f87171; font-weight: bold; }
@@ -352,6 +358,8 @@
       padding: 20px;
       animation: fadeIn 0.3s ease;
     }
+    .mythic-modal { background:radial-gradient(circle,rgba(88,28,135,.88),rgba(2,6,23,.97)); animation:fadeIn .55s ease; }
+    .abyssal-modal { background:radial-gradient(circle,rgba(8,47,73,.94),#02030a 72%); animation:fadeIn 1s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .legendary-box {
       background: radial-gradient(circle at 50% 30%, #352512 0%, #15101a 100%);
@@ -516,6 +524,8 @@
     .badge-Rare { background: rgba(56, 189, 248, 0.2); color: var(--r-rare); border: 1px solid var(--r-rare); }
     .badge-Epic { background: rgba(192, 132, 252, 0.25); color: var(--r-epic); border: 1px solid var(--r-epic); }
     .badge-Legendary { background: rgba(251, 191, 36, 0.25); color: var(--r-legendary); border: 1px solid var(--r-legendary); }
+    .badge-Mythic { background:rgba(244,63,158,.22);color:var(--r-mythic);border:1px solid var(--r-mythic); }
+    .badge-Abyssal { background:rgba(34,211,238,.2);color:var(--r-abyssal);border:1px solid var(--r-abyssal); }
 
     .item-toast-diff {
       display: flex;
@@ -1139,7 +1149,7 @@
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
     const MAX_DUNGEON_FLOOR = 30;
-    const GAME_VERSION = '0.4.0';
+    const GAME_VERSION = '0.5.0';
     const UPDATE_NOTES = [
       '戦闘UIに通常攻撃・強攻撃・防御・武器固有スキルを接続',
       '出撃前支援と煙玉による通常戦闘からの逃走を実装',
@@ -1148,7 +1158,11 @@
       '道具屋購入品、倉庫増築、満杯時の整理処理を修正',
       '死亡・緊急帰還時の戦利品選択を実装',
       '王冠・古代鍵・深淵の幼竜・GREEDの効果を戦闘と探索へ接続',
-      '神秘進行のセーブ互換性と敵固有特性の未接続を修正'
+      '神秘進行のセーブ互換性と敵固有特性の未接続を修正',
+      '防御連打・盾カウンターを弱体化し、JUST GUARDとガード疲労を追加',
+      'Legendary出現率を大幅に調整し、神話級Mythic・深淵級Abyssalを追加',
+      '超希少装備のPity・初発見記録・専用演出を追加',
+      '6段階の共通ドロップテーブルとレアリティ別図鑑を実装'
     ];
 
     // Underground Lore & Mysteries (地下世界の真相)
@@ -1291,17 +1305,17 @@
       giant_ram: {
         key: 'giant_ram', name: '巨人の粉砕槌', icon: '🔨', type: 'weapon', rarity: 'Legendary',
         archetype: 'greatsword', setTag: 'titan', baseAtk: 28,
-        desc: '【大剣・10Fボス秘宝】強撃で敵防御60%貫通 ＆ 渾身打撃で敵スタン'
+        bossUnique: true, desc: '【大剣・10Fボス秘宝】強撃で敵防御60%貫通 ＆ 渾身打撃で敵スタン'
       },
       guardian_aegis: {
         key: 'guardian_aegis', name: '古代守護者の神盾', icon: '🛡️', type: 'armor', rarity: 'Legendary',
         archetype: 'shield', setTag: 'titan', baseDef: 35, hp: 100,
-        desc: '【盾壁・20Fボス秘宝】防御時被ダメ75%カット ＆ 反射カウンターダメージ2倍'
+        bossUnique: true, desc: '【20Fボス秘宝】通常ガード軽減+15%。JUST GUARD時のみ反撃威力×1.5（疲労は無効化しない）'
       },
       mutagen_core: {
         key: 'mutagen_core', name: '変異原核EX', icon: '🧬', type: 'accessory', rarity: 'Legendary',
         isCurse: true, baseAtk: 20, baseDef: 10, hp: 60,
-        desc: '【30Fボス秘宝】深淵の変異因子。HP50%以下で変異暴走し攻撃力2.5倍！'
+        bossUnique: true, desc: '【30Fボス秘宝】深淵の変異因子。HP50%以下で変異暴走し攻撃力2.5倍！'
       },
 
       // Build Synergies (Thunder static, Blood covenant)
@@ -1323,6 +1337,32 @@
       trophy_abyss1: {
         key: 'trophy_abyss1', name: '深淵第一層踏破の証', icon: '🏆', type: 'relic', rarity: 'Legendary',
         desc: '【30F完全制覇のトロフィー】地上拠点の全施設効率+10%の覇王の威光'
+      },
+
+      // Ultra-rare build-changing artifacts (never craftable/upgradable by rarity)
+      mythic_thunder_blade: {
+        key:'mythic_thunder_blade', name:'神雷剣・天哭', icon:'⚡', type:'weapon', rarity:'Mythic', archetype:'thunder', baseAtk:38, crit:12,
+        desc:'【神話級】攻撃で雷印を蓄積。3印で落雷し、武器スキルは印を即時起爆する'
+      },
+      mythic_blood_scythe: {
+        key:'mythic_blood_scythe', name:'原初血王の鎌', icon:'🩸', type:'weapon', rarity:'Mythic', archetype:'cursed_staff', setTag:'blood', baseAtk:44, vamp:12,
+        desc:'【神話級】HPを代償に超火力。HP25%以下で血脈解放が強化される'
+      },
+      mythic_sky_shield: {
+        key:'mythic_sky_shield', name:'天城の絶対盾', icon:'🛡️', type:'armor', rarity:'Mythic', archetype:'shield', baseDef:32, hp:70,
+        desc:'【神話級】JUST GUARD成功時のみ強力反撃。通常防御連打では力を発揮しない'
+      },
+      abyssal_devourer: {
+        key:'abyssal_devourer', name:'深淵喰らい・終焉', icon:'🌌', type:'weapon', rarity:'Abyssal', archetype:'greatsword', baseAtk:52,
+        desc:'【深淵級】敵撃破ごとに探索中の攻撃力+2。GREED中は成長量が増える（帰還でリセット）'
+      },
+      abyssal_observer: {
+        key:'abyssal_observer', name:'深淵観測者の眼', icon:'👁️', type:'accessory', rarity:'Abyssal', crit:18, rareRate:15,
+        desc:'【深淵級】扉選択に第4の隠された道を出現させ、危険と報酬を見抜く'
+      },
+      abyssal_void_cloak: {
+        key:'abyssal_void_cloak', name:'虚無王の外套', icon:'🕳️', type:'armor', rarity:'Abyssal', baseDef:26, hp:90,
+        desc:'【深淵級】探索中1回だけ致死ダメージを無効化。発動後は最大HPが半減する'
       }
     };
 
@@ -1343,7 +1383,7 @@
         enemies: [
           { name: '遺跡の自律歩哨', icon: '🤖', hp: 65, atk: 20, def: 6, trait: 'grab_attack', traitName: '電磁拘束', hint: '防御貫通スタン攻撃！攻撃で迎撃せよ' },
           { name: '怨嗟のレイス', icon: '👻', hp: 55, atk: 26, def: 3, trait: 'curse_poison', traitName: '呪毒の霧', hint: '攻撃時に毒付与！速やかに討て' },
-          { name: '翡翠のガーゴイル', icon: '🦇', hp: 85, atk: 22, def: 10, trait: 'counter_heavy', traitName: '石化反撃', hint: '強撃を弾いて猛反撃！通常攻撃推奨' }
+          { name: '翡翠のガーゴイル', icon: '🦇', hp: 85, atk: 22, def: 10, trait: 'guard_enrage', traitName: '盾喰らい', hint: '防御されると攻撃力が上昇！攻撃を織り交ぜろ' }
         ],
         elite: { name: '古代の処刑執行機', icon: '⚙️', hp: 170, atk: 34, def: 12, isElite: true, trait: 'counter_heavy', traitName: '断頭反撃', hint: '強撃厳禁！防御とスキルで隙を突け' },
         boss: { name: '【古代の守護者】', icon: '🏛️', hp: 520, atk: 36, def: 18, gimmick: 'shield_barrier' }
@@ -1355,7 +1395,7 @@
           { name: '暴走サイボーグ', icon: '🦾', hp: 130, atk: 42, def: 14, trait: 'exposed_weakpoint', traitName: '冷却露出', hint: '3ターン周期で弱点露出(被ダメ2倍)！好機を逃すな' },
           { name: 'キメラハウンド', icon: '🐕‍🦺', hp: 125, atk: 46, def: 8, trait: 'rage_stack', traitName: '捕食本能', hint: '被弾で攻撃力上昇！一撃必殺を狙え' }
         ],
-        elite: { name: '被験体第9号', icon: '🧬', hp: 280, atk: 54, def: 16, isElite: true, trait: 'curse_poison', traitName: '劇毒噴霧', hint: '強力な毒を噴射！回復薬を惜しむな' },
+        elite: { name: '被験体第9号', icon: '🧬', hp: 280, atk: 54, def: 16, isElite: true, trait: 'guard_breaker', traitName: '装甲破砕触手', hint: '防御時にガードゲージを大きく破壊する' },
         boss: { name: '【失敗作EX-03】', icon: '👾', hp: 950, atk: 58, def: 22, gimmick: 'mutate_form' }
       }
     ];
@@ -1467,8 +1507,13 @@
       playerAttackBuff: 1.0,
       skillCooldown: 0,
       usedSecondChance: false,
+      usedVoidCloak: false,
       starterPerk: null,
       thunderCharges: 0,
+      abyssGrowth: 0,
+      guardFatigue: 0,
+      guardStamina: 100,
+      guardBroken: false,
       playerPoisonTurns: 0,
       playerPoisonDmg: 0,
       
@@ -1497,7 +1542,8 @@
         currentKills: 0,
         rewardGold: 150,
         completed: false
-      }
+      },
+      rarityProgress: { mythicPity: 0, abyssalPity: 0, mythicTotalDrops: 0, abyssalTotalDrops: 0, upperDropHistory: [] }
     };
 
     function saveState() {
@@ -1517,6 +1563,7 @@
           bossFirstKills: state.bossFirstKills || {}
           ,mystery: state.mystery
           ,starterPerk: state.starterPerk
+          ,rarityProgress: state.rarityProgress
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(d));
       } catch (e) {}
@@ -1552,6 +1599,7 @@
             state.mystery.crownAwakened = state.storage.some(i => i.awakened && String(i.key).includes('crown'));
           }
           state.starterPerk = p.starterPerk || null;
+          state.rarityProgress = Object.assign(state.rarityProgress, p.rarityProgress || {});
         } else {
           initStarterItems();
         }
@@ -1703,6 +1751,7 @@
       if (state.equipped.accessory?.isBerserk && state.hp <= (maxHp * 0.5)) {
         atk *= 2;
       }
+      if (state.equipped.weapon?.key === 'abyssal_devourer') atk += (state.abyssGrowth || 0);
 
       // GREED Modifiers (リスク＆リターン)
       if (state.greedLevel > 0) {
@@ -1720,6 +1769,7 @@
       if (state.modifiers.chestRareBonus) rareRate += state.modifiers.chestRareBonus;
       if (state.modifiers.nextChestDebuff) rareRate -= state.modifiers.nextChestDebuff;
       if (state.modifiers.goldenStairTurns > 0) goldRate += 200;
+      if (state.usedVoidCloak) maxHp = Math.max(1, Math.floor(maxHp / 2));
 
       const activeSyn = synList.filter(s => s.isActive);
       return { maxHp, atk, def, crit, vamp, rareRate: Math.max(0, rareRate), goldRate, perFloorDrain, demeritDamage: Math.max(-40, demeritDamage), synList, activeSyn };
@@ -1749,7 +1799,12 @@
       state.playerAttackBuff = 1.0;
       state.skillCooldown = 0;
       state.usedSecondChance = false;
+      state.usedVoidCloak = false;
       state.thunderCharges = 0;
+      state.abyssGrowth = 0;
+      state.guardFatigue = 0;
+      state.guardStamina = 100;
+      state.guardBroken = false;
       state.modifiers = { goldMult: 1.0, enemyAtkMult: 1.0, chestRareBonus: 0, nextChestDebuff: 0, goldenStairTurns: 0 };
 
       // Prepared items brought from town
@@ -1953,8 +2008,8 @@
               <div class="item-stats">${getItemStatSummary(it)}</div>
             </div>
           </div>
-          <button class="btn btn-gold btn-xs" onclick="sellOverflowItem(${idx})">
-            💰 売却 (+${getItemSellPrice(it)}G)
+          <button class="btn btn-gold btn-xs" ${it.locked ? 'disabled' : ''} onclick="sellOverflowItem(${idx})">
+            ${it.locked ? '🔒 保護中' : `💰 売却 (+${getItemSellPrice(it)}G)`}
           </button>
         </div>
       `).join('');
@@ -2005,7 +2060,8 @@
     function sellOverflowItem(idx) {
       initAudio();
       const item = state.inventory[idx];
-      if (!item) return;
+      if (!item || item.locked) return;
+      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？')) return;
       const price = getItemSellPrice(item);
       state.dungeonGold += price;
       state.inventory.splice(idx, 1);
@@ -2017,6 +2073,7 @@
     function sellOverflowStorageItem(idx) {
       const item = state.storage[idx];
       if (!item || item.locked) return;
+      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？')) return;
       const price = getItemSellPrice(item);
       state.storage.splice(idx, 1);
       state.vaultGold += price;
@@ -2067,7 +2124,7 @@
       const keepCount = state.talents.keepItemLv;
       // Pre-select top items by rarity
       const sortedIndexes = state.inventory.map((it, idx) => ({ it, idx })).sort((a, b) => {
-        const rRank = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+        const rRank = { Abyssal: 6, Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
         return (rRank[b.it.rarity] || 0) - (rRank[a.it.rarity] || 0);
       });
 
@@ -2384,7 +2441,12 @@
 
       // Pick 3 random distinct doors
       const shuffled = doorPool.sort(() => 0.5 - Math.random());
-      state.currentDoors = shuffled.slice(0, 3);
+      const hasObserver = state.equipped.accessory?.key === 'abyssal_observer';
+      state.currentDoors = shuffled.slice(0, hasObserver ? 4 : 3);
+      if (hasObserver && state.currentDoors[3]) {
+        state.currentDoors[3].sign = `👁️ 隠された道：${state.currentDoors[3].sign}`;
+        state.currentDoors[3].desc += ' 【観測済み：表示どおりの危険度と報酬】';
+      }
 
       state.screen = 'door_select';
       updateHeader();
@@ -2482,6 +2544,7 @@
       state.screen = 'battle';
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
+      state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
       decideEnemyIntent();
       addLog(`${state.currentEnemy.name} が立ちはだかった！`, isElite ? 'danger' : 'normal');
       updateHeader();
@@ -2507,6 +2570,7 @@
       state.bossMutated = false;
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
+      state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
 
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
@@ -2655,6 +2719,12 @@
         spawnFloatingFx(`🐉 +${regen}HP`, 'heal');
       }
 
+      if (action === 'attack' || action === 'heavy' || action === 'skill') {
+        state.guardFatigue = 0;
+        state.guardStamina = Math.min(100, (state.guardStamina || 0) + 20);
+        state.guardBroken = false;
+      }
+
       // Cooldown tick
       if (state.skillCooldown > 0 && action !== 'skill') {
         state.skillCooldown--;
@@ -2795,9 +2865,21 @@
       // 3. DEFEND (身を守る: ダメージ激減 & 次ターン攻撃力+35% & 盾反撃)
       else if (action === 'defend') {
         playSound('click');
+        state.guardFatigue = (state.guardFatigue || 0) + 1;
+        const intentCanJustGuard = ['heavy', 'critical_smash'].includes(enemy.actionType);
+        const staminaCost = intentCanJustGuard ? 10 : 30;
+        state.guardStamina = Math.max(0, (state.guardStamina || 0) - staminaCost);
+        if (state.guardStamina <= 0 || state.guardFatigue >= 4) {
+          state.guardBroken = true;
+          spawnFloatingFx('⚠️ GUARD BREAK！', 'damage');
+          addLog('⚠️ ガード疲労が限界に達し、構えを崩された！', 'danger');
+        } else if (state.guardFatigue >= 2) {
+          spawnFloatingFx(`⚠️ ガード疲労 ${state.guardFatigue}`, 'info');
+          addLog(`⚠️ 連続防御でガード効率が低下している（${state.guardFatigue}連続）`, 'danger');
+        }
         state.playerAttackBuff = 1.35; // Next attack buffed
-        spawnFloatingFx('🛡️ 身構え (被ダメ激減 & 次回攻撃+35%)', 'info');
-        addLog('盾を構えて防御態勢を取った！被ダメージを大きく低減し、反撃の好機を伺う。', 'normal');
+        spawnFloatingFx(intentCanJustGuard && !state.guardBroken ? '✨ JUST GUARD！' : '🛡️ ガード', 'info');
+        addLog(intentCanJustGuard && !state.guardBroken ? '✨ 敵の大技を読み切り、JUST GUARDを狙う！' : '盾を構えた。連続使用するとガード疲労が蓄積する。', 'normal');
         setTimeout(() => enemyTurn(true), 250);
       }
       // 4. WEAPON SKILL (装備固有スキル)
@@ -2831,13 +2913,19 @@
             return;
           }
           state.hp -= 10;
-          skillDmg = Math.max(1, Math.round(stats.atk * 3.2));
+          const bloodAwakened = weapon?.key === 'mythic_blood_scythe' && state.hp <= stats.maxHp * 0.25;
+          skillDmg = Math.max(1, Math.round(stats.atk * (bloodAwakened ? 4.2 : 3.2)));
           enemy.hp -= skillDmg;
           spawnFloatingFx(`🩸 深淵血脈解放 -${skillDmg} (HP-10)`, 'crit');
           addLog(`【深淵血脈解放】HP10を捧げて深淵の黒炎を召喚！ ${skillDmg} の致命打！`, 'gold');
         } else if (archetype === 'thunder') {
           // 天雷招来
           skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - enemy.def)) + 22;
+          if (weapon?.key === 'mythic_thunder_blade' && state.thunderCharges > 0) {
+            skillDmg += state.thunderCharges * 15;
+            addLog(`⚡ 神雷剣が雷印${state.thunderCharges}個を一斉起爆！`, 'gold');
+            state.thunderCharges = 0;
+          }
           enemy.hp -= skillDmg;
           spawnFloatingFx(`⚡ 天雷招来 -${skillDmg}`, 'crit');
           addLog(`【天雷招来】稲妻が直撃！ ${skillDmg} の雷電ダメージ！`, 'gold');
@@ -2907,10 +2995,20 @@
         state.playerExposed = false; // reset
       }
 
-      // Grab attack ignores defending multiplier if uninterrupted
+      // Guard is tactical: big telegraphed attacks can be JUST GUARDED,
+      // while repeated guards lose efficiency and grabs pierce it.
       let isGrab = (enemy.actionType === 'grab_prep');
-      let playerDef = (isPlayerDefending && !isGrab) ? (stats.def * 3.5 + 8) : stats.def;
-      let dmg = Math.max(1, Math.round(enemyAtk - playerDef));
+      const isJustGuard = isPlayerDefending && !isGrab && !state.guardBroken && ['heavy', 'critical_smash'].includes(enemy.actionType);
+      const baseDmg = Math.max(1, Math.round(enemyAtk - stats.def));
+      let dmg = baseDmg;
+      if (isPlayerDefending && !isGrab && !state.guardBroken) {
+        const fatigueReductions = [0, 0.55, 0.45, 0.30];
+        let reduction = isJustGuard ? 0.80 : (fatigueReductions[Math.min(3, state.guardFatigue)] || 0);
+        if (state.equipped.armor?.key === 'guardian_aegis') reduction = Math.min(0.85, reduction + 0.15);
+        dmg = Math.max(Math.ceil(enemyAtk * (isJustGuard ? 0.10 : 0.18)), Math.round(baseDmg * (1 - reduction)));
+      } else if (state.guardBroken) {
+        dmg = Math.max(1, Math.round(baseDmg * 1.35));
+      }
 
       // Apply demerit damages (e.g. Gold mask)
       if (stats.demeritDamage !== 0) {
@@ -2922,7 +3020,13 @@
       playSound('player_hurt');
       triggerShake();
 
-      if (isGrab && isPlayerDefending) {
+      if (state.guardBroken) {
+        spawnFloatingFx(`💥 GUARD BREAK -${dmg}`, 'damage');
+        addLog(`⚠️ ガードが崩壊し、${enemy.name}の攻撃が直撃！ ${dmg}ダメージ！`, 'danger');
+      } else if (isJustGuard) {
+        spawnFloatingFx(`✨ JUST GUARD -${dmg}`, 'info');
+        addLog(`✨ JUST GUARD成功！ ${enemy.name}の大技を読み切り、被害を${dmg}に抑えた！`, 'gold');
+      } else if (isGrab && isPlayerDefending) {
         spawnFloatingFx(`💥 ガード貫通拘束 -${dmg}`, 'damage');
         addLog(`⚠️ ${enemy.name} の強烈な拘束突進は防御を突き破って直撃した！ ${dmg} の大打撃！`, 'danger');
       } else {
@@ -2940,6 +3044,15 @@
         enemy.atk = Math.round(enemy.atk * 1.08);
         addLog(`🔥 ${enemy.name}の攻撃力が上昇した！`, 'danger');
       }
+      if (isPlayerDefending && enemy.trait === 'guard_enrage') {
+        enemy.atk = Math.round(enemy.atk * 1.15);
+        addLog(`💢 ${enemy.name}は防御を見て激昂し、攻撃力を上げた！`, 'danger');
+      }
+      if (isPlayerDefending && enemy.trait === 'guard_breaker') {
+        state.guardStamina = Math.max(0, state.guardStamina - 35);
+        state.guardFatigue = Math.max(3, state.guardFatigue);
+        addLog(`💥 ${enemy.name}がガードゲージを大きく破壊した！`, 'danger');
+      }
       if (enemy.trait === 'regen_cell' && enemy.turnCount % 2 === 0) {
         const heal = Math.min(15, enemy.maxHp - enemy.hp);
         enemy.hp += heal;
@@ -2953,9 +3066,12 @@
 
       // Shield / Titan counter parry
       const armor = state.equipped.armor;
-      const hasShield = armor?.archetype === 'shield' || stats.synList.some(s => s.id === 'syn_titan' && s.count >= 3);
-      if (isPlayerDefending && hasShield) {
-        const counterDmg = Math.max(4, Math.round(dmg * 0.45) + stats.def);
+      const titanActive = stats.synList.some(s => s.id === 'syn_titan' && s.count >= 3);
+      const hasShield = armor?.archetype === 'shield' || titanActive;
+      const parryChance = isJustGuard ? 1 : (titanActive ? 0.55 : 0.35);
+      if (isPlayerDefending && !state.guardBroken && hasShield && Math.random() < parryChance) {
+        let counterDmg = Math.max(4, Math.round(stats.atk * 0.5 + enemy.atk * 0.15));
+        if (isJustGuard && armor?.key === 'guardian_aegis') counterDmg = Math.round(counterDmg * 1.5);
         enemy.hp -= counterDmg;
         playSound('parry');
         spawnFloatingFx(`🛡️ パリィ反撃 -${counterDmg}`, 'crit');
@@ -2966,9 +3082,18 @@
           return;
         }
       }
+      state.guardStamina = Math.min(100, (state.guardStamina || 0) + 10);
 
       // Check fatal blow & Second Chance from Nameless Portrait
       if (state.hp <= 0) {
+        if (state.equipped.armor?.key === 'abyssal_void_cloak' && !state.usedVoidCloak) {
+          state.usedVoidCloak = true;
+          state.maxHp = Math.max(1, Math.floor(state.maxHp / 2));
+          state.hp = state.maxHp;
+          spawnFloatingFx('🕳️ 虚無王の外套：死を無効化', 'crit');
+          addLog('🕳️ 虚無が致命傷を呑み込んだ。代償として、この探索中の最大HPが半減！', 'gold');
+          decideEnemyIntent(); updateHeader(); render(); return;
+        }
         if (state.mystery.hasSecondChance && !state.usedSecondChance) {
           state.usedSecondChance = true;
           state.hp = 1;
@@ -2996,6 +3121,11 @@
       const enemy = state.currentEnemy;
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.runKills++;
+      if (state.equipped.weapon?.key === 'abyssal_devourer') {
+        const growth = state.greedLevel > 0 ? 2 + state.greedLevel : 2;
+        state.abyssGrowth = (state.abyssGrowth || 0) + growth;
+        addLog(`🌌 深淵喰らいが成長：探索中攻撃力 +${state.abyssGrowth}`, 'gold');
+      }
 
       if (state.camp.tavern >= 2 && state.bounty && !state.bounty.completed) {
         const killBonus = state.expeditionPolicy === 'bounty' ? 2 : 1;
@@ -3044,10 +3174,9 @@
           spawnFloatingFx(`👑 ボス初討伐！ 固有秘宝GET！`, 'crit');
           addLog(`【初回撃破達成】守護ボスの固有秘宝【${sigItem.name}】と深淵の核×${extraCores}を獲得！`, 'gold');
         } else {
-          // Farm / Repeat Boss kill: 80% Epic, 20% Legendary + 1 Core
+          // Repeat bosses use the centralized table (Epic floor, Legendary ~7%).
           state.abyssCores += 1;
-          const dropRarity = Math.random() < 0.2 ? 'Legendary' : 'Epic';
-          const bossDrop = generateItem(state.floor, dropRarity);
+          const bossDrop = generateItem(state.floor, null, 'boss_repeat');
           giveItemToBag(bossDrop);
           addLog(`ボス周回撃破！ 【${bossDrop.name}】[${bossDrop.rarity}] と深淵の核を獲得！`, 'gold');
         }
@@ -3078,8 +3207,7 @@
         }
       } else if (enemy.isElite || Math.random() < (0.45 - (state.expeditionPolicy === 'mining' ? 0.15 : 0))) {
         // Elite or standard drop
-        const forcedRarity = (enemy.isElite && state.greedLevel >= 2) ? (Math.random() < 0.3 ? 'Legendary' : 'Epic') : null;
-        const item = generateItem(state.floor, forcedRarity);
+        const item = generateItem(state.floor, null, enemy.isElite ? 'elite' : 'normal');
         giveItemToBag(item);
       }
 
@@ -3163,30 +3291,75 @@
     /* ==========================================================================
        ITEM GENERATION & LEGENDARY CELEBRATION (レア発見演出)
        ========================================================================== */
-    function generateItem(floor, forcedRarity = null) {
-      let rarity = forcedRarity;
+    function rollItemRarity({ floor = 1, source = 'normal', greed = 0, luck = 0, trackPity = true, rng = Math.random } = {}) {
+      const progress = state.rarityProgress;
+      if (trackPity) {
+        progress.mythicPity++;
+        progress.abyssalPity++;
+      }
+
+      if (source === 'boss_repeat') {
+        const r = rng();
+        if (floor >= 11 && ((trackPity && progress.abyssalPity >= 1500) || r < 0.0005)) return registerUpperRarity('Abyssal', trackPity);
+        if ((trackPity && progress.mythicPity >= 250) || r < 0.0045) return registerUpperRarity('Mythic', trackPity);
+        if (r < 0.0745) return 'Legendary';
+        return 'Epic';
+      }
+
+      let abyssal = floor < 11 ? 0 : (floor < 21 ? 0.0002 : 0.0006);
+      let mythic = floor < 11 ? 0.0015 : (floor < 21 ? 0.0040 : 0.0050);
+      let legendary = 0.006 + (floor >= 21 ? 0.002 : (floor >= 11 ? 0.001 : 0));
+      abyssal += Math.min(0.00015, luck * 0.000001) + greed * 0.00004;
+      mythic += Math.min(0.0010, luck * 0.00001) + greed * 0.00012;
+      legendary += Math.min(0.004, luck * 0.00004) + greed * 0.0008;
+      if (floor < 11) abyssal = 0;
+
+      if (source === 'elite') legendary = 0.04 + greed * 0.002;
+      if (source === 'sealed_vault') legendary = 0.025;
+      if (source === 'cursed_chest') legendary = 0.018;
+
+      if (trackPity && progress.abyssalPity >= 800) abyssal += Math.min(0.0014, (progress.abyssalPity - 800) * 0.000002);
+      if (trackPity && progress.mythicPity >= 100) mythic += Math.min(0.0045, (progress.mythicPity - 100) * 0.00003);
+
+      const r = rng();
+      if (floor >= 11 && ((trackPity && progress.abyssalPity >= 1500) || r < abyssal)) return registerUpperRarity('Abyssal', trackPity);
+      if ((trackPity && progress.mythicPity >= 250) || r < abyssal + mythic) return registerUpperRarity('Mythic', trackPity);
+      if (r < abyssal + mythic + legendary) return 'Legendary';
+
+      if (source === 'elite') return r < abyssal + mythic + legendary + 0.28 ? 'Epic' : 'Rare';
+      if (source === 'sealed_vault' || source === 'cursed_chest') return 'Epic';
+
+      const epic = 0.075 + Math.min(0.13, luck * 0.0010) + greed * 0.018;
+      const rare = 0.27 + Math.min(0.24, luck * 0.0020) + greed * 0.035;
+      if (r < abyssal + mythic + legendary + epic) return 'Epic';
+      if (r < abyssal + mythic + legendary + epic + rare) return 'Rare';
+      return 'Common';
+    }
+
+    function registerUpperRarity(rarity, trackPity) {
+      if (!trackPity) return rarity;
+      if (rarity === 'Mythic') {
+        state.rarityProgress.mythicPity = 0;
+        state.rarityProgress.mythicTotalDrops++;
+      } else {
+        state.rarityProgress.abyssalPity = 0;
+        state.rarityProgress.abyssalTotalDrops++;
+      }
+      saveState();
+      return rarity;
+    }
+
+    function generateItem(floor, forcedRarity = null, source = 'normal') {
       const stats = getPlayerStats();
+      let rarity = forcedRarity || rollItemRarity({ floor, source, greed: state.greedLevel, luck: stats.rareRate });
 
-      if (!rarity) {
-        // Weighted Random Distribution (最優先7: バランス調整)
-        // Common: 600, Rare: 260 + bonus, Epic: 80 + bonus, Legendary: 12 + capped bonus
-        const wCommon = 600;
-        const wRare = 260 + Math.round(stats.rareRate * 2.5);
-        const wEpic = 80 + Math.round(stats.rareRate * 1.5) + (state.greedLevel >= 2 ? 60 : 0);
-        const wLegendary = 12 + Math.min(18, Math.round(stats.rareRate * 0.15)) + (state.greedLevel >= 3 ? 15 : 0);
-
-        const totalWeight = wCommon + wRare + wEpic + wLegendary;
-        const roll = Math.random() * totalWeight;
-
-        if (roll < wLegendary) {
-          rarity = 'Legendary';
-        } else if (roll < wLegendary + wEpic) {
-          rarity = 'Epic';
-        } else if (roll < wLegendary + wEpic + wRare) {
-          rarity = 'Rare';
-        } else {
-          rarity = 'Common';
-        }
+      if (rarity === 'Abyssal') {
+        const pool = [UNIQUE_ITEMS.abyssal_devourer, UNIQUE_ITEMS.abyssal_observer, UNIQUE_ITEMS.abyssal_void_cloak];
+        return { ...pool[Math.floor(Math.random() * pool.length)], id:'aby_' + Date.now() + Math.random(), dropSource:source };
+      }
+      if (rarity === 'Mythic') {
+        const pool = [UNIQUE_ITEMS.mythic_thunder_blade, UNIQUE_ITEMS.mythic_blood_scythe, UNIQUE_ITEMS.mythic_sky_shield];
+        return { ...pool[Math.floor(Math.random() * pool.length)], id:'myt_' + Date.now() + Math.random(), dropSource:source };
       }
 
       // Check unique item pool with signature archetype items
@@ -3235,7 +3408,7 @@
       const icons = { weapon: '⚔️', armor: '🛡️', accessory: '💍' };
 
       const baseName = names[type][Math.floor(Math.random() * names[type].length)];
-      const mult = { Common: 1, Rare: 1.35, Epic: 1.75, Legendary: 2.4 }[rarity];
+      const mult = { Common: 1, Rare: 1.35, Epic: 1.75, Legendary: 2.4, Mythic:3.0, Abyssal:3.6 }[rarity];
 
       const it = {
         id: 'it_' + Date.now() + Math.random(),
@@ -3411,9 +3584,20 @@
     }
 
     function giveItemToBag(item) {
+      const wasUnknown = !state.codex.items[item.name];
+      if (item.rarity === 'Mythic' || item.rarity === 'Abyssal') item.locked = true;
       recordCodex('item', item);
       state.inventory.push(item);
       if (item.key === 'ancient_key') state.mystery.keyOwned = true;
+      if (wasUnknown && (item.rarity === 'Mythic' || item.rarity === 'Abyssal')) {
+        state.rarityProgress.upperDropHistory.unshift({
+          rarity:item.rarity, itemName:item.name, date:new Date().toISOString(), floor:state.floor,
+          source:item.dropSource || (state.currentEnemy?.isElite ? 'Elite' : state.currentEnemy?.isBoss ? 'Boss' : '探索'),
+          greed:state.greedLevel || 0
+        });
+        state.rarityProgress.upperDropHistory = state.rarityProgress.upperDropHistory.slice(0, 30);
+        saveState();
+      }
 
       // Flash bag tab animation
       const bagTab = document.getElementById('tab-btn-bag');
@@ -3423,13 +3607,32 @@
         bagTab.classList.add('tab-flash');
       }
 
-      if (item.rarity === 'Legendary') {
+      if (item.rarity === 'Mythic' || item.rarity === 'Abyssal') {
+        showUpperRarityDiscoveryModal(item, wasUnknown);
+      } else if (item.rarity === 'Legendary') {
         showLegendaryDiscoveryModal(item);
       } else {
         showItemToast(item);
         addLog(`戦利品【${item.name}】(${item.rarity}) を獲得！`, 'gold');
       }
       updateHeader();
+    }
+
+    function showUpperRarityDiscoveryModal(item, isFirst) {
+      playSound('legendary');
+      const m = document.getElementById('modal-layer');
+      const abyssal = item.rarity === 'Abyssal';
+      m.style.display = 'flex';
+      m.className = abyssal ? 'abyssal-modal' : 'mythic-modal';
+      m.innerHTML = `<div class="card r-${item.rarity}" style="max-width:500px;width:100%;padding:26px;text-align:center;border:2px solid ${abyssal ? '#22d3ee' : '#f43f9e'};box-shadow:0 0 60px ${abyssal ? 'rgba(34,211,238,.55)' : 'rgba(244,63,158,.5)'};">
+        <div style="font-size:56px;">${item.icon}</div>
+        <div style="font-size:11px;letter-spacing:3px;color:${abyssal ? '#67e8f9' : '#f9a8d4'};">${abyssal ? 'ABYSSAL ARTIFACT DISCOVERED' : 'MYTHIC DISCOVERED'}</div>
+        <h1 style="font-size:24px;color:#fff;margin:8px 0;">${item.name}</h1>
+        ${isFirst ? `<div style="color:#fbbf24;font-weight:900;margin-bottom:7px;">✨ 人生初の${abyssal ? '深淵級' : '神話級'}発見記録！</div>` : ''}
+        <div style="font-size:13px;color:#e2e8f0;background:rgba(0,0,0,.45);padding:12px;border-radius:8px;">${item.desc}<br><b>${getItemStatSummary(item)}</b></div>
+        <div style="font-size:10px;color:#94a3b8;margin:8px;">誤売却防止のため自動ロックしました</div>
+        <button class="btn ${abyssal ? 'btn-blue' : 'btn-purple'}" onclick="closeGenericModal()">秘宝を受け取る</button>
+      </div>`;
     }
 
     function showLegendaryDiscoveryModal(item) {
@@ -3604,7 +3807,7 @@
     function openChestEvent(isCursed = false) {
       if (isCursed) {
         // Cursed Chest: Guaranteed Epic or Legendary, but permanently reduces Max HP
-        const item = generateItem(state.floor, Math.random() < 0.5 ? 'Epic' : 'Legendary');
+        const item = generateItem(state.floor, null, 'cursed_chest');
         const hpCost = Math.round(state.maxHp * 0.15);
         state.hp = Math.max(1, state.hp - hpCost);
         state.maxHp = Math.max(20, state.maxHp - hpCost);
@@ -3931,7 +4134,7 @@
       const keyIndex = state.inventory.findIndex(i => i.key === 'ancient_key');
       if (keyIndex >= 0) state.inventory.splice(keyIndex, 1);
       state.mystery.keyOwned = false;
-      const treasure = generateItem(Math.max(20, state.floor), Math.random() < 0.35 ? 'Legendary' : 'Epic');
+      const treasure = generateItem(Math.max(20, state.floor), null, 'sealed_vault');
       state.screen = 'event';
       state.currentEvent = {
         title: '🔓 古代の封印宝物庫', icon: '🏛️',
@@ -4182,7 +4385,7 @@
 
     function getItemSellPrice(item) {
       if (!item) return 0;
-      const basePrices = { Common: 15, Rare: 45, Epic: 120, Legendary: 300 };
+      const basePrices = { Common: 15, Rare: 45, Epic: 120, Legendary: 320, Mythic: 1200, Abyssal: 5000 };
       let price = basePrices[item.rarity] || 15;
       if (item.refineCount) price += item.refineCount * 30;
       return price;
@@ -4208,6 +4411,7 @@
         render();
         return;
       }
+      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？ この操作は取り消せません。')) return;
       const price = getItemSellPrice(item);
       state.vaultGold += price;
       state.storage.splice(index, 1);
@@ -4253,7 +4457,7 @@
     function sortStorage(criteria = 'rarity') {
       initAudio();
       playSound('click');
-      const rarityRank = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const rarityRank = { Abyssal: 6, Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
       const typeRank = { weapon: 1, armor: 2, accessory: 3, potion: 4, relic: 5 };
 
       state.storage.sort((a, b) => {
@@ -4437,6 +4641,8 @@
       return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
         📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shownHp} / 攻撃 ${boss.atk} / ${gimmicks[boss.gimmick]}
         ${state.camp.lab >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
+        ${state.camp.lab >= 4 && state.rarityProgress.mythicPity >= 100 ? '<div style="color:#f9a8d4;">💠 神話級の気配が強まっている…</div>' : ''}
+        ${state.camp.lab >= 4 && state.rarityProgress.abyssalPity >= 800 ? '<div style="color:#67e8f9;">🌌 深淵の鼓動が近い…</div>' : ''}
       </div>`;
     }
 
@@ -4759,6 +4965,7 @@
               </div>
               ${state.camp.lab >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
               ${Object.values(state.equipped).some(i => i?.archetype === 'thunder') ? `<div style="font-size:10.5px;color:#facc15;">⚡ 雷チャージ ${state.thunderCharges}/3（3で追加30ダメージ＆スタン）</div>` : ''}
+              <div style="font-size:10.5px;color:${state.guardStamina <= 30 ? '#f87171' : '#93c5fd'};">🛡️ GUARD ${state.guardStamina}/100 ${state.guardFatigue >= 2 ? `⚠️ 疲労${state.guardFatigue}` : ''}</div>
             </div>
 
             <!-- Combat Actions -->
@@ -4929,6 +5136,19 @@
         // 図鑑 (Codex)
         const totalItems = Object.keys(UNIQUE_ITEMS).length + 12;
         const knownItems = Object.keys(state.codex.items).length;
+        const rarityOrder = ['Common','Rare','Epic','Legendary','Mythic','Abyssal'];
+        const rarityNames = { Common:'一般級', Rare:'希少級', Epic:'英雄級', Legendary:'伝説級', Mythic:'神話級', Abyssal:'深淵級' };
+        const uniqueValues = Object.values(UNIQUE_ITEMS);
+        const rarityCollectionHtml = rarityOrder.map(r => {
+          const total = uniqueValues.filter(i => i.rarity === r && !i.bossUnique).length;
+          const found = Object.values(state.codex.items).filter(i => i.rarity === r).length;
+          return `<div class="item-row r-${r}" style="padding:5px 8px;"><span class="item-name">${rarityNames[r]} ${r}</span><b>${found}/${total || '∞'}</b></div>`;
+        }).join('');
+        const upperCatalogHtml = uniqueValues.filter(i => ['Mythic','Abyssal'].includes(i.rarity)).map(i => {
+          const found = state.codex.items[i.name];
+          return `<div class="codex-item ${found ? '' : 'locked'}"><span>${found ? i.icon : '❔'}</span><div><b class="${found ? 'item-name' : ''}">${found ? i.name : '？？？？？？？'}</b><div style="font-size:10px;color:#94a3b8;">${found ? i.desc : `${i.rarity} 未発見`}</div></div></div>`;
+        }).join('');
+        const upperHistoryHtml = (state.rarityProgress.upperDropHistory || []).map(h => `<div style="font-size:10px;color:#cbd5e1;padding:3px 0;">${h.rarity === 'Abyssal' ? '🌌' : '💠'} ${h.itemName} / B${h.floor}F / ${h.source} / GREED ${h.greed} / ${new Date(h.date).toLocaleString()}</div>`).join('');
         const enemyList = Object.values(state.codex.enemies).map(e => `
           <div class="codex-item"><span>${e.icon}</span><div><b style="color:${e.isBoss ? '#f87171' : '#7dd3fc'};">${e.name}</b>
           <div style="font-size:10px;color:#cbd5e1;">${state.camp.lab >= 1 ? `HP ${e.maxHp || '?'} / 攻 ${e.atk || '?'} / 防 ${e.def || '?'}${e.traitName ? ` / ${e.traitName}: ${e.hint || ''}` : ''}` : '研究所Lv1で詳細解放'}</div></div></div>`).join('');
@@ -4950,6 +5170,10 @@
             <span>深淵図鑑 & 記録</span>
             <span>収集率: ${knownItems}種</span>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">${rarityCollectionHtml}</div>
+          <div style="font-size:11px;font-weight:bold;color:#f9a8d4;margin-bottom:4px;">超希少装備コレクション:</div>
+          <div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto;">${upperCatalogHtml}</div>
+          ${upperHistoryHtml ? `<details style="margin:7px 0;"><summary style="font-size:11px;color:#67e8f9;">初発見記録</summary>${upperHistoryHtml}</details>` : ''}
           <div style="font-size:11px; font-weight:bold; color:#fff; margin-bottom:4px;">地下の記録 (ロア):</div>
           <div style="display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto;">
             ${loreList}
@@ -4985,6 +5209,7 @@
       if (it.rareRate) s.push(`幸運+${it.rareRate}%`);
       if (it.heal) s.push(`回復+${it.heal}`);
       if (it.affixName) s.push(`特性:${it.affixName}`);
+      if (it.bossUnique) s.push('秘宝 / Boss Unique');
       return s.join(' | ') || it.desc;
     }
 
@@ -5021,7 +5246,7 @@
         `;
       } else {
         if (data.items && data.items.length > 0) {
-          const rarityScore = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+          const rarityScore = { Abyssal: 6, Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
           const sorted = [...data.items].sort((a, b) => {
             const rDiff = (rarityScore[b.rarity] || 0) - (rarityScore[a.rarity] || 0);
             if (rDiff !== 0) return rDiff;
