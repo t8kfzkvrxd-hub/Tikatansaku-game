@@ -1,0 +1,134 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ABYSS DELVER smoke tests</title>
+<iframe id="game" src="/"></iframe>
+<pre id="results">RUNNING</pre>
+<script>
+const results = [];
+function check(condition, name) {
+  results.push(`${condition ? 'PASS' : 'FAIL'}: ${name}`);
+  if (!condition) throw new Error(name);
+}
+window.addEventListener('load', () => setTimeout(() => {
+  const w = document.getElementById('game').contentWindow;
+  const d = w.document;
+  const game = w.__gameDebug;
+  try {
+    w.closeGenericModal();
+    w.localStorage.setItem('ABYSS_TUTORIAL_SEEN', 'true');
+
+    w.selectStarterPerk('smoke');
+    check(d.getElementById('viewport').textContent.includes('地下迷宮へ潜る'), '出撃支援を選択すると探索開始できる');
+    w.startDungeonRun();
+    check(game.state.inventory.some(i => i.type === 'escape_item'), '煙玉を探索へ持ち込める');
+
+    w.startNormalBattle(false);
+    const battleText = d.getElementById('viewport').textContent;
+    check(['通常攻撃', '強攻撃', '防御', w.getEquippedSkillInfo().name].every(t => battleText.includes(t)), '戦闘UIに4行動が表示される');
+    check(battleText.includes('煙玉で逃走'), '通常戦闘で煙玉ボタンが表示される');
+    game.state.skillCooldown = 2; w.render();
+    check(d.getElementById('viewport').textContent.includes('あと2T') && d.querySelector('button[disabled]'), 'スキルCDを残りターン表示して無効化');
+    const nativeTimeout = w.setTimeout; w.setTimeout = () => 0;
+    for (const action of ['attack','heavy','defend','skill']) {
+      w.startNormalBattle(false); game.state.skillCooldown = 0;
+      game.state.currentEnemy.actionType = 'normal'; game.state.currentEnemy.nextMult = 1;
+      const enemyHp = game.state.currentEnemy.hp;
+      w.playerCombatAction(action);
+      check(action === 'defend' ? game.state.playerAttackBuff === 1.35 : (!game.state.currentEnemy || game.state.currentEnemy.hp < enemyHp), `${action}をUI相当操作で実行できる`);
+    }
+    w.setTimeout = nativeTimeout;
+    w.startNormalBattle(false);
+    const beforeFloor = game.state.floor;
+    w.escapeBattleWithSmoke();
+    check(!game.state.inventory.some(i => i.type === 'escape_item') && game.state.floor === beforeFloor + 1, '煙玉を消費して報酬なしで次階へ進む');
+
+    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000;
+    game.state.camp.lab = 3;
+    w.startBossBattle(game.AREAS[0].boss);
+    check(game.state.currentEnemy.maxHp === Math.round(game.AREAS[0].boss.hp * .85), '研究所Lv3でボス最大HP-15%');
+
+    game.state.floor = 1; game.state.talents.merchantFriendLv = 0; w.startMerchantEvent();
+    const normalSlots = game.state.currentEvent.choices.length;
+    game.state.talents.merchantFriendLv = 1; w.startMerchantEvent();
+    check(game.state.currentEvent.choices.length === normalSlots + 1 && game.state.currentEvent.choices.some(c => c.text.includes('友好枠')), '商人の友で割引と商品枠を追加');
+
+    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000;
+    const oldDef = game.state.talents.defLv;
+    const defCost = w.getTalentUpgradeCost('defLv');
+    const goldBeforeDef = game.state.vaultGold;
+    w.upgradeTalent('defLv');
+    check(game.state.talents.defLv === oldDef + 1 && game.state.vaultGold === goldBeforeDef - defCost, '防御永久強化の価格・購入・効果を共通化');
+
+    const oldVaultSize = game.state.camp.vaultSize;
+    const vaultCost = w.getVaultUpgradeCost(game.state.camp.vaultLevel);
+    const goldBeforeVault = game.state.vaultGold;
+    w.upgradeVault();
+    check(game.state.camp.vaultSize === oldVaultSize + 10 && game.state.vaultGold === goldBeforeVault - vaultCost, '倉庫増築が表示価格で+10枠');
+
+    game.state.camp.shop = 2; game.state.preparedItems = []; game.state.preparedBuffs = {chestRareBonus:0,goldMult:1};
+    w.buyExpeditionSupply('potion');
+    check(game.state.preparedItems.length === 1, '道具屋購入品を探索前データへ保存');
+    w.selectStarterPerk('luck'); w.startDungeonRun();
+    check(game.state.inventory.some(i => i.name.includes('携帯傷薬')), '道具屋購入品が探索開始時に消えない');
+
+    game.state.camp.tavern = 3; game.state.camp.rescuedAdventurer = false; w.selectStarterPerk('luck'); w.startDungeonRun();
+    const hpWithoutLeon = game.state.maxHp;
+    game.state.camp.rescuedAdventurer = true; w.selectStarterPerk('luck'); w.startDungeonRun();
+    check(game.state.maxHp === hpWithoutLeon + 20, '特製スープは酒場Lv3かつレオン救助後のみ発動');
+
+    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000; game.state.camp.blacksmith = 3;
+    const weapon = game.state.equipped.weapon;
+    const refineCost = w.getRefineCost(weapon); const beforeRefineGold = game.state.vaultGold;
+    w.refineEquippedItem('weapon');
+    check(game.state.vaultGold === beforeRefineGold - refineCost && w.getRefineCost(weapon) === refineCost + 40, '鍛冶強化の表示・判定・消費価格を共通化');
+    w.applyEquipmentAffix('weapon', 'boss_slayer');
+    check(weapon.affix === 'boss_slayer', '鍛冶屋Lv3で装備特性を付与できる');
+
+    game.state.inventory = [{name:'C',icon:'○',rarity:'Common'},{name:'L',icon:'★',rarity:'Legendary'}];
+    game.state.talents.keepItemLv = 1; w.openDeathProtectModal();
+    check(d.getElementById('modal-layer').textContent.includes('1 / 1個'), '死亡時保護品をレア度優先で初期選択し手動変更できる');
+    w.closeGenericModal();
+    w.emergencyEscape();
+    check(d.getElementById('modal-layer').textContent.includes('持ち帰れるのは半分'), '緊急帰還時に持ち帰る半分を選択できる');
+    w.closeGenericModal();
+
+    game.state.inventory = [{...game.state.equipped.weapon, key:'ancient_key', name:'古代鍵'}]; game.state.mystery.keyOwned = true; game.state.floor = 12;
+    w.openSealedVault();
+    check(!game.state.mystery.keyOwned && game.state.currentEvent.title.includes('封印宝物庫'), '古代鍵で地下遺跡の封印宝物庫を開ける');
+
+    game.state.mystery.eggHatched = true; game.state.hp = 30; game.state.floor = 1;
+    w.startNormalBattle(false); const hpBeforeDragon = game.state.hp;
+    w.playerCombatAction('attack');
+    check(game.state.hp === hpBeforeDragon + 3, '深淵の幼竜が毎ターンHP+3回復する');
+    game.state.currentEnemy = null;
+
+    const originalRandom = w.Math.random; w.Math.random = () => 0;
+    game.state.greedLevel = 0; game.state.floor = 1; w.startNormalBattle(false); const normalAtk = game.state.currentEnemy.atk;
+    game.state.greedLevel = 3; w.startNormalBattle(false); const greedAtk = game.state.currentEnemy.atk;
+    w.Math.random = originalRandom;
+    check(greedAtk > normalAtk && greedAtk >= 11, 'GREED Lv3で敵基礎攻撃力へ+45%補正');
+
+    game.state.screen = 'town'; game.state.floor = 0; game.state.camp.tavern = 1; w.render();
+    check(d.getElementById('viewport').textContent.includes('酒場Lv2で討伐依頼を解放'), '酒場Lv1では討伐依頼をロック表示');
+
+    game.state.storage = Array.from({length: game.state.camp.vaultSize}, (_, i) => ({name:`品${i}`,icon:'📦',rarity:'Common'}));
+    game.state.inventory = [{name:'新戦利品',icon:'✨',rarity:'Rare'}];
+    w.returnToTown(true);
+    check(d.getElementById('modal-layer').textContent.includes('倉庫の保管枠が不足') && d.getElementById('modal-layer').textContent.includes('倉庫の既存品を整理'), '倉庫満杯時に警告し既存品整理を選べる');
+    w.closeGenericModal();
+
+    game.state.mystery = {eggReturns:2,eggHatched:true,crownAwakened:true,keyOwned:true,hasSecondChance:true};
+    w.saveState();
+    game.state.mystery = {eggReturns:0,eggHatched:false,crownAwakened:false,keyOwned:false,hasSecondChance:false};
+    w.loadState();
+    check(game.state.mystery.eggHatched && game.state.mystery.crownAwakened && game.state.mystery.keyOwned, '神秘進行を保存・復元できる');
+
+    w.localStorage.setItem('lastSeenVersion', game.GAME_VERSION);
+    check(w.localStorage.getItem('lastSeenVersion') === game.GAME_VERSION, '更新通知の確認バージョンを保存できる');
+    results.push('ALL TESTS PASSED');
+  } catch (error) {
+    results.push(`ERROR: ${error.message}`);
+  }
+  document.getElementById('results').textContent = results.join('\n');
+}, 500));
+</script>

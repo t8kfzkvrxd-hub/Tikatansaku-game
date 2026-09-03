@@ -873,6 +873,7 @@
         </div>
         <div class="goal-nudge" id="ui-goal-nudge">🎯 5F安全帰還まで: あと5階</div>
         <div style="display:flex; gap:4px; align-items:center;">
+          <button class="btn btn-outline btn-xs" onclick="showUpdateNotes(false)">📋 更新履歴</button>
           <button id="help-btn" class="btn btn-outline btn-xs" onclick="showTutorialModal()">❓ 遊び方</button>
           <button id="sound-btn" class="btn btn-outline btn-xs" onclick="toggleSound()">🔊 音 ON</button>
         </div>
@@ -1138,6 +1139,17 @@
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
     const MAX_DUNGEON_FLOOR = 30;
+    const GAME_VERSION = '0.4.0';
+    const UPDATE_NOTES = [
+      '戦闘UIに通常攻撃・強攻撃・防御・武器固有スキルを接続',
+      '出撃前支援と煙玉による通常戦闘からの逃走を実装',
+      '研究所・防御強化・商人の友・酒場依頼を正式実装',
+      '鍛冶屋Lv3の装備特性と強化価格表示を実装',
+      '道具屋購入品、倉庫増築、満杯時の整理処理を修正',
+      '死亡・緊急帰還時の戦利品選択を実装',
+      '王冠・古代鍵・深淵の幼竜・GREEDの効果を戦闘と探索へ接続',
+      '神秘進行のセーブ互換性と敵固有特性の未接続を修正'
+    ];
 
     // Underground Lore & Mysteries (地下世界の真相)
     const LORE_RECORDS = [
@@ -1155,8 +1167,8 @@
         id: 'syn_blood',
         name: '🩸 血の誓約',
         setTag: 'blood',
-        desc: '2部位: 攻撃時HP+4吸血。4部位: HP50%以下で毎ターン自動追加攻撃！',
-        reqLevels: [2, 4]
+        desc: '2部位: 攻撃時HP+4吸血。3部位: 低HP時に攻撃・吸血がさらに強化！',
+        reqLevels: [2, 3]
       },
       {
         id: 'syn_gold',
@@ -1357,7 +1369,7 @@
     const TALENT_CONFIG = {
       hpLv: { name: '生命の加護', icon: '❤️', desc: '初期最大HP+15', baseCost: 70, costPerLv: 50, maxLv: 5 },
       atkLv: { name: '剛力の加護', icon: '⚔️', desc: '初期攻撃力+3', baseCost: 80, costPerLv: 60, maxLv: 5 },
-      defLv: { name: '金剛の加護', icon: '🛡️', desc: '初期防御力+2', baseCost: 80, costPerLv: 60, maxLv: 5 },
+      defLv: { name: '防御強化', icon: '🛡️', desc: '初期防御力+2', baseCost: 80, costPerLv: 60, maxLv: 5 },
       luckLv: { name: '宿命の幸運', icon: '🍀', desc: '宝箱レア率+6%', baseCost: 90, costPerLv: 70, maxLv: 5 },
       keepItemLv: { name: '遺品守護符', icon: '📜', desc: '死亡時アイテム保護 (Lv1=1個, Lv2=2個)', baseCost: 150, costPerLv: 150, maxLv: 2 },
       fateRerollLv: { name: '運命の再選択', icon: '🎲', desc: '部屋の扉を探索中1回再抽選', baseCost: 120, costPerLv: 100, maxLv: 1 },
@@ -1365,12 +1377,19 @@
       merchantFriendLv: { name: '商人の友', icon: '🤝', desc: '商人枠+1 & 20%割引', baseCost: 140, costPerLv: 120, maxLv: 1 }
     };
 
-    function getTalentCost(key) {
+    function getTalentUpgradeCost(key) {
       const cfg = TALENT_CONFIG[key];
       if (!cfg) return 100;
       const curLv = state.talents[key] || 0;
       if (cfg.maxLv && curLv >= cfg.maxLv) return null; // MAX reached
       return cfg.baseCost + curLv * cfg.costPerLv;
+    }
+
+    // Backward-compatible alias for older inline handlers/saves.
+    const getTalentCost = getTalentUpgradeCost;
+
+    function getRefineCost(item) {
+      return 75 + ((item && item.refineCount) || 0) * 40;
     }
 
     function getVaultUpgradeCost(level) {
@@ -1470,6 +1489,8 @@
       bossMutated: false,
       currentEvent: null,
 
+      pendingEmergencySelection: [],
+
       runKills: 0,
       bounty: {
         targetKills: 5,
@@ -1494,6 +1515,8 @@
           preparedBuffs: state.preparedBuffs || { chestRareBonus: 0, goldMult: 1.0 },
           expeditionPolicy: state.expeditionPolicy || 'normal',
           bossFirstKills: state.bossFirstKills || {}
+          ,mystery: state.mystery
+          ,starterPerk: state.starterPerk
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(d));
       } catch (e) {}
@@ -1522,6 +1545,13 @@
           state.preparedBuffs = p.preparedBuffs || { chestRareBonus: 0, goldMult: 1.0 };
           state.expeditionPolicy = p.expeditionPolicy || 'normal';
           state.bossFirstKills = p.bossFirstKills || {};
+          state.mystery = Object.assign(state.mystery, p.mystery || {});
+          if (!p.mystery) {
+            state.mystery.keyOwned = state.storage.some(i => i.key === 'ancient_key');
+            state.mystery.eggHatched = state.storage.some(i => i.key === 'dragon_hatchling');
+            state.mystery.crownAwakened = state.storage.some(i => i.awakened && String(i.key).includes('crown'));
+          }
+          state.starterPerk = p.starterPerk || null;
         } else {
           initStarterItems();
         }
@@ -1542,7 +1572,11 @@
       if (type === 'item') {
         state.codex.items[obj.name] = { name: obj.name, icon: obj.icon, rarity: obj.rarity, desc: obj.desc || '装備品' };
       } else if (type === 'enemy') {
-        state.codex.enemies[obj.name] = { name: obj.name, icon: obj.icon, isBoss: obj.isBoss || false };
+        state.codex.enemies[obj.name] = {
+          name: obj.name, icon: obj.icon, isBoss: obj.isBoss || false,
+          maxHp: obj.maxHp, atk: obj.atk, def: obj.def,
+          traitName: obj.traitName, hint: obj.hint
+        };
       } else if (type === 'lore') {
         state.codex.lore[obj.id] = { title: obj.title, text: obj.text };
       }
@@ -1606,6 +1640,11 @@
           if (item.goldRate) goldRate += item.goldRate;
           if (item.curseHpDrain) perFloorDrain += item.curseHpDrain;
           if (item.demeritDamageTaken) demeritDamage += item.demeritDamageTaken;
+          if (item.affix === 'critical') crit += 8;
+          if (item.affix === 'lifesteal') vamp += 3;
+          if (item.affix === 'max_hp') maxHp += 25;
+          if (item.affix === 'damage_reduction') demeritDamage -= 10;
+          if (item.affix === 'low_hp_def' && state.hp <= maxHp * 0.4) def += 8;
         }
       });
 
@@ -1683,7 +1722,7 @@
       if (state.modifiers.goldenStairTurns > 0) goldRate += 200;
 
       const activeSyn = synList.filter(s => s.isActive);
-      return { maxHp, atk, def, crit, vamp, rareRate: Math.max(0, rareRate), goldRate, perFloorDrain, demeritDamage, synList, activeSyn };
+      return { maxHp, atk, def, crit, vamp, rareRate: Math.max(0, rareRate), goldRate, perFloorDrain, demeritDamage: Math.max(-40, demeritDamage), synList, activeSyn };
     }
 
     function addLog(msg, type = 'normal') {
@@ -1750,16 +1789,11 @@
       const hasPortrait = state.storage.some(i => i.key === 'nameless_portrait') || Object.values(state.equipped).some(i => i?.key === 'nameless_portrait');
       state.mystery.hasSecondChance = hasPortrait;
 
-      // Tavern Adventurer Free Meal if Tavern Lv >= 3
-      if (state.camp.tavern >= 3) {
+      // Leon's soup requires both the upgraded tavern and an actual rescue.
+      if (state.camp.tavern >= 3 && state.camp.rescuedAdventurer === true) {
         state.hp += 20;
         state.maxHp += 20;
         addLog('🧝 救助した冒険者レオンの特製スープを飲み干した！ 最大HP+20', 'heal');
-      }
-
-      // Shop prep: Take pre-bought potion if shop Lv >= 2
-      if (state.camp.shop >= 2) {
-        state.inventory.push({ id: 'pot_shop_' + Date.now(), name: '冒険者の傷薬', icon: '🧪', type: 'potion', heal: 40, rarity: 'Common', desc: 'HP40回復' });
       }
 
       // Starter Perk if chosen
@@ -1770,6 +1804,8 @@
       } else if (state.starterPerk === 'luck') {
         state.modifiers.chestRareBonus += 25;
       }
+
+      state.starterPerk = null;
 
       saveState();
       addLog('深淵の地下迷宮へと足を踏み入れた。生還は5階ごとの転移門のみ！', 'gold');
@@ -1815,9 +1851,11 @@
       state.storage.forEach(item => {
         if (item && item.key === 'black_egg') {
           item.progress = (item.progress || 0) + 1;
+          state.mystery.eggReturns = Math.max(state.mystery.eggReturns || 0, item.progress);
           item.desc = `生還3回で孵化する謎の卵 (進捗: ${item.progress}/3)`;
           if (item.progress >= 3 && !eggHatched) {
             eggHatched = true;
+            state.mystery.eggHatched = true;
             item.key = 'dragon_hatchling';
             item.name = '🐉 深淵の幼竜';
             item.icon = '🐉';
@@ -1830,6 +1868,7 @@
           }
         }
       });
+      if (eggHatched) state.mystery.eggReturns = Math.max(3, state.mystery.eggReturns || 0);
 
       // Update Tavern Quests
       state.camp.questKills = (state.camp.questKills || 0) + (state.runKills || 0);
@@ -1946,6 +1985,11 @@
             ${itemsHtml}
           </div>
 
+          <details style="text-align:left;margin-bottom:10px;">
+            <summary style="font-size:11px;color:#7dd3fc;cursor:pointer;">📦 倉庫の既存品を整理・売却</summary>
+            <div style="max-height:140px;overflow:auto;margin-top:5px;">${state.storage.map((it, idx) => `<div class="item-row r-${it.rarity}" style="margin-bottom:3px;"><span>${it.icon} ${it.name}</span><button class="btn btn-sub btn-xs" ${it.locked ? 'disabled' : ''} onclick="sellOverflowStorageItem(${idx})">売却 +${getItemSellPrice(it)}G</button></div>`).join('') || '<div style="color:#64748b;">倉庫は空です</div>'}</div>
+          </details>
+
           <div style="display:flex; gap:8px;">
             <button class="btn btn-sub" style="flex:1;" onclick="bulkSellInventoryOverflow()">
               💰 Common品を全売却
@@ -1967,6 +2011,17 @@
       state.inventory.splice(idx, 1);
       playSound('gold');
       spawnFloatingFx(`+${price}G`, 'gold');
+      renderWarehouseOverflowContent();
+    }
+
+    function sellOverflowStorageItem(idx) {
+      const item = state.storage[idx];
+      if (!item || item.locked) return;
+      const price = getItemSellPrice(item);
+      state.storage.splice(idx, 1);
+      state.vaultGold += price;
+      playSound('gold');
+      saveState();
       renderWarehouseOverflowContent();
     }
 
@@ -2098,15 +2153,52 @@
     };
 
     function emergencyEscape() {
-      // 緊急帰還ポータル: 戦利品の半分没収
       initAudio();
       playSound('escape');
       const keepCount = Math.ceil(state.inventory.length / 2);
-      const keptItems = state.inventory.slice(0, keepCount);
-      const lostItems = state.inventory.slice(keepCount);
+      state.pendingEmergencySelection = [];
+      renderEmergencySelection(keepCount);
+    }
+
+    function renderEmergencySelection(keepCount) {
+      const selected = new Set(state.pendingEmergencySelection || []);
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex';
+      m.className = 'legendary-modal';
+      m.innerHTML = `
+        <div class="card" style="max-width:460px;width:100%;border:2px solid #a855f7;padding:18px;max-height:88vh;overflow:auto;">
+          <h2 style="font-size:18px;color:#fff;text-align:center;">🌀 緊急帰還：戦利品を選択</h2>
+          <p style="font-size:12px;color:#cbd5e1;text-align:center;">持ち帰れるのは半分です。最大 <b>${keepCount}個</b> を選んでください（${selected.size}/${keepCount}）。</p>
+          <div style="display:flex;flex-direction:column;gap:5px;margin:12px 0;">
+            ${state.inventory.map((it, idx) => `<button class="btn ${selected.has(idx) ? 'btn-gold' : 'btn-sub'}" style="justify-content:flex-start;text-align:left;" onclick="toggleEmergencyLoot(${idx},${keepCount})">${selected.has(idx) ? '✔' : '○'} ${it.icon} ${it.name} [${it.rarity}]</button>`).join('') || '<div style="text-align:center;color:#94a3b8;">戦利品なし</div>'}
+          </div>
+          <button class="btn btn-purple" style="width:100%;" ${selected.size === keepCount ? '' : 'disabled'} onclick="confirmEmergencyEscape(${keepCount})">${selected.size === keepCount ? '選択した戦利品で帰還する' : `あと${keepCount - selected.size}個選択`}</button>
+        </div>`;
+    }
+
+    function toggleEmergencyLoot(idx, keepCount) {
+      const selected = new Set(state.pendingEmergencySelection || []);
+      if (selected.has(idx)) selected.delete(idx);
+      else if (selected.size < keepCount) selected.add(idx);
+      state.pendingEmergencySelection = [...selected];
+      renderEmergencySelection(keepCount);
+    }
+
+    function confirmEmergencyEscape(keepCount) {
+      const selected = new Set(state.pendingEmergencySelection || []);
+      const keptItems = state.inventory.filter((_, idx) => selected.has(idx));
+      const lostItems = state.inventory.filter((_, idx) => !selected.has(idx));
+
+      if (keptItems.length > state.camp.vaultSize - state.storage.length) {
+        addLog('⚠️ 倉庫容量不足です。地上倉庫を整理してから帰還してください。', 'danger');
+        document.getElementById('modal-layer').style.display = 'none';
+        state.inventory = keptItems;
+        openWarehouseOverflowModal(state.camp.vaultSize - state.storage.length);
+        return;
+      }
 
       keptItems.forEach(i => {
-        if (state.storage.length < state.camp.vaultSize) state.storage.push(i);
+        state.storage.push(i);
       });
 
       const keptGold = Math.floor(state.dungeonGold * 0.6);
@@ -2123,6 +2215,8 @@
       });
 
       state.greedLevel = 0;
+      state.inventory = [];
+      state.pendingEmergencySelection = [];
       saveState();
       state.screen = 'town';
       state.floor = 0;
@@ -2243,6 +2337,35 @@
         }
       ];
 
+      // Research forecasts and GREED alter actual room composition.
+      if (state.camp.lab >= 4) {
+        doorPool.forEach(room => {
+          room.desc += ` 【研究予測: ${room.riskText}】`;
+        });
+      }
+      if (state.greedLevel >= 2 || (state.modifiers.eliteRateBonus || 0) > 0) {
+        doorPool.push({ ...doorPool.find(d => d.type === 'elite_battle') });
+      }
+      if ((state.modifiers.eventRateBonus || 0) > 0) {
+        doorPool.push({ ...doorPool.find(d => d.type === 'mystery_wanderer') });
+        doorPool.push({ ...doorPool.find(d => d.type === 'blood_altar') });
+      }
+      if (state.greedLevel >= 3) {
+        const healIndex = doorPool.findIndex(d => d.type === 'heal_spring');
+        if (healIndex >= 0) doorPool.splice(healIndex, 1);
+        doorPool.push({ ...doorPool.find(d => d.type === 'blood_altar') });
+        doorPool.push({ ...doorPool.find(d => d.type === 'cursed_chest') });
+      }
+
+      const ownsAncientKey = state.mystery.keyOwned || state.inventory.some(i => i.key === 'ancient_key');
+      if (ownsAncientKey && state.floor >= 11 && state.floor <= 20) {
+        doorPool.push({
+          type: 'sealed_vault', icon: '🔐', sign: '古代の封印宝物庫',
+          desc: '錆びた古代鍵が反応している。鍵を使えば秘宝を回収できる。',
+          risk: 'safe', riskText: '鍵で解放'
+        });
+      }
+
       // Emergency Portal Generation
       // Emerges at low chance, but jumps to 22% when HP < 25% or carrying Epic/Legendary item
       const isHpCritical = (state.hp / stats.maxHp) <= 0.25;
@@ -2316,6 +2439,8 @@
         startGoldenStairsEvent();
       } else if (door.type === 'mystery_wanderer') {
         startMysteryEvent();
+      } else if (door.type === 'sealed_vault') {
+        openSealedVault();
       }
     }
 
@@ -2337,15 +2462,20 @@
       
       const scale = 1 + (state.floor * 0.08);
       const eliteScale = isElite ? 1.5 : 1.0;
+      const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
       state.currentEnemy = {
         name: enemyTemplate.name,
         icon: enemyTemplate.icon,
         maxHp: Math.round(enemyTemplate.hp * scale * eliteScale),
         hp: Math.round(enemyTemplate.hp * scale * eliteScale),
-        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0) * (isElite ? 1.3 : 1.0)),
+        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0) * greedAtkMult * (isElite ? 1.3 : 1.0)),
         def: Math.round(enemyTemplate.def * scale),
         isBoss: false,
-        isElite: isElite
+        isElite: isElite,
+        trait: enemyTemplate.trait,
+        traitName: enemyTemplate.traitName,
+        hint: enemyTemplate.hint,
+        turnCount: 0
       };
 
       recordCodex('enemy', state.currentEnemy);
@@ -2360,12 +2490,14 @@
 
     function startBossBattle(bossTemplate) {
       playSound('hit');
+      const labHpMult = state.camp.lab >= 3 ? 0.85 : 1;
+      const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
       state.currentEnemy = {
         name: bossTemplate.name,
         icon: bossTemplate.icon,
-        maxHp: bossTemplate.hp,
-        hp: bossTemplate.hp,
-        atk: bossTemplate.atk,
+        maxHp: Math.round(bossTemplate.hp * labHpMult),
+        hp: Math.round(bossTemplate.hp * labHpMult),
+        atk: Math.round(bossTemplate.atk * greedAtkMult),
         def: bossTemplate.def,
         isBoss: true,
         gimmick: bossTemplate.gimmick
@@ -2428,7 +2560,23 @@
         }
       } else {
         const r = Math.random();
-        if (r < 0.35) {
+        if (e.trait === 'counter_heavy' && r < 0.55) {
+          e.actionType = 'counter_stance';
+          e.pendingAction = `⚔️ ${e.traitName} (強攻撃厳禁)`;
+          e.nextMult = 0.8;
+        } else if (e.trait === 'grab_attack' && r < 0.55) {
+          e.actionType = 'grab_prep';
+          e.pendingAction = `⚠️ ${e.traitName}の溜め (攻撃・スキルで中断)`;
+          e.nextMult = 1.6;
+        } else if (e.trait === 'speed' && r < 0.55) {
+          e.actionType = 'heavy';
+          e.pendingAction = '⚡ 俊敏な連撃 (防御推奨)';
+          e.nextMult = 1.35;
+        } else if (e.trait === 'exposed_weakpoint' && (e.turnCount || 0) % 3 === 2) {
+          e.actionType = 'falter';
+          e.pendingAction = '🎯 冷却弱点が露出 (強攻撃の好機)';
+          e.nextMult = 0.5;
+        } else if (r < 0.35) {
           e.actionType = 'normal';
           e.pendingAction = '通常攻撃の構え';
           e.nextMult = 1.0;
@@ -2475,6 +2623,20 @@
       return skills[archetype] || skills.sword;
     }
 
+    function addThunderCharge(enemy, source) {
+      const hasThunderGear = Object.values(state.equipped).some(i => i?.archetype === 'thunder');
+      if (!hasThunderGear || !enemy) return;
+      state.thunderCharges = (state.thunderCharges || 0) + 1;
+      addLog(`⚡ ${source}で雷チャージ ${state.thunderCharges}/3`, 'gold');
+      if (state.thunderCharges >= 3) {
+        state.thunderCharges = 0;
+        enemy.hp -= 30;
+        enemy.stunned = true;
+        spawnFloatingFx('⚡ 天雷招来 -30 & スタン！', 'crit');
+        addLog(`⚡ 雷チャージが弾け、${enemy.name}に30固定ダメージ＆スタン！`, 'gold');
+      }
+    }
+
     function playerCombatAction(action) {
       if (!state.currentEnemy || state.hp <= 0) return;
       initAudio();
@@ -2483,6 +2645,15 @@
       const enemy = state.currentEnemy;
       const weapon = state.equipped.weapon;
       const archetype = weapon?.archetype || 'sword';
+
+      // The hatchling's regeneration is a real once-per-player-turn effect.
+      const hasDragon = state.mystery.eggHatched || state.storage.some(i => i.key === 'dragon_hatchling') || state.inventory.some(i => i.key === 'dragon_hatchling');
+      if (hasDragon && state.hp < stats.maxHp) {
+        const regen = Math.min(3, stats.maxHp - state.hp);
+        state.hp += regen;
+        addLog(`🐉 深淵の幼竜の加護でHPが${regen}回復した。`, 'heal');
+        spawnFloatingFx(`🐉 +${regen}HP`, 'heal');
+      }
 
       // Cooldown tick
       if (state.skillCooldown > 0 && action !== 'skill') {
@@ -2541,9 +2712,10 @@
           spawnFloatingFx(`⚡ 雷撃 -${shock}`, 'crit');
           addLog(`雷光が放電！ ${enemy.name} に ${shock} の追加雷撃！`, 'gold');
         }
+        addThunderCharge(enemy, '攻撃');
 
         // Baby Dragon companion follow-up strike
-        const hasDragon = state.storage.some(i => i.key === 'dragon_hatchling') || state.inventory.some(i => i.key === 'dragon_hatchling');
+        const hasDragon = state.mystery.eggHatched || state.storage.some(i => i.key === 'dragon_hatchling') || state.inventory.some(i => i.key === 'dragon_hatchling');
         if (hasDragon) {
           const flame = 8;
           enemy.hp -= flame;
@@ -2596,11 +2768,19 @@
         let baseDmg = stats.atk * mult * (state.playerAttackBuff || 1.0);
         let targetDef = (enemy.isBoss && state.bossBarrier) ? enemy.def * 3 : enemy.def;
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 6 - 3)));
+        if (weapon?.affix === 'boss_slayer' && enemy.isBoss) dmg = Math.round(dmg * 1.25);
+        if (weapon?.affix === 'elite_slayer' && enemy.isElite) dmg = Math.round(dmg * 1.30);
 
         state.playerAttackBuff = 1.0;
         state.playerExposed = true; // Demerit: +35% damage next enemy turn!
 
         enemy.hp -= dmg;
+        addThunderCharge(enemy, '強攻撃');
+        if (hasDragon) {
+          enemy.hp -= 8;
+          spawnFloatingFx('🔥 幼竜の息吹 -8', 'crit');
+          addLog(`幼竜の火炎追撃！ ${enemy.name}に8ダメージ。`, 'gold');
+        }
         spawnFloatingFx(`💥 強撃 -${dmg}！ ${enemy.actionType === 'falter' ? '(隙特効!)' : '(隙あり被ダメ+35%)'}`, 'crit');
         addLog(`渾身の力で武器を叩きつけた！ ${enemy.name} に ${dmg} の強打！`, 'gold');
 
@@ -2679,6 +2859,13 @@
         }
 
         state.skillCooldown = 2;
+        addThunderCharge(enemy, '武器スキル');
+
+        if (hasDragon) {
+          enemy.hp -= 8;
+          spawnFloatingFx('🔥 幼竜の息吹 -8', 'crit');
+          addLog(`幼竜の火炎追撃！ ${enemy.name}に8ダメージ。`, 'gold');
+        }
 
         if (enemy.hp <= 0) {
           enemy.hp = 0;
@@ -2707,6 +2894,12 @@
       if (!state.currentEnemy || state.hp <= 0) return;
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
+      if (enemy.stunned) {
+        enemy.stunned = false;
+        addLog(`💫 ${enemy.name}はスタンして行動できない！`, 'gold');
+        decideEnemyIntent(); updateHeader(); render(); return;
+      }
+      enemy.turnCount = (enemy.turnCount || 0) + 1;
 
       let enemyAtk = enemy.atk * (enemy.nextMult || 1.0);
       if (state.playerExposed) {
@@ -2720,11 +2913,12 @@
       let dmg = Math.max(1, Math.round(enemyAtk - playerDef));
 
       // Apply demerit damages (e.g. Gold mask)
-      if (stats.demeritDamage > 0) {
+      if (stats.demeritDamage !== 0) {
         dmg = Math.round(dmg * (1 + stats.demeritDamage / 100));
       }
 
       state.hp -= dmg;
+      if (state.equipped.armor?.archetype === 'thunder') addThunderCharge(enemy, '被弾');
       playSound('player_hurt');
       triggerShake();
 
@@ -2734,6 +2928,27 @@
       } else {
         spawnFloatingFx(isPlayerDefending ? `🛡️ ガード -${dmg}` : `-${dmg}`, 'damage');
         addLog(`${enemy.name} の反撃！ ${dmg} のダメージを受けた！`, 'danger');
+      }
+
+
+      if (enemy.trait === 'curse_poison') {
+        state.playerPoisonTurns = 2;
+        state.playerPoisonDmg = enemy.isElite ? 6 : 3;
+        addLog(`☣️ ${enemy.name}の呪毒を受けた！`, 'danger');
+      }
+      if (enemy.trait === 'rage_stack') {
+        enemy.atk = Math.round(enemy.atk * 1.08);
+        addLog(`🔥 ${enemy.name}の攻撃力が上昇した！`, 'danger');
+      }
+      if (enemy.trait === 'regen_cell' && enemy.turnCount % 2 === 0) {
+        const heal = Math.min(15, enemy.maxHp - enemy.hp);
+        enemy.hp += heal;
+        if (heal > 0) addLog(`🧬 ${enemy.name}の再生細胞がHPを${heal}回復！`, 'heal');
+      }
+      if (state.playerPoisonTurns > 0) {
+        state.hp -= state.playerPoisonDmg;
+        state.playerPoisonTurns--;
+        addLog(`☣️ 呪毒によりHP-${state.playerPoisonDmg}`, 'danger');
       }
 
       // Shield / Titan counter parry
@@ -2782,7 +2997,7 @@
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.runKills++;
 
-      if (state.bounty && !state.bounty.completed) {
+      if (state.camp.tavern >= 2 && state.bounty && !state.bounty.completed) {
         const killBonus = state.expeditionPolicy === 'bounty' ? 2 : 1;
         state.bounty.currentKills = (state.bounty.currentKills || 0) + killBonus;
         if (state.bounty.currentKills >= state.bounty.targetKills) {
@@ -2795,6 +3010,7 @@
       const stats = getPlayerStats();
       const baseGold = 12 + state.floor * 6;
       let earnedGold = Math.round(baseGold * (1 + stats.goldRate / 100));
+      earnedGold = Math.round(earnedGold * (state.modifiers.goldMult || 1));
       if (state.expeditionPolicy === 'bounty') earnedGold = Math.round(earnedGold * 1.5);
       state.dungeonGold += earnedGold;
 
@@ -2837,7 +3053,7 @@
         }
 
         // Check Broken Crown awakening
-        state.inventory.forEach(it => {
+        [...state.inventory, ...state.storage, ...Object.values(state.equipped).filter(Boolean)].forEach(it => {
           if (it.key === 'broken_crown' && !it.awakened) {
             it.awakened = true;
             it.name = '👑 覚醒した深淵覇王冠';
@@ -2848,6 +3064,7 @@
             it.hp = 60;
             it.goldRate = 80;
             it.desc = '【覚醒した王冠】階層ボスの血を吸い真の威光を取り戻した王の証 (攻+16/防+12/HP+60/金+80%)';
+            state.mystery.crownAwakened = true;
             playSound('legendary');
             spawnFloatingFx('👑 王冠が覚醒した！', 'crit');
             addLog('👑 階層ボスの魂を吸収し、【壊れた王冠】が【覚醒した深淵覇王冠】へと真の覚醒を果たした！', 'gold');
@@ -3196,6 +3413,7 @@
     function giveItemToBag(item) {
       recordCodex('item', item);
       state.inventory.push(item);
+      if (item.key === 'ancient_key') state.mystery.keyOwned = true;
 
       // Flash bag tab animation
       const bagTab = document.getElementById('tab-btn-bag');
@@ -3257,6 +3475,20 @@
       render();
     }
 
+    function escapeBattleWithSmoke() {
+      if (!state.currentEnemy || state.currentEnemy.isBoss) return;
+      const smokeIndex = state.inventory.findIndex(i => i.type === 'escape_item');
+      if (smokeIndex < 0) return;
+      const enemyName = state.currentEnemy.name;
+      state.inventory.splice(smokeIndex, 1);
+      state.currentEnemy = null;
+      state.floor++;
+      playSound('escape');
+      addLog(`💨 忍びの煙玉を使い、${enemyName}から報酬を得ずに離脱した！`, 'gold');
+      spawnFloatingFx('💨 逃走成功！', 'info');
+      generateDoorsForFloor();
+    }
+
     /* ==========================================================================
        FIRST-TIME 3-POINT TUTORIAL (初回プレイ時の説明)
        ========================================================================== */
@@ -3264,6 +3496,23 @@
       if (!localStorage.getItem('ABYSS_TUTORIAL_SEEN')) {
         showTutorialModal();
       }
+    }
+
+    function showUpdateNotes(markSeen = false) {
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex'; m.className = 'legendary-modal';
+      m.innerHTML = `<div class="card" style="max-width:460px;width:100%;border:2px solid #fbbf24;padding:22px;">
+        <div style="font-size:34px;text-align:center;">🎉</div>
+        <h2 style="font-size:20px;color:#fbbf24;text-align:center;">UPDATE v${GAME_VERSION}</h2>
+        <div style="margin:14px 0;display:flex;flex-direction:column;gap:7px;">${UPDATE_NOTES.map(n => `<div style="font-size:12px;color:#e2e8f0;border-left:3px solid #fbbf24;padding-left:8px;">・${n}</div>`).join('')}</div>
+        <button class="btn btn-gold" style="width:100%;" onclick="dismissUpdateNotes(${markSeen})">確認してゲームを始める</button>
+      </div>`;
+    }
+
+    function dismissUpdateNotes(markSeen) {
+      if (markSeen) localStorage.setItem('lastSeenVersion', GAME_VERSION);
+      closeGenericModal();
+      if (!localStorage.getItem('ABYSS_TUTORIAL_SEEN')) checkTutorial();
     }
 
     function showTutorialModal() {
@@ -3542,6 +3791,7 @@
       const discount = state.talents.merchantFriendLv > 0 ? 0.8 : 1.0;
       const potPrice = Math.round(30 * discount);
       const epicPrice = Math.round(75 * discount);
+      const rarePrice = Math.round(50 * discount);
 
       state.currentEvent = {
         title: '🛒 迷宮の放浪商人',
@@ -3560,15 +3810,19 @@
             }
           },
           {
-            text: `${item2.name} [${item2.rarity}] - ${epicPrice}G (${getItemStatSummary(item2)})`,
+            text: `${item1.name} [${item1.rarity}] - ${rarePrice}G (${getItemStatSummary(item1)})`,
             action: () => {
-              if (state.dungeonGold < epicPrice) { addLog('ゴールドが足りない！', 'danger'); return; }
-              state.dungeonGold -= epicPrice;
-              giveItemToBag(item2);
-              playSound('click');
-              endEvent();
+              if (state.dungeonGold < rarePrice) { addLog('ゴールドが足りない！', 'danger'); return; }
+              state.dungeonGold -= rarePrice; giveItemToBag(item1); playSound('click'); endEvent();
             }
           },
+          ...(state.talents.merchantFriendLv > 0 ? [{
+            text: `🤝 友好枠: ${item2.name} [${item2.rarity}] - ${epicPrice}G (${getItemStatSummary(item2)})`,
+            action: () => {
+              if (state.dungeonGold < epicPrice) { addLog('ゴールドが足りない！', 'danger'); return; }
+              state.dungeonGold -= epicPrice; giveItemToBag(item2); playSound('click'); endEvent();
+            }
+          }] : []),
           {
             text: '買い物をせず立ち去る',
             action: () => { endEvent(); }
@@ -3593,10 +3847,12 @@
               text: '薬草やHPを分けて救助する (HP-15)',
               action: () => {
                 state.hp = Math.max(1, state.hp - 15);
+                state.camp.rescuedAdventurer = true;
                 const rewardRing = { ...UNIQUE_ITEMS.blood_ring, id: 'r_' + Date.now() };
                 giveItemToBag(rewardRing);
                 playSound('heal');
-                addLog('冒険者を救った！ お礼に【血晶の指輪】を受け取った！', 'gold');
+                saveState();
+                addLog('冒険者レオンを救助した！ お礼に【血晶の指輪】を受け取った！', 'gold');
                 endEvent();
               }
             },
@@ -3671,6 +3927,24 @@
       render();
     }
 
+    function openSealedVault() {
+      const keyIndex = state.inventory.findIndex(i => i.key === 'ancient_key');
+      if (keyIndex >= 0) state.inventory.splice(keyIndex, 1);
+      state.mystery.keyOwned = false;
+      const treasure = generateItem(Math.max(20, state.floor), Math.random() < 0.35 ? 'Legendary' : 'Epic');
+      state.screen = 'event';
+      state.currentEvent = {
+        title: '🔓 古代の封印宝物庫', icon: '🏛️',
+        text: `古代鍵が砕け、封印が解けた。祭壇の秘宝【${treasure.name}】が目覚める！`,
+        choices: [{
+          text: `${treasure.icon} ${treasure.name} [${treasure.rarity}] を回収する`,
+          action: () => { giveItemToBag(treasure); saveState(); endEvent(); }
+        }]
+      };
+      saveState();
+      render();
+    }
+
     function endEvent() {
       state.screen = 'door_select';
       state.floor++;
@@ -3682,6 +3956,10 @@
        ========================================================================== */
     function upgradeCampFacility(fac) {
       initAudio();
+      const maxLevels = { blacksmith: 3, shop: 3, lab: 4, tavern: 3 };
+      if (maxLevels[fac] && state.camp[fac] >= maxLevels[fac]) {
+        addLog('この施設は最大レベルです。', 'info'); render(); return;
+      }
       let cost;
       if (fac === 'vault') {
         cost = getVaultUpgradeCost(state.camp.vaultLevel);
@@ -3710,6 +3988,22 @@
       saveState();
       updateHeader();
       render();
+    }
+
+    function upgradeVault() {
+      initAudio();
+      const cost = getVaultUpgradeCost(state.camp.vaultLevel);
+      if (state.vaultGold < cost) {
+        addLog(`ゴールドが足りません！ 必要: ${cost}G`, 'danger');
+        render();
+        return;
+      }
+      state.vaultGold -= cost;
+      state.camp.vaultLevel += 1;
+      state.camp.vaultSize += 10;
+      playSound('heal');
+      addLog(`📦 倉庫を増築！ Lv.${state.camp.vaultLevel} / ${state.camp.vaultSize}枠`, 'gold');
+      saveState(); render();
     }
 
     function upgradeTalent(key) {
@@ -3743,7 +4037,7 @@
         render();
         return;
       }
-      const cost = 75 + (item.refineCount || 0) * 40;
+      const cost = getRefineCost(item);
       if (state.vaultGold < cost) {
         addLog(`ゴールドが不足しています！ 必要: ${cost}G (所持: ${state.vaultGold}G)`, 'danger');
         render();
@@ -3768,6 +4062,54 @@
       saveState();
       updateHeader();
       render();
+    }
+
+    const EQUIPMENT_AFFIXES = {
+      weapon: [
+        { key: 'critical', name: '鋭利', desc: '会心率+8%' },
+        { key: 'lifesteal', name: '吸血', desc: '攻撃時HP回復+3' },
+        { key: 'boss_slayer', name: 'ボス特効', desc: 'ボスへの強攻撃+25%' },
+        { key: 'elite_slayer', name: 'Elite特効', desc: 'Eliteへの強攻撃+30%' }
+      ],
+      armor: [
+        { key: 'max_hp', name: '生命', desc: '最大HP+25' },
+        { key: 'damage_reduction', name: '堅牢', desc: '被ダメージ-10%' },
+        { key: 'low_hp_def', name: '背水防御', desc: 'HP40%以下で防御+8' }
+      ]
+    };
+
+    function openAffixModal(slot) {
+      if (state.camp.blacksmith < 3) return;
+      const item = state.equipped[slot];
+      if (!item || item.affix) return;
+      const cost = 150;
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex'; m.className = 'legendary-modal';
+      m.innerHTML = `<div class="card" style="max-width:430px;width:100%;border:2px solid #f59e0b;padding:18px;">
+        <h2 style="color:#fff;font-size:18px;">🔨 追加特性を付与</h2>
+        <p style="font-size:12px;color:#cbd5e1;">${item.icon} ${item.name} / 費用 ${cost}G</p>
+        <div style="display:flex;flex-direction:column;gap:7px;margin:12px 0;">${EQUIPMENT_AFFIXES[slot].map(a => `<button class="btn btn-sub" onclick="applyEquipmentAffix('${slot}','${a.key}')"><b>${a.name}</b>：${a.desc}</button>`).join('')}</div>
+        <button class="btn btn-outline" onclick="closeGenericModal()">閉じる</button>
+      </div>`;
+    }
+
+    function applyEquipmentAffix(slot, affixKey) {
+      const item = state.equipped[slot];
+      const affix = EQUIPMENT_AFFIXES[slot]?.find(a => a.key === affixKey);
+      const cost = 150;
+      if (!item || item.affix || !affix || state.vaultGold < cost) {
+        addLog(state.vaultGold < cost ? `ゴールド不足！ 必要: ${cost}G` : '特性を付与できません。', 'danger');
+        closeGenericModal(); render(); return;
+      }
+      state.vaultGold -= cost;
+      item.affix = affix.key; item.affixName = affix.name;
+      item.desc = `${item.desc || ''} 【${affix.name}: ${affix.desc}】`.trim();
+      addLog(`🔨 ${item.name}に特性【${affix.name}】を付与した！`, 'gold');
+      saveState(); closeGenericModal(); render();
+    }
+
+    function closeGenericModal() {
+      document.getElementById('modal-layer').style.display = 'none';
     }
 
     function buyExpeditionSupply(type) {
@@ -3828,6 +4170,13 @@
       playSound('click');
       state.expeditionPolicy = policy;
       saveState();
+      render();
+    }
+
+    function selectStarterPerk(perk) {
+      state.starterPerk = perk;
+      saveState();
+      playSound('click');
       render();
     }
 
@@ -3929,8 +4278,8 @@
 
     function claimTavernBounty() {
       initAudio();
-      if (!state.bounty || !state.bounty.completed) return;
-      const reward = state.bounty.rewardGold || 150;
+      if (state.camp.tavern < 2 || !state.bounty || !state.bounty.completed) return;
+      const reward = Math.round((state.bounty.rewardGold || 150) * (state.expeditionPolicy === 'bounty' ? 1.5 : 1));
       state.vaultGold += reward;
       playSound('gold');
       spawnFloatingFx(`💰 討伐達成 +${reward}G`, 'gold');
@@ -4075,6 +4424,22 @@
       document.getElementById('ui-codex-pct').textContent = `${totalCodexKnown}種`;
     }
 
+    function getLabBossIntelHtml() {
+      const nextBossFloor = state.bossFirstKills?.[10] ? (state.bossFirstKills?.[20] ? 30 : 20) : 10;
+      const area = AREAS.find(a => a.max === nextBossFloor) || AREAS[2];
+      const boss = area.boss;
+      const gimmicks = {
+        heavy_charge: '3ターンごとの溜め強撃',
+        shield_barrier: '古代障壁（解除可能）',
+        mutate_form: 'HP50%以下で変異・攻撃上昇'
+      };
+      const shownHp = state.camp.lab >= 3 ? Math.round(boss.hp * 0.85) : boss.hp;
+      return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
+        📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shownHp} / 攻撃 ${boss.atk} / ${gimmicks[boss.gimmick]}
+        ${state.camp.lab >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
+      </div>`;
+    }
+
     function render() {
       updateHeader();
       const vp = document.getElementById('viewport');
@@ -4103,6 +4468,7 @@
           <div class="card" style="text-align:center; background: radial-gradient(circle at 50% 20%, #1e293b, #0f172a);">
             <div style="font-size:36px; margin-bottom:4px;">🏕️</div>
             <h2 style="font-size:18px; font-weight:900; color:#fff;">生存者の野営キャンプ</h2>
+            <div style="font-size:10px;color:#64748b;margin-bottom:3px;">Version ${GAME_VERSION}</div>
             <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">深淵から生還した者だけがこの拠点を発展させられる。</p>
             
             <!-- Expedition Policy Selection -->
@@ -4116,8 +4482,19 @@
               </div>
             </div>
 
-            <button class="btn btn-gold" style="font-size:16px; padding:14px; width:100%;" onclick="startDungeonRun()">
-              🪜 地下迷宮へ潜る (探索開始)
+            <div style="background:rgba(0,0,0,0.4);padding:8px;border-radius:6px;margin-bottom:10px;">
+              <div style="font-size:11px;color:#cbd5e1;margin-bottom:5px;">🎒 出撃前支援を1つ選択:</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+                ${[
+                  ['potion','🧪 特製薬酒','HP60回復薬'],
+                  ['smoke','💨 忍びの煙玉','通常戦闘から逃走'],
+                  ['luck','🍀 幸運の護符','宝箱レア率+25%']
+                ].map(p => `<button class="btn ${state.starterPerk === p[0] ? 'btn-gold' : 'btn-sub'} btn-xs" onclick="selectStarterPerk('${p[0]}')" title="${p[2]}">${p[1]}</button>`).join('')}
+              </div>
+            </div>
+
+            <button class="btn btn-gold" style="font-size:16px; padding:14px; width:100%;" ${state.starterPerk ? '' : 'disabled'} onclick="startDungeonRun()">
+              ${state.starterPerk ? '🪜 地下迷宮へ潜る (探索開始)' : '支援を選ぶと探索開始できます'}
             </button>
           </div>
 
@@ -4139,9 +4516,13 @@
                 </div>
                 ${state.camp.blacksmith >= 2 ? `
                   <div style="display:flex; gap:4px; margin-top:2px; width:100%;">
-                    ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (75G)</button>` : ''}
-                    ${state.equipped.armor ? `<button class="btn btn-sub btn-xs" style="flex:1;" onclick="refineEquippedItem('armor')">🛡️ 防具強化 (75G)</button>` : ''}
+                    ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (${getRefineCost(state.equipped.weapon)}G)</button>` : ''}
+                    ${state.equipped.armor ? `<button class="btn btn-sub btn-xs" style="flex:1;" onclick="refineEquippedItem('armor')">🛡️ 防具強化 (${getRefineCost(state.equipped.armor)}G)</button>` : ''}
                   </div>
+                  ${state.camp.blacksmith >= 3 ? `<div style="display:flex;gap:4px;width:100%;margin-top:3px;">
+                    ${state.equipped.weapon && !state.equipped.weapon.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('weapon')">武器に特性付与 (150G)</button>` : ''}
+                    ${state.equipped.armor && !state.equipped.armor.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('armor')">防具に特性付与 (150G)</button>` : ''}
+                  </div>` : ''}
                 ` : ''}
               </div>
 
@@ -4166,7 +4547,7 @@
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">📦 倉庫 Lv.${state.camp.vaultLevel} (${state.camp.vaultSize}枠)</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('vault')">増築 (${vaultCost}G)</button>
+                  <button class="btn btn-sub btn-xs" onclick="upgradeVault()">増築 (${vaultCost}G)</button>
                 </div>
                 <div style="font-size:10.5px; color:#94a3b8;">容量+10枠 / 未持ち帰り防止</div>
               </div>
@@ -4178,7 +4559,7 @@
                   <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('tavern')">改築 (${state.camp.tavern * 120}G)</button>
                 </div>
                 <div style="font-size:10.5px; color:#e2e8f0; width:100%;">
-                  ${state.bounty ? `
+                  ${state.camp.tavern < 2 ? `<div style="color:#94a3b8;padding:5px;">🔒 酒場Lv2で討伐依頼を解放</div>` : state.bounty ? `
                     <div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:2px;">
                       <div style="display:flex; justify-content:space-between; font-size:10.5px;">
                         <span>📜 討伐依頼: 魔物${state.bounty.targetKills}体</span>
@@ -4194,6 +4575,18 @@
                     </div>
                   ` : ''}
                 </div>
+              </div>
+
+              <!-- Laboratory -->
+              <div class="item-row" style="grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:4px;">
+                <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                  <div style="font-size:12px;font-weight:bold;color:#fff;">🔬 深淵研究所 Lv.${state.camp.lab}</div>
+                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('lab')">研究拡張 (${state.camp.lab * 120}G)</button>
+                </div>
+                <div style="font-size:10.5px;color:#cbd5e1;line-height:1.5;">
+                  Lv1 敵図鑑詳細${state.camp.lab >= 2 ? ' / Lv2 次ボス能力解析' : ''}${state.camp.lab >= 3 ? ' / Lv3 ボス最大HP-15%' : ''}${state.camp.lab >= 4 ? ' / Lv4 部屋危険度予測' : ''}
+                </div>
+                ${state.camp.lab >= 2 ? getLabBossIntelHtml() : '<div style="font-size:10px;color:#64748b;">Lv2で次ボスのHP・攻撃・特殊能力を表示</div>'}
               </div>
             </div>
           </div>
@@ -4345,6 +4738,8 @@
       else if (state.screen === 'battle') {
         const e = state.currentEnemy;
         const eHpPct = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
+        const skillInfo = getEquippedSkillInfo();
+        const smokeCount = state.inventory.filter(i => i.type === 'escape_item').length;
         vp.innerHTML = `
           ${getUnclaimedLootBarHtml()}
           <div class="scene-box">
@@ -4362,12 +4757,17 @@
                 <span>攻撃力: ${e.atk}</span>
                 <span>防御力: ${state.bossBarrier ? e.def * 3 + ' (障壁)' : e.def}</span>
               </div>
+              ${state.camp.lab >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
+              ${Object.values(state.equipped).some(i => i?.archetype === 'thunder') ? `<div style="font-size:10.5px;color:#facc15;">⚡ 雷チャージ ${state.thunderCharges}/3（3で追加30ダメージ＆スタン）</div>` : ''}
             </div>
 
             <!-- Combat Actions -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%; margin-top:6px;">
-              <button class="btn btn-red" onclick="playerCombatAction('attack')">⚔️ 攻撃する</button>
-              <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 身を守る (防御)</button>
+              <button class="btn btn-red" onclick="playerCombatAction('attack')">⚔️ 通常攻撃</button>
+              <button class="btn btn-purple" onclick="playerCombatAction('heavy')">💥 強攻撃</button>
+              <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 防御</button>
+              <button class="btn btn-gold" ${state.skillCooldown > 0 ? 'disabled' : ''} onclick="playerCombatAction('skill')">✨ ${skillInfo.name}${state.skillCooldown > 0 ? `（あと${state.skillCooldown}T）` : ''}</button>
+              ${smokeCount > 0 && !e.isBoss ? `<button class="btn btn-sub" style="grid-column:1 / -1;" onclick="escapeBattleWithSmoke()">💨 煙玉で逃走（残り${smokeCount}）</button>` : ''}
               ${e.isBoss && state.bossBarrier ? `
                 <button class="btn btn-purple" style="grid-column:1 / -1;" onclick="playerCombatAction('disrupt_barrier')">
                   ⚡ ルーン障壁を解除する (好機!)
@@ -4529,6 +4929,9 @@
         // 図鑑 (Codex)
         const totalItems = Object.keys(UNIQUE_ITEMS).length + 12;
         const knownItems = Object.keys(state.codex.items).length;
+        const enemyList = Object.values(state.codex.enemies).map(e => `
+          <div class="codex-item"><span>${e.icon}</span><div><b style="color:${e.isBoss ? '#f87171' : '#7dd3fc'};">${e.name}</b>
+          <div style="font-size:10px;color:#cbd5e1;">${state.camp.lab >= 1 ? `HP ${e.maxHp || '?'} / 攻 ${e.atk || '?'} / 防 ${e.def || '?'}${e.traitName ? ` / ${e.traitName}: ${e.hint || ''}` : ''}` : '研究所Lv1で詳細解放'}</div></div></div>`).join('');
         const loreList = LORE_RECORDS.map(l => {
           const unlocked = state.codex.lore[l.id];
           return `
@@ -4551,6 +4954,8 @@
           <div style="display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto;">
             ${loreList}
           </div>
+          <div style="font-size:11px;font-weight:bold;color:#fff;margin:8px 0 4px;">遭遇した敵（研究所解析）:</div>
+          <div style="display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;">${enemyList || '<div style="font-size:10px;color:#64748b;">まだ敵と遭遇していません</div>'}</div>
         `;
       } else if (state.activeTab === 'log') {
         const logHtml = state.logs.map(l => `
@@ -4579,6 +4984,7 @@
       if (it.goldRate) s.push(`金+${it.goldRate}%`);
       if (it.rareRate) s.push(`幸運+${it.rareRate}%`);
       if (it.heal) s.push(`回復+${it.heal}`);
+      if (it.affixName) s.push(`特性:${it.affixName}`);
       return s.join(' | ') || it.desc;
     }
 
@@ -4685,10 +5091,17 @@
     /* ==========================================================================
        INITIALIZE ON LOAD
        ========================================================================== */
+    window.__gameDebug = {
+      get state() { return state; },
+      AREAS,
+      get GAME_VERSION() { return GAME_VERSION; }
+    };
+
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
       render();
-      checkTutorial();
+      if (localStorage.getItem('lastSeenVersion') !== GAME_VERSION) showUpdateNotes(true);
+      else checkTutorial();
     });
 
     window.addEventListener('click', () => {
