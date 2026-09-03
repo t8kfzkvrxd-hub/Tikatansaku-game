@@ -1,0 +1,2203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>地下探索型・持ち帰りローグライト - ABYSS DELVER</title>
+  <meta name="description" content="地下30階の深淵に挑む持ち帰り型ローグライト。生還か、更なる深層か。緊張感あふれるリスクとリターン。" />
+  <style>
+    /* ==========================================================================
+       RESET & THEME
+       ========================================================================== */
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+    :root {
+      --bg: #090a0f;
+      --panel: rgba(18, 21, 31, 0.95);
+      --border: #2e384d;
+      --text: #e2e8f0;
+      --muted: #8b9bb4;
+      --gold: #f59e0b;
+      --core: #a855f7;
+      --hp: #ef4444;
+      --hp-bg: #450a0a;
+      --atk: #f97316;
+      --def: #38bdf8;
+      --crit: #ec4899;
+      --curse: #a855f7;
+      
+      --r-common: #94a3b8;
+      --r-rare: #38bdf8;
+      --r-epic: #c084fc;
+      --r-legendary: #fbbf24;
+      --r-curse: #f43f5e;
+    }
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 10%, #1c1524 0%, #08090d 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: hidden;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 620px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: rgba(12, 14, 20, 0.88);
+      box-shadow: 0 0 35px rgba(0,0,0,0.9);
+      position: relative;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* TOP STATUS BAR */
+    header#status-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(13, 16, 25, 0.98);
+      backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .status-row-1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .floor-badge {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .area-tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #cbd5e1;
+    }
+    .goal-nudge {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-weight: bold;
+      animation: pulse 2.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.5; } }
+
+    .hp-box { width: 100%; }
+    .hp-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 2px; }
+    .hp-bar-bg { width: 100%; height: 10px; background: var(--hp-bg); border-radius: 5px; overflow: hidden; border: 1px solid #5a1111; }
+    .hp-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #b91c1c, #ef4444); transition: width 0.25s ease; }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      font-size: 11px;
+      background: rgba(0,0,0,0.4);
+      padding: 4px 6px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stats-bar span b { color: #fff; }
+
+    /* VIEWPORT */
+    main#viewport {
+      flex: 1;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* CARDS & BUTTONS */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--gold);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 5px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      width: 100%;
+      min-height: 42px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.8); }
+    .btn-gold { background: linear-gradient(180deg, #d97706, #b45309); color: #fff; border-color: #f59e0b; }
+    .btn-gold:hover { background: linear-gradient(180deg, #f59e0b, #d97706); }
+    .btn-red { background: linear-gradient(180deg, #dc2626, #991b1b); color: #fff; border-color: #ef4444; }
+    .btn-blue { background: linear-gradient(180deg, #0284c7, #0369a1); color: #fff; border-color: #38bdf8; }
+    .btn-green { background: linear-gradient(180deg, #059669, #047857); color: #fff; border-color: #10b981; }
+    .btn-purple { background: linear-gradient(180deg, #7c3aed, #5b21b6); color: #fff; border-color: #a855f7; }
+    .btn-sub { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+    .btn-sub:hover { background: #334155; }
+    .btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+    .btn-xs { padding: 4px 8px; font-size: 11px; min-height: 28px; width: auto; border-radius: 5px; }
+
+    /* DOOR CHOICE SYSTEM (1階ごとの選択) */
+    .door-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .door-card {
+      background: linear-gradient(135deg, rgba(30, 36, 52, 0.9), rgba(16, 19, 28, 0.95));
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .door-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    .door-card.danger-high { border-color: #ef4444; background: linear-gradient(135deg, rgba(50, 20, 25, 0.9), rgba(20, 10, 12, 0.95)); }
+    .door-card.danger-curse { border-color: #a855f7; background: linear-gradient(135deg, rgba(40, 15, 50, 0.9), rgba(18, 8, 24, 0.95)); }
+    .door-card.safe { border-color: #10b981; }
+    .door-card.gold-room { border-color: #fbbf24; }
+
+    .door-icon { font-size: 32px; min-width: 44px; text-align: center; }
+    .door-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .door-sign { font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .door-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
+    .door-risk { font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 4px; display: inline-block; width: fit-content; }
+    .risk-low { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .risk-mid { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .risk-high { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .risk-curse { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+    /* EVENT / BATTLE SCENE */
+    .scene-box {
+      background: radial-gradient(circle at 50% 30%, rgba(35, 42, 60, 0.7), rgba(12, 14, 20, 0.95));
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      position: relative;
+    }
+    .scene-art { font-size: 52px; filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.4)); animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .scene-title { font-size: 18px; font-weight: 800; color: #fff; }
+    .scene-text { font-size: 13px; color: #cbd5e1; line-height: 1.5; max-width: 92%; }
+
+    /* BATTLE */
+    .enemy-card {
+      width: 100%;
+      background: rgba(0,0,0,0.5);
+      border: 1.5px solid #6b1d1d;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .enemy-card.boss { border-color: #f43f5e; box-shadow: 0 0 20px rgba(244, 63, 94, 0.4); }
+    .enemy-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; }
+    .enemy-intent-badge { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+    /* SYNERGY BADGES */
+    .synergy-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 4px 0;
+    }
+    .synergy-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.25));
+      border: 1px solid #c084fc;
+      color: #f5d0fe;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: bold;
+    }
+
+    /* ITEMS & RARITY */
+    .item-row {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 7px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .item-row.r-Common { border-left: 3.5px solid var(--r-common); }
+    .item-row.r-Rare { border-left: 3.5px solid var(--r-rare); }
+    .item-row.r-Epic { border-left: 3.5px solid var(--r-epic); }
+    .item-row.r-Legendary { border-left: 4px solid var(--r-legendary); box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+    .item-row.r-Curse { border-left: 4px solid var(--r-curse); box-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
+
+    .item-name { font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+    .r-Common .item-name { color: var(--r-common); }
+    .r-Rare .item-name { color: var(--r-rare); }
+    .r-Epic .item-name { color: var(--r-epic); }
+    .r-Legendary .item-name { color: var(--r-legendary); }
+    .r-Curse .item-name { color: var(--r-curse); }
+    .item-stats { font-size: 10.5px; color: #94a3b8; }
+    .item-curse-note { font-size: 10.5px; color: #f87171; font-weight: bold; }
+
+    /* BOTTOM TABS */
+    nav#sub-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      gap: 3px;
+      margin-top: auto;
+      background: rgba(10, 12, 18, 0.9);
+    }
+    .sub-tab-btn {
+      flex: 1;
+      padding: 8px 3px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+    .sub-tab-btn.active {
+      background: var(--panel);
+      border-color: var(--border);
+      color: #fff;
+    }
+    .sub-tab-btn .badge-pill {
+      background: #3b82f6;
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-left: 2px;
+    }
+    #sub-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 10px;
+      min-height: 170px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    /* LEGENDARY DISCOVERY OVERLAY */
+    .legendary-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .legendary-box {
+      background: radial-gradient(circle at 50% 30%, #352512 0%, #15101a 100%);
+      border: 2.5px solid #fbbf24;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 0 45px rgba(251, 191, 36, 0.6);
+      max-width: 440px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: popZoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popZoom { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .legendary-tag {
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #fbbf24;
+      font-weight: 900;
+      text-transform: uppercase;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* CODEX (図鑑) GRID */
+    .codex-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    .codex-item {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .codex-item.locked {
+      opacity: 0.4;
+      color: var(--muted);
+      border-style: dashed;
+    }
+
+    /* FX ANIMATIONS */
+    .shake { animation: shake 0.35s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      50% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- TOP STATUS -->
+    <header id="status-bar">
+      <div class="status-row-1">
+        <div class="floor-badge">
+          <span id="ui-floor-icon">🪜</span>
+          <span id="ui-floor-name">地上 拠点</span>
+          <span class="area-tag" id="ui-area-tag">荒野の野営地</span>
+        </div>
+        <div class="goal-nudge" id="ui-goal-nudge">🎯 5F安全帰還まで: あと5階</div>
+        <button id="sound-btn" class="btn btn-outline btn-xs" onclick="toggleSound()">🔊 音 ON</button>
+      </div>
+
+      <div class="hp-box">
+        <div class="hp-label">
+          <span>体力 (HP)</span>
+          <span id="ui-hp-text">100 / 100</span>
+        </div>
+        <div class="hp-bar-bg">
+          <div id="ui-hp-bar" class="hp-bar-fill"></div>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <span>⚔️ 攻 <b id="ui-atk">12</b></span>
+        <span>🛡️ 防 <b id="ui-def">3</b></span>
+        <span>💥 会心 <b id="ui-crit">5%</b></span>
+        <span>🪙 金 <b id="ui-gold" style="color:var(--gold);">0</b></span>
+        <span>🔮 核 <b id="ui-core" style="color:var(--core);">0</b></span>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWPORT -->
+    <main id="viewport">
+      <!-- Injected by render() -->
+    </main>
+
+    <!-- BOTTOM SUB TABS -->
+    <nav id="sub-tabs">
+      <button class="sub-tab-btn active" id="tab-btn-equip" onclick="setTab('equip')">⚔️ 装備 & シナジー</button>
+      <button class="sub-tab-btn" id="tab-btn-bag" onclick="setTab('bag')">🎒 戦利品 <span class="badge-pill" id="ui-bag-count">0</span></button>
+      <button class="sub-tab-btn" id="tab-btn-codex" onclick="setTab('codex')">📖 図鑑 <span class="badge-pill" id="ui-codex-pct">0%</span></button>
+      <button class="sub-tab-btn" id="tab-btn-log" onclick="setTab('log')">📜 日誌</button>
+    </nav>
+    <div id="sub-panel">
+      <!-- Injected by renderSubPanel() -->
+    </div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div id="modal-layer" style="display:none;"></div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* ==========================================================================
+       AUDIO SYNTHESIZER (Web Audio API - Zero External Dependencies)
+       ========================================================================== */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const b = document.getElementById('sound-btn');
+      b.textContent = soundEnabled ? '🔊 音 ON' : '🔇 音 OFF';
+      if (soundEnabled) { initAudio(); playSound('click'); }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400, t);
+          osc.frequency.exponentialRampToValueAtTime(800, t + 0.04);
+          gain.gain.setValueAtTime(0.08, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+          osc.start(t); osc.stop(t + 0.04);
+        } else if (type === 'hit') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(280, t);
+          osc.frequency.exponentialRampToValueAtTime(60, t + 0.1);
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+          osc.start(t); osc.stop(t + 0.1);
+        } else if (type === 'crit') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(520, t);
+          osc.frequency.setValueAtTime(880, t + 0.06);
+          osc.frequency.setValueAtTime(1200, t + 0.14);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+          osc.start(t); osc.stop(t + 0.25);
+        } else if (type === 'player_hurt') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, t);
+          osc.frequency.exponentialRampToValueAtTime(45, t + 0.15);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+          osc.start(t); osc.stop(t + 0.15);
+        } else if (type === 'heal') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, t);
+          osc.frequency.exponentialRampToValueAtTime(640, t + 0.2);
+          gain.gain.setValueAtTime(0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+          osc.start(t); osc.stop(t + 0.25);
+        } else if (type === 'legendary') {
+          // Grand fanfare
+          [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(freq, t + i * 0.09);
+            g.gain.setValueAtTime(0.15, t + i * 0.09);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.09 + 0.35);
+            o.start(t + i * 0.09);
+            o.stop(t + i * 0.09 + 0.35);
+          });
+        } else if (type === 'escape') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(350, t);
+          osc.frequency.exponentialRampToValueAtTime(900, t + 0.35);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+          osc.start(t); osc.stop(t + 0.4);
+        } else if (type === 'gameover') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, t);
+          osc.frequency.setValueAtTime(150, t + 0.2);
+          osc.frequency.setValueAtTime(90, t + 0.4);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.7);
+          osc.start(t); osc.stop(t + 0.7);
+        }
+      } catch (e) {}
+    }
+
+    /* ==========================================================================
+       DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
+       ========================================================================== */
+    const MAX_DUNGEON_FLOOR = 30;
+
+    // Underground Lore & Mysteries (地下世界の真相)
+    const LORE_RECORDS = [
+      { id: 'lore_1', title: '坑道夫の走り書き', text: '「掘れば掘るほど金が出る。だが深層から響く鼓動は何だ？あれは大地じゃない…生きている何かの音だ。」' },
+      { id: 'lore_2', title: '古代の石版断片', text: '「天の災いを逃れ、我らは地下に都市を築いた。しかし、地底に眠る原初の核に触れてはならなかったのだ。」' },
+      { id: 'lore_3', title: '放棄された研究日誌 04', text: '「被験体EX-03の細胞分裂が止まらない。深淵の核から放射される紫光は、人間を神に変えるのか、それとも肉塊に変えるのか？」' },
+      { id: 'lore_4', title: '死んだ冒険者の手帳', text: '「5階ごとの帰還転移門だけが唯一の救いだ。欲をかいて進んだ奴は、一人残らずこの迷宮の餌食になった。」' },
+      { id: 'lore_5', title: '血文字の警告', text: '「怪しい商人の売る呪われた仮面には手を出すな。金は手に入るが、その代償にお前の魂が蝕まれる。」' },
+      { id: 'lore_6', title: '深淵の予言書', text: '「地下1000階の玉座にて、深淵の王が目覚めを待つ。全ての迷宮は彼を育てるための巨大な胃袋である。」' }
+    ];
+
+    // Synergies (装備シナジー)
+    const SYNERGIES = [
+      {
+        id: 'syn_blood',
+        name: '🩸 血の契約',
+        desc: '敵撃破時HP回復量が2倍になり、会心時にHP2回復。',
+        check: (eq) => eq.weapon?.key === 'vamp_dagger' && eq.accessory?.key === 'blood_ring'
+      },
+      {
+        id: 'syn_gold',
+        name: '👑 黄金王',
+        desc: '獲得ゴールド+300%！富が力となる。',
+        check: (eq) => eq.weapon?.key === 'gold_blade' || (eq.accessory?.key === 'gold_mask' && eq.armor?.key === 'gold_mail')
+      },
+      {
+        id: 'syn_curse',
+        name: '👁️ 呪われし者',
+        desc: '呪い装備を2つ以上装備。攻撃力+30、会心率+15%（毎階HP-2）。',
+        check: (eq) => [eq.weapon, eq.armor, eq.accessory].filter(i => i && i.isCurse).length >= 2
+      },
+      {
+        id: 'syn_titan',
+        name: '🗿 不滅の剛体',
+        desc: '最大HP+50、被ダメージ20%カット。',
+        check: (eq) => eq.armor?.key === 'abyss_armor' && eq.accessory?.key === 'giant_bracer'
+      }
+    ];
+
+    // Unique / Archetype Items
+    const UNIQUE_ITEMS = {
+      vamp_dagger: { key: 'vamp_dagger', name: '吸血の短剣', icon: '🗡️', type: 'weapon', rarity: 'Epic', baseAtk: 14, vamp: 3, desc: '敵撃破時HP3回復' },
+      gold_blade: { key: 'gold_blade', name: '黄金の宝剣', icon: '⚔️', type: 'weapon', rarity: 'Epic', baseAtk: 16, goldRate: 60, desc: '獲得金額+60%' },
+      death_scythe: { key: 'death_scythe', name: '死神の契約鎌', icon: '🔪', type: 'weapon', rarity: 'Legendary', isCurse: true, baseAtk: 38, crit: 35, curseHpDrain: 2, desc: '超攻撃力・会心+35% (毎階HP-2)' },
+      
+      gold_mail: { key: 'gold_mail', name: '黄金の豪奢鎧', icon: '🥋', type: 'armor', rarity: 'Rare', baseDef: 6, goldRate: 40, hp: 20, desc: '獲得金貨+40%' },
+      abyss_armor: { key: 'abyss_armor', name: '深淵の重鋼鎧', icon: '🛡️', type: 'armor', rarity: 'Legendary', baseDef: 28, hp: 80, isCurse: true, curseHpDrain: 1, desc: '鉄壁の防御 (毎階HP-1)' },
+      
+      blood_ring: { key: 'blood_ring', name: '血晶の指輪', icon: '💍', type: 'accessory', rarity: 'Rare', vamp: 2, hp: 25, desc: '撃破時HP2回復' },
+      berserk_ring: { key: 'berserk_ring', name: '狂戦士の指輪', icon: '💍', type: 'accessory', rarity: 'Epic', isBerserk: true, desc: 'HP50%以下で攻撃力2倍！' },
+      gold_mask: { key: 'gold_mask', name: '呪われし黄金仮面', icon: '🎭', type: 'accessory', rarity: 'Legendary', isCurse: true, goldRate: 120, demeritDamageTaken: 25, desc: '獲得金貨+120% (被ダメ+25%)' },
+      giant_bracer: { key: 'giant_bracer', name: '巨人の怪力腕輪', icon: '💪', type: 'accessory', rarity: 'Rare', baseAtk: 6, hp: 40, desc: '攻撃+6, HP+40' },
+      luck_key: { key: 'luck_key', name: '幸運の合鍵', icon: '🗝️', type: 'accessory', rarity: 'Rare', rareRate: 35, desc: '宝箱レア率+35%' }
+    };
+
+    // Areas
+    const AREAS = [
+      {
+        id: 1, name: '廃坑 (1〜10F)', tag: '廃坑', min: 1, max: 10,
+        enemies: [
+          { name: '鉱山ネズミ', icon: '🐀', hp: 25, atk: 7, def: 1 },
+          { name: '坑道スケルトン', icon: '💀', hp: 35, atk: 10, def: 2 },
+          { name: 'コボルト採掘兵', icon: '⛏️', hp: 42, atk: 13, def: 3 }
+        ],
+        elite: { name: '狂気のトロッコ怪人', icon: '🧌', hp: 90, atk: 18, def: 6, isElite: true },
+        boss: { name: '【坑道の巨人】', icon: '🗿', hp: 260, atk: 22, def: 8, gimmick: 'heavy_charge' }
+      },
+      {
+        id: 2, name: '地下遺跡 (11〜20F)', tag: '地下遺跡', min: 11, max: 20,
+        enemies: [
+          { name: '遺跡の自律歩哨', icon: '🤖', hp: 65, atk: 20, def: 6 },
+          { name: '怨嗟のレイス', icon: '👻', hp: 55, atk: 26, def: 3 },
+          { name: '翡翠のガーゴイル', icon: '🦇', hp: 85, atk: 22, def: 10 }
+        ],
+        elite: { name: '古代の処刑執行機', icon: '⚙️', hp: 170, atk: 34, def: 12, isElite: true },
+        boss: { name: '【古代の守護者】', icon: '🏛️', hp: 520, atk: 36, def: 18, gimmick: 'shield_barrier' }
+      },
+      {
+        id: 3, name: '放棄研究施設 (21〜30F)', tag: '研究施設', min: 21, max: 30,
+        enemies: [
+          { name: '変異スライム', icon: '🧪', hp: 110, atk: 35, def: 10 },
+          { name: '暴走サイボーグ', icon: '🦾', hp: 130, atk: 42, def: 14 },
+          { name: 'キメラハウンド', icon: '🐕‍🦺', hp: 125, atk: 46, def: 8 }
+        ],
+        elite: { name: '被験体第9号', icon: '🧬', hp: 280, atk: 54, def: 16, isElite: true },
+        boss: { name: '【失敗作EX-03】', icon: '👾', hp: 950, atk: 58, def: 22, gimmick: 'mutate_form' }
+      }
+    ];
+
+    /* ==========================================================================
+       STATE & PERSISTENCE
+       ========================================================================== */
+    const SAVE_KEY = 'ABYSS_ROGUE_SAVED_V2';
+
+    let state = {
+      screen: 'town', // 'town' | 'door_select' | 'battle' | 'event'
+      activeTab: 'equip', // 'equip' | 'bag' | 'codex' | 'log'
+
+      // Town / Camp Level & Facilities
+      camp: {
+        blacksmith: 1, // 鍛冶屋: 装備強化
+        shop: 1,       // 商店: ポーション持込
+        lab: 1,        // 研究所: 図鑑解析
+        tavern: 1,     // 酒場: クエスト
+        vaultSize: 20  // 倉庫枠数
+      },
+
+      vaultGold: 0,
+      abyssCores: 0, // ボス素材「深淵の核」
+      storage: [],
+      equipped: { weapon: null, armor: null, accessory: null },
+      
+      // Permanent Upgrades (神殿)
+      talents: {
+        hpLv: 0,
+        atkLv: 0,
+        defLv: 0,
+        luckLv: 0,
+        keepItemLv: 0
+      },
+
+      // Codex (図鑑登録記録)
+      codex: {
+        items: {},
+        enemies: {},
+        lore: {}
+      },
+
+      // Dungeon Current Run
+      floor: 0,
+      hp: 100,
+      maxHp: 100,
+      dungeonGold: 0,
+      inventory: [],
+      logs: [],
+      
+      // Dungeon Run Modifiers (リスク・リターン契約)
+      modifiers: {
+        goldMult: 1.0,
+        enemyAtkMult: 1.0,
+        chestRareBonus: 0,
+        goldenStairTurns: 0 // 黄金の階段持続
+      },
+
+      // Battle / Event State
+      currentDoors: [],
+      currentEnemy: null,
+      bossTurnCount: 0,
+      bossBarrier: false,
+      bossMutated: false,
+      currentEvent: null,
+
+      runKills: 0
+    };
+
+    function saveState() {
+      try {
+        const d = {
+          camp: state.camp,
+          vaultGold: state.vaultGold,
+          abyssCores: state.abyssCores,
+          storage: state.storage,
+          equipped: state.equipped,
+          talents: state.talents,
+          codex: state.codex
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+      } catch (e) {}
+    }
+
+    function loadState() {
+      try {
+        const s = localStorage.getItem(SAVE_KEY);
+        if (s) {
+          const p = JSON.parse(s);
+          state.camp = Object.assign(state.camp, p.camp || {});
+          state.vaultGold = p.vaultGold || 0;
+          state.abyssCores = p.abyssCores || 0;
+          state.storage = p.storage || [];
+          state.equipped = p.equipped || { weapon: null, armor: null, accessory: null };
+          state.talents = Object.assign(state.talents, p.talents || {});
+          state.codex = Object.assign(state.codex, p.codex || { items: {}, enemies: {}, lore: {} });
+        } else {
+          initStarterItems();
+        }
+      } catch (e) {
+        initStarterItems();
+      }
+    }
+
+    function initStarterItems() {
+      state.equipped.weapon = { key: 'starter_w', name: '錆びたショートソード', icon: '🗡️', type: 'weapon', rarity: 'Common', baseAtk: 6, desc: '初期武器' };
+      state.equipped.armor = { key: 'starter_a', name: '擦り切れた革鎧', icon: '🥋', type: 'armor', rarity: 'Common', baseDef: 2, hp: 10, desc: '初期防具' };
+      recordCodex('item', state.equipped.weapon);
+      recordCodex('item', state.equipped.armor);
+    }
+
+    function recordCodex(type, obj) {
+      if (!obj) return;
+      if (type === 'item') {
+        state.codex.items[obj.name] = { name: obj.name, icon: obj.icon, rarity: obj.rarity, desc: obj.desc || '装備品' };
+      } else if (type === 'enemy') {
+        state.codex.enemies[obj.name] = { name: obj.name, icon: obj.icon, isBoss: obj.isBoss || false };
+      } else if (type === 'lore') {
+        state.codex.lore[obj.id] = { title: obj.title, text: obj.text };
+      }
+      saveState();
+    }
+
+    /* ==========================================================================
+       STATS & SYNERGIES CALCULATION
+       ========================================================================== */
+    function getActiveSynergies() {
+      return SYNERGIES.filter(s => s.check(state.equipped));
+    }
+
+    function getPlayerStats() {
+      let maxHp = 100 + (state.talents.hpLv * 15);
+      let atk = 10 + (state.talents.atkLv * 3);
+      let def = 2 + (state.talents.defLv * 2);
+      let crit = 5;
+      let vamp = 0;
+      let rareRate = state.talents.luckLv * 6;
+      let goldRate = 0;
+      let perFloorDrain = 0;
+      let demeritDamage = 0;
+
+      // Equipment
+      ['weapon', 'armor', 'accessory'].forEach(k => {
+        const item = state.equipped[k];
+        if (item) {
+          if (item.baseAtk) atk += item.baseAtk;
+          if (item.baseDef) def += item.baseDef;
+          if (item.hp) maxHp += item.hp;
+          if (item.crit) crit += item.crit;
+          if (item.vamp) vamp += item.vamp;
+          if (item.rareRate) rareRate += item.rareRate;
+          if (item.goldRate) goldRate += item.goldRate;
+          if (item.curseHpDrain) perFloorDrain += item.curseHpDrain;
+          if (item.demeritDamageTaken) demeritDamage += item.demeritDamageTaken;
+        }
+      });
+
+      // Synergy effects
+      const activeSyn = getActiveSynergies();
+      activeSyn.forEach(s => {
+        if (s.id === 'syn_curse') { atk += 30; crit += 15; perFloorDrain += 2; }
+        if (s.id === 'syn_titan') { maxHp += 50; def += 8; }
+        if (s.id === 'syn_gold') { goldRate += 300; }
+        if (s.id === 'syn_blood') { vamp += 4; }
+      });
+
+      // Berserk item check (狂戦士の指輪: HP50%以下で攻撃2倍)
+      if (state.equipped.accessory?.isBerserk && state.hp <= (maxHp * 0.5)) {
+        atk *= 2;
+      }
+
+      // Modifiers from events
+      if (state.modifiers.chestRareBonus) rareRate += state.modifiers.chestRareBonus;
+      if (state.modifiers.goldenStairTurns > 0) goldRate += 200;
+
+      return { maxHp, atk, def, crit, vamp, rareRate, goldRate, perFloorDrain, demeritDamage, activeSyn };
+    }
+
+    function addLog(msg, type = 'normal') {
+      state.logs.unshift({ msg, type, time: new Date().toLocaleTimeString() });
+      if (state.logs.length > 40) state.logs.pop();
+    }
+
+    /* ==========================================================================
+       START RUN & TOWN FLOW
+       ========================================================================== */
+    function startDungeonRun() {
+      initAudio();
+      playSound('click');
+      const stats = getPlayerStats();
+      state.floor = 1;
+      state.hp = stats.maxHp;
+      state.maxHp = stats.maxHp;
+      state.dungeonGold = 0;
+      state.inventory = [];
+      state.logs = [];
+      state.runKills = 0;
+      state.modifiers = { goldMult: 1.0, enemyAtkMult: 1.0, chestRareBonus: 0, goldenStairTurns: 0 };
+
+      // Shop prep: Take pre-bought potion if shop Lv >= 2
+      if (state.camp.shop >= 2) {
+        state.inventory.push({ id: 'pot_1', name: '冒険者の傷薬', icon: '🧪', type: 'potion', heal: 40, rarity: 'Common', desc: 'HP40回復' });
+      }
+
+      addLog('深淵の地下迷宮へと足を踏み入れた。生還は5階ごとの転移門のみ！', 'gold');
+      generateDoorsForFloor();
+    }
+
+    function returnToTown(safeReturn = true) {
+      if (safeReturn) {
+        playSound('escape');
+        state.vaultGold += state.dungeonGold;
+        // Move inventory into storage
+        let savedCount = 0;
+        state.inventory.forEach(item => {
+          if (state.storage.length < state.camp.vaultSize) {
+            state.storage.push(item);
+            savedCount++;
+          }
+        });
+        showResultModal({
+          title: '🏰 地上への安全帰還 達成！',
+          subtitle: `地下 ${state.floor} 階の転移門から無事生還しました。全ての戦利品を保管しました。`,
+          gold: state.dungeonGold,
+          cores: state.dungeonGold >= 200 ? 1 : 0,
+          items: state.inventory,
+          isDeath: false
+        });
+      } else {
+        // Death
+        playSound('gameover');
+        // Calculate item retention from talents
+        const retainCount = state.talents.keepItemLv; // 0, 1, 2
+        const keptItems = state.inventory.slice(0, retainCount);
+        const lostItems = state.inventory.slice(retainCount);
+
+        keptItems.forEach(i => {
+          if (state.storage.length < state.camp.vaultSize) state.storage.push(i);
+        });
+
+        // Lost 80% gold
+        const keptGold = Math.floor(state.dungeonGold * 0.2);
+        const lostGold = state.dungeonGold - keptGold;
+        state.vaultGold += keptGold;
+
+        showResultModal({
+          title: '💀 探索失敗... 深淵で力尽きた',
+          subtitle: `地下 ${state.floor} 階の闇に呑まれた。未保管の戦利品と大部分のゴールドを失った。`,
+          lostItems: lostItems,
+          keptItems: keptItems,
+          lostGold: lostGold,
+          keptGold: keptGold,
+          isDeath: true
+        });
+      }
+
+      saveState();
+      state.screen = 'town';
+      state.floor = 0;
+      updateHeader();
+      render();
+    }
+
+    function emergencyEscape() {
+      // 緊急帰還ポータル: 戦利品の半分没収
+      initAudio();
+      playSound('escape');
+      const keepCount = Math.ceil(state.inventory.length / 2);
+      const keptItems = state.inventory.slice(0, keepCount);
+      const lostItems = state.inventory.slice(keepCount);
+
+      keptItems.forEach(i => {
+        if (state.storage.length < state.camp.vaultSize) state.storage.push(i);
+      });
+
+      const keptGold = Math.floor(state.dungeonGold * 0.6);
+      state.vaultGold += keptGold;
+
+      showResultModal({
+        title: '🌀 緊急脱出ポータルで強行生還！',
+        subtitle: `不安定な歪みを通って帰還した！戦利品の半分とゴールドの一部を代償として失った。`,
+        lostItems: lostItems,
+        keptItems: keptItems,
+        lostGold: state.dungeonGold - keptGold,
+        keptGold: keptGold,
+        isDeath: false
+      });
+
+      saveState();
+      state.screen = 'town';
+      state.floor = 0;
+      updateHeader();
+      render();
+    }
+
+    /* ==========================================================================
+       ROOM GENERATION (毎階の2〜3個の選択肢)
+       ========================================================================== */
+    function getCurrentArea() {
+      if (state.floor <= 10) return AREAS[0];
+      if (state.floor <= 20) return AREAS[1];
+      return AREAS[2];
+    }
+
+    function generateDoorsForFloor() {
+      const isBossFloor = (state.floor === 10 || state.floor === 20 || state.floor === 30);
+      const isSafePortalFloor = (state.floor % 5 === 0 && !isBossFloor);
+
+      // Turn effects check (Curse damage)
+      const stats = getPlayerStats();
+      if (stats.perFloorDrain > 0) {
+        state.hp -= stats.perFloorDrain;
+        addLog(`呪いの装備が体力を蝕む... HP -${stats.perFloorDrain}`, 'danger');
+        if (state.hp <= 0) {
+          state.hp = 0;
+          returnToTown(false);
+          return;
+        }
+      }
+
+      if (state.modifiers.goldenStairTurns > 0) {
+        state.modifiers.goldenStairTurns--;
+      }
+
+      // Check Boss Encounter
+      if (isBossFloor) {
+        state.screen = 'battle';
+        startBossBattle(getCurrentArea().boss);
+        return;
+      }
+
+      // If safe portal floor (5, 15, 25)
+      if (isSafePortalFloor) {
+        state.currentDoors = [
+          {
+            type: 'portal_safe',
+            icon: '🏰',
+            sign: '古代の安全転移門',
+            desc: '【安全帰還】戦利品とゴールドを全て持ち帰って地上へ生還する。',
+            risk: 'safe',
+            riskText: '完全生還'
+          },
+          {
+            type: 'door_deeper',
+            icon: '🔻',
+            sign: '更なる深層への階段',
+            desc: '帰還を拒み、危険を冒してさらに潜る（宝箱のレア率UP）。',
+            risk: 'mid',
+            riskText: '挑戦'
+          }
+        ];
+        state.screen = 'door_select';
+        updateHeader();
+        render();
+        return;
+      }
+
+      // Normal floors: Generate 2 to 3 distinct room options
+      const doorPool = [
+        {
+          type: 'battle_normal',
+          icon: '⚔️',
+          sign: '敵の気配',
+          desc: '通常の魔物が徘徊している。討伐でゴールドと装備獲得。',
+          risk: 'mid', riskText: '中危険'
+        },
+        {
+          type: 'chest_normal',
+          icon: '🎁',
+          sign: '金色の光',
+          desc: '施錠されていない宝箱の気配。レア装備やゴールドの期待。',
+          risk: 'low', riskText: '低危険'
+        },
+        {
+          type: 'blood_altar',
+          icon: '🩸',
+          sign: '血の跡と邪神像',
+          desc: '【血の祭壇】HP30を捧げ、強力な永続バフや攻撃力を獲得。',
+          risk: 'curse', riskText: '代償大'
+        },
+        {
+          type: 'cursed_chest',
+          icon: '👁️',
+          sign: '呪われた黒櫃',
+          desc: '【呪い宝箱】Epic以上の強力装備確定。代わりに最大HP減少。',
+          risk: 'curse', riskText: 'ハイリスク'
+        },
+        {
+          type: 'heal_spring',
+          icon: '💧',
+          sign: '聖なる滴りの音',
+          desc: '澄んだ泉。HPを大幅に回復するか、神秘の力を得る。',
+          risk: 'safe', riskText: '安全回復'
+        },
+        {
+          type: 'merchant',
+          icon: '🛒',
+          sign: '怪しい商人',
+          desc: '探索中に拾ったゴールドで回復薬や限定装備を売買できる。',
+          risk: 'low', riskText: '取引'
+        },
+        {
+          type: 'golden_stairs',
+          icon: '✨',
+          sign: '黄金の階段',
+          desc: '【欲深き契約】次の敵が大幅強化される代わりに獲得ゴールド3倍。',
+          risk: 'high', riskText: '超リターン'
+        },
+        {
+          type: 'elite_battle',
+          icon: '💀',
+          sign: '重い唸り声 (エリート)',
+          desc: '凶悪な強敵が潜む。勝てばレアアイテム確定＆大量ゴールド。',
+          risk: 'high', riskText: '超危険'
+        },
+        {
+          type: 'mystery_wanderer',
+          icon: '🧙‍♂️',
+          sign: '謎の遭遇',
+          desc: '傷ついた冒険者や不気味な黒卵など、予期せぬ出来事。',
+          risk: 'mid', riskText: '謎'
+        }
+      ];
+
+      // Low chance of emergency portal in non-safe floors (低確率で緊急帰還ポータル)
+      if (Math.random() < 0.15 && state.floor > 2) {
+        doorPool.push({
+          type: 'emergency_portal',
+          icon: '🌀',
+          sign: '不安定な緊急ポータル',
+          desc: '【即時帰還】今すぐ生還可能だが、戦利品の半分を代償として失う。',
+          risk: 'safe', riskText: '半分ロスト生還'
+        });
+      }
+
+      // Pick 3 random distinct doors
+      const shuffled = doorPool.sort(() => 0.5 - Math.random());
+      state.currentDoors = shuffled.slice(0, 3);
+
+      state.screen = 'door_select';
+      updateHeader();
+      render();
+    }
+
+    function selectDoor(index) {
+      initAudio();
+      playSound('click');
+      const door = state.currentDoors[index];
+      if (!door) return;
+
+      // Advance lore check (低確率で地下の謎を拾う)
+      if (Math.random() < 0.22) {
+        discoverLore();
+      }
+
+      if (door.type === 'portal_safe') {
+        returnToTown(true);
+      } else if (door.type === 'emergency_portal') {
+        emergencyEscape();
+      } else if (door.type === 'door_deeper') {
+        addLog('帰還門を背にして、更なる闇へと踏み込んだ！', 'danger');
+        state.modifiers.chestRareBonus += 15;
+        state.floor++;
+        generateDoorsForFloor();
+      } else if (door.type === 'battle_normal') {
+        startNormalBattle(false);
+      } else if (door.type === 'elite_battle') {
+        startNormalBattle(true);
+      } else if (door.type === 'chest_normal') {
+        openChestEvent(false);
+      } else if (door.type === 'cursed_chest') {
+        openChestEvent(true);
+      } else if (door.type === 'blood_altar') {
+        startBloodAltarEvent();
+      } else if (door.type === 'heal_spring') {
+        startHealSpringEvent();
+      } else if (door.type === 'merchant') {
+        startMerchantEvent();
+      } else if (door.type === 'golden_stairs') {
+        startGoldenStairsEvent();
+      } else if (door.type === 'mystery_wanderer') {
+        startMysteryEvent();
+      }
+    }
+
+    function discoverLore() {
+      const unread = LORE_RECORDS.filter(l => !state.codex.lore[l.id]);
+      if (unread.length > 0) {
+        const picked = unread[Math.floor(Math.random() * unread.length)];
+        recordCodex('lore', picked);
+        addLog(`📜 古代の記録【${picked.title}】を発見した！（図鑑に登録）`, 'gold');
+      }
+    }
+
+    /* ==========================================================================
+       BATTLE ENGINE & BOSS GIMMICKS
+       ========================================================================== */
+    function startNormalBattle(isElite = false) {
+      const area = getCurrentArea();
+      let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
+      
+      const scale = 1 + (state.floor * 0.08);
+      state.currentEnemy = {
+        name: enemyTemplate.name,
+        icon: enemyTemplate.icon,
+        maxHp: Math.round(enemyTemplate.hp * scale),
+        hp: Math.round(enemyTemplate.hp * scale),
+        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0)),
+        def: Math.round(enemyTemplate.def * scale),
+        isBoss: false,
+        isElite: isElite
+      };
+
+      recordCodex('enemy', state.currentEnemy);
+      state.screen = 'battle';
+      decideEnemyIntent();
+      addLog(`${state.currentEnemy.name} が立ちはだかった！`, isElite ? 'danger' : 'normal');
+      updateHeader();
+      render();
+    }
+
+    function startBossBattle(bossTemplate) {
+      playSound('hit');
+      state.currentEnemy = {
+        name: bossTemplate.name,
+        icon: bossTemplate.icon,
+        maxHp: bossTemplate.hp,
+        hp: bossTemplate.hp,
+        atk: bossTemplate.atk,
+        def: bossTemplate.def,
+        isBoss: true,
+        gimmick: bossTemplate.gimmick
+      };
+      state.bossTurnCount = 0;
+      state.bossBarrier = (bossTemplate.gimmick === 'shield_barrier');
+      state.bossMutated = false;
+
+      recordCodex('enemy', state.currentEnemy);
+      state.screen = 'battle';
+      decideEnemyIntent();
+      addLog(`階層の守護ボス【${state.currentEnemy.name}】が降臨した！`, 'danger');
+      updateHeader();
+      render();
+    }
+
+    function decideEnemyIntent() {
+      if (!state.currentEnemy) return;
+      const e = state.currentEnemy;
+
+      if (e.isBoss) {
+        state.bossTurnCount++;
+        if (e.gimmick === 'heavy_charge') {
+          // 10F 坑道の巨人: 3ターンごとに「地響き大粉砕」
+          if (state.bossTurnCount % 3 === 0) {
+            e.pendingAction = '⚠️【地響き大粉砕】次ターン壊滅的打撃！(防御必須)';
+            e.nextMult = 2.4;
+          } else {
+            e.pendingAction = '通常打撃の構え';
+            e.nextMult = 1.0;
+          }
+        } else if (e.gimmick === 'shield_barrier') {
+          // 20F 古代の守護者: バリア中は防御超UP
+          if (state.bossBarrier) {
+            e.pendingAction = '🛡️【古代障壁】防御力超上昇中！';
+            e.nextMult = 1.0;
+          } else {
+            e.pendingAction = '⚡【雷撃の矢】激しい攻撃！';
+            e.nextMult = 1.4;
+          }
+        } else if (e.gimmick === 'mutate_form') {
+          // 30F 失敗作EX-03: HP50%以下で変異
+          if (!state.bossMutated && e.hp <= (e.maxHp * 0.5)) {
+            state.bossMutated = true;
+            e.name = '【暴走被験体EX-03: 完全体】';
+            e.atk = Math.round(e.atk * 1.4);
+            e.icon = '🐉';
+            addLog('EX-03の細胞が激しく変異！完全体へと形態変化した！', 'danger');
+          }
+          e.pendingAction = state.bossMutated ? '☣️【変異暴走連撃】苛烈な連続攻撃！' : '触手なぎ払い';
+          e.nextMult = state.bossMutated ? 1.6 : 1.1;
+        }
+      } else {
+        const r = Math.random();
+        if (r < 0.6) { e.pendingAction = '攻撃の構え'; e.nextMult = 1.0; }
+        else if (r < 0.85) { e.pendingAction = '鋭い刺突の気配！'; e.nextMult = 1.3; }
+        else { e.pendingAction = '様子を窺っている'; e.nextMult = 0.8; }
+      }
+    }
+
+    function playerCombatAction(action) {
+      if (!state.currentEnemy || state.hp <= 0) return;
+      initAudio();
+
+      const stats = getPlayerStats();
+      const enemy = state.currentEnemy;
+
+      if (action === 'attack') {
+        const isCrit = Math.random() * 100 < stats.crit;
+        let baseDmg = stats.atk * (isCrit ? 1.8 : 1.0);
+        let targetDef = (enemy.isBoss && state.bossBarrier) ? enemy.def * 3 : enemy.def;
+        let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 4 - 2)));
+
+        enemy.hp -= dmg;
+        if (isCrit) {
+          playSound('crit');
+          addLog(`会心の一撃！ ${enemy.name} に ${dmg} の痛撃！`, 'gold');
+        } else {
+          playSound('hit');
+          addLog(`${enemy.name} に ${dmg} のダメージ！`, 'normal');
+        }
+
+        // Vampirism
+        if (stats.vamp > 0) {
+          const healed = Math.min(stats.maxHp - state.hp, stats.vamp);
+          if (healed > 0) {
+            state.hp += healed;
+            addLog(`吸血により HPが ${healed} 回復した。`, 'heal');
+          }
+        }
+
+        if (enemy.hp <= 0) {
+          enemy.hp = 0;
+          onEnemyKilled();
+          return;
+        }
+
+        setTimeout(() => enemyTurn(false), 250);
+      } else if (action === 'defend') {
+        playSound('click');
+        addLog('盾を構えて防御！被ダメージを大きく低減する。', 'normal');
+        setTimeout(() => enemyTurn(true), 250);
+      } else if (action === 'disrupt_barrier') {
+        // Special Boss button for 20F
+        if (enemy.isBoss && state.bossBarrier) {
+          state.bossBarrier = false;
+          playSound('crit');
+          addLog('ルーン障壁を破壊した！古代の守護者が隙を晒した！', 'gold');
+          setTimeout(() => enemyTurn(false), 300);
+        }
+      }
+      render();
+    }
+
+    function enemyTurn(isPlayerDefending = false) {
+      if (!state.currentEnemy || state.hp <= 0) return;
+      const stats = getPlayerStats();
+      const enemy = state.currentEnemy;
+
+      let enemyAtk = enemy.atk * (enemy.nextMult || 1.0);
+      let playerDef = isPlayerDefending ? (stats.def * 2.5 + 6) : stats.def;
+      let dmg = Math.max(1, Math.round(enemyAtk - playerDef));
+
+      // Apply demerit damages (e.g. Gold mask)
+      if (stats.demeritDamage > 0) {
+        dmg = Math.round(dmg * (1 + stats.demeritDamage / 100));
+      }
+
+      state.hp -= dmg;
+      playSound('player_hurt');
+      triggerShake();
+      addLog(`${enemy.name} の反撃！ ${dmg} のダメージを受けた！`, 'danger');
+
+      if (state.hp <= 0) {
+        state.hp = 0;
+        updateHeader();
+        setTimeout(() => returnToTown(false), 500);
+        return;
+      }
+
+      decideEnemyIntent();
+      updateHeader();
+      render();
+    }
+
+    function onEnemyKilled() {
+      const enemy = state.currentEnemy;
+      playSound('heal');
+      state.runKills++;
+
+      const stats = getPlayerStats();
+      const baseGold = 12 + state.floor * 6;
+      const earnedGold = Math.round(baseGold * (1 + stats.goldRate / 100));
+      state.dungeonGold += earnedGold;
+
+      addLog(`討伐成功！ ${enemy.name} を撃破！ 金貨 +${earnedGold}G`, 'gold');
+
+      if (enemy.isBoss) {
+        state.abyssCores++;
+        addLog(`希少素材【深淵の核】を獲得した！`, 'gold');
+        // Boss Guaranteed Legendary
+        const legItem = generateItem(state.floor, 'Legendary');
+        giveItemToBag(legItem);
+      } else if (enemy.isElite || Math.random() < 0.45) {
+        // Drop item check
+        const item = generateItem(state.floor);
+        giveItemToBag(item);
+      }
+
+      state.currentEnemy = null;
+      // Advance to next floor
+      state.floor++;
+      setTimeout(() => generateDoorsForFloor(), 400);
+    }
+
+    /* ==========================================================================
+       ITEM GENERATION & LEGENDARY CELEBRATION (レア発見演出)
+       ========================================================================== */
+    function generateItem(floor, forcedRarity = null) {
+      let rarity = forcedRarity;
+      if (!rarity) {
+        const stats = getPlayerStats();
+        const roll = Math.random() * 100;
+        if (roll < 5 + stats.rareRate * 0.4) rarity = 'Legendary';
+        else if (roll < 22 + stats.rareRate * 0.6) rarity = 'Epic';
+        else if (roll < 55 + stats.rareRate) rarity = 'Rare';
+        else rarity = 'Common';
+      }
+
+      // Check unique item pool
+      if (rarity === 'Legendary' && Math.random() < 0.6) {
+        const legPool = [UNIQUE_ITEMS.death_scythe, UNIQUE_ITEMS.abyss_armor, UNIQUE_ITEMS.gold_mask];
+        return { ...legPool[Math.floor(Math.random() * legPool.length)], id: 'u_' + Date.now() + Math.random() };
+      } else if (rarity === 'Epic' && Math.random() < 0.5) {
+        const epicPool = [UNIQUE_ITEMS.vamp_dagger, UNIQUE_ITEMS.gold_blade, UNIQUE_ITEMS.berserk_ring];
+        return { ...epicPool[Math.floor(Math.random() * epicPool.length)], id: 'u_' + Date.now() + Math.random() };
+      }
+
+      // Procedural Item
+      const types = ['weapon', 'armor', 'accessory'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const names = {
+        weapon: ['鋼鉄のブロードソード', '怨嗟のバトルアックス', '暗殺者のダガー', '古代の儀式槍'],
+        armor: ['黒鉄のチェインメイル', 'ルーンの防護ローブ', '深海の鱗鎧', '名も無き騎士の甲冑'],
+        accessory: ['深紅のルビー指輪', '守護の魔導護符', '黒猫の尾チャーム', '強欲のペンダント']
+      };
+      const icons = { weapon: '⚔️', armor: '🛡️', accessory: '💍' };
+
+      const baseName = names[type][Math.floor(Math.random() * names[type].length)];
+      const mult = { Common: 1, Rare: 1.4, Epic: 1.8, Legendary: 2.5 }[rarity];
+
+      const it = {
+        id: 'it_' + Date.now() + Math.random(),
+        name: baseName,
+        icon: icons[type],
+        type: type,
+        rarity: rarity,
+        desc: ''
+      };
+
+      if (type === 'weapon') it.baseAtk = Math.round((6 + floor * 1.5) * mult);
+      if (type === 'armor') { it.baseDef = Math.round((2 + floor * 0.8) * mult); it.hp = Math.round(15 * mult); }
+      if (type === 'accessory') { it.crit = Math.round(4 * mult); it.goldRate = Math.round(15 * mult); }
+
+      // Random Curse or Bonus
+      if (rarity === 'Legendary' && Math.random() < 0.3) {
+        it.name = '【呪縛】' + it.name;
+        it.isCurse = true;
+        it.curseHpDrain = 2;
+        if (it.baseAtk) it.baseAtk += 15;
+        if (it.baseDef) it.baseDef += 10;
+        it.desc = '驚異的性能だが毎階HP-2';
+      }
+
+      return it;
+    }
+
+    function giveItemToBag(item) {
+      recordCodex('item', item);
+      state.inventory.push(item);
+
+      if (item.rarity === 'Legendary') {
+        showLegendaryDiscoveryModal(item);
+      } else {
+        addLog(`戦利品【${item.name}】(${item.rarity}) を獲得！`, 'gold');
+      }
+    }
+
+    function showLegendaryDiscoveryModal(item) {
+      playSound('legendary');
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex';
+      m.className = 'legendary-modal';
+      m.innerHTML = `
+        <div class="legendary-box">
+          <div class="legendary-tag">★ LEGENDARY ITEM DISCOVERED ★</div>
+          <div style="font-size:56px; filter:drop-shadow(0 0 20px #fbbf24);">${item.icon}</div>
+          <div style="font-size:22px; font-weight:900; color:#fbbf24;">${item.name}</div>
+          <div style="font-size:13px; color:#fef08a;">${item.desc || '深淵の伝説的遺物'}</div>
+          <div style="font-size:12px; color:#cbd5e1; background:rgba(0,0,0,0.5); padding:6px 12px; border-radius:6px; width:100%;">
+            ${getItemStatSummary(item)}
+          </div>
+          <button class="btn btn-gold" onclick="closeLegendaryModal()">バッグに収める</button>
+        </div>
+      `;
+    }
+
+    function closeLegendaryModal() {
+      initAudio();
+      playSound('click');
+      document.getElementById('modal-layer').style.display = 'none';
+      render();
+    }
+
+    /* ==========================================================================
+       ROOM EVENTS (RISK & REWARD)
+       ========================================================================== */
+    function openChestEvent(isCursed = false) {
+      if (isCursed) {
+        // Cursed Chest: Epic or Legendary guaranteed, but drains 15% Max HP
+        const item = generateItem(state.floor, Math.random() < 0.5 ? 'Epic' : 'Legendary');
+        const hpCost = Math.round(state.maxHp * 0.15);
+        state.hp = Math.max(1, state.hp - hpCost);
+        state.maxHp = Math.max(20, state.maxHp - hpCost);
+
+        playSound('hit');
+        giveItemToBag(item);
+        addLog(`呪いの宝箱を開封！ 代償として最大HP -${hpCost}`, 'danger');
+      } else {
+        const item = generateItem(state.floor);
+        giveItemToBag(item);
+        const goldBonus = 15 + state.floor * 8;
+        state.dungeonGold += goldBonus;
+        addLog(`宝箱から金貨 +${goldBonus}G を入手！`, 'gold');
+      }
+
+      state.floor++;
+      setTimeout(() => generateDoorsForFloor(), 500);
+    }
+
+    function startBloodAltarEvent() {
+      state.screen = 'event';
+      state.currentEvent = {
+        title: '🩸 血の祭壇',
+        icon: '🩸',
+        text: '暗闇に浮かぶ不気味な邪神の祭壇。新鮮な生血を求めている…',
+        choices: [
+          {
+            text: 'HP30を捧げて攻撃力+8の祝福を得る',
+            action: () => {
+              if (state.hp <= 30) { addLog('体力が足りず血を捧げられない！', 'danger'); return; }
+              state.hp -= 30;
+              state.equipped.weapon = state.equipped.weapon || { name: '血の契約刃', icon: '🗡️', type: 'weapon', rarity: 'Rare', baseAtk: 6 };
+              state.equipped.weapon.baseAtk = (state.equipped.weapon.baseAtk || 0) + 8;
+              playSound('crit');
+              addLog('血の対価として攻撃力+8の永続加護を得た！', 'gold');
+              endEvent();
+            }
+          },
+          {
+            text: '祭壇に唾を吐いて立ち去る',
+            action: () => { addLog('祭壇を無視して先を急いだ。', 'normal'); endEvent(); }
+          }
+        ]
+      };
+      render();
+    }
+
+    function startGoldenStairsEvent() {
+      state.screen = 'event';
+      state.currentEvent = {
+        title: '✨ 黄金の階段',
+        icon: '🪜',
+        text: '黄金に光り輝く危険な階段。昇れば莫大な富を得られるが、深淵の魔物が狂暴化する。',
+        choices: [
+          {
+            text: '契約を結ぶ (次の敵強化 / 獲得ゴールド3倍)',
+            action: () => {
+              state.modifiers.goldenStairTurns = 3;
+              state.modifiers.enemyAtkMult = 1.35;
+              playSound('gold');
+              addLog('黄金の契約成立！ 3フロアの間、敵が強大化するが獲得ゴールド3倍！', 'gold');
+              endEvent();
+            }
+          },
+          {
+            text: '誘惑を断ち切る',
+            action: () => { addLog('堅実な道を選び、階段を避けた。', 'normal'); endEvent(); }
+          }
+        ]
+      };
+      render();
+    }
+
+    function startHealSpringEvent() {
+      state.screen = 'event';
+      state.currentEvent = {
+        title: '💧 聖なる滴りの泉',
+        icon: '⛲',
+        text: '地下に湧き出る神秘の聖水。傷を癒し、魂を浄化する力がある。',
+        choices: [
+          {
+            text: '泉の水を飲んでHPを全快する',
+            action: () => {
+              state.hp = state.maxHp;
+              playSound('heal');
+              addLog('聖水によりHPが全回復した！', 'heal');
+              endEvent();
+            }
+          },
+          {
+            text: '聖水を小瓶に汲む (回復薬を獲得)',
+            action: () => {
+              state.inventory.push({ id: 'p_holy', name: '聖水の小瓶', icon: '🧪', type: 'potion', heal: 50, rarity: 'Rare', desc: 'HP50回復' });
+              playSound('heal');
+              addLog('聖水をバッグに詰めた！', 'heal');
+              endEvent();
+            }
+          }
+        ]
+      };
+      render();
+    }
+
+    function startMerchantEvent() {
+      state.screen = 'event';
+      const item1 = generateItem(state.floor, 'Rare');
+      const item2 = generateItem(state.floor, 'Epic');
+      const potPrice = 30;
+
+      state.currentEvent = {
+        title: '🛒 迷宮の放浪商人',
+        icon: '🧳',
+        text: `「深淵で金を持っていても死ねばゴミだ。買い物はどうだい？」 (所持金: ${state.dungeonGold}G)`,
+        choices: [
+          {
+            text: `特製傷薬 (HP45回復) - 30G`,
+            action: () => {
+              if (state.dungeonGold < 30) { addLog('ゴールドが足りない！', 'danger'); return; }
+              state.dungeonGold -= 30;
+              state.inventory.push({ id: 'pot_m', name: '特製傷薬', icon: '🧪', type: 'potion', heal: 45, rarity: 'Common', desc: 'HP45回復' });
+              playSound('click');
+              addLog('特製傷薬を購入した！', 'gold');
+              endEvent();
+            }
+          },
+          {
+            text: `${item2.name} (${item2.rarity}) - 80G`,
+            action: () => {
+              if (state.dungeonGold < 80) { addLog('ゴールドが足りない！', 'danger'); return; }
+              state.dungeonGold -= 80;
+              giveItemToBag(item2);
+              playSound('click');
+              endEvent();
+            }
+          },
+          {
+            text: '買い物をせず立ち去る',
+            action: () => { endEvent(); }
+          }
+        ]
+      };
+      render();
+    }
+
+    function startMysteryEvent() {
+      state.screen = 'event';
+      const r = Math.random();
+      if (r < 0.5) {
+        state.currentEvent = {
+          title: '🤕 倒れかけた冒険者',
+          icon: '🧝',
+          text: '血を流して倒れている冒険者がいる。「頼む…傷薬を分けてくれ…礼はする…」',
+          choices: [
+            {
+              text: '薬草やHPを分けて救助する (HP-15)',
+              action: () => {
+                state.hp = Math.max(1, state.hp - 15);
+                const rewardRing = { ...UNIQUE_ITEMS.blood_ring, id: 'r_' + Date.now() };
+                giveItemToBag(rewardRing);
+                playSound('heal');
+                addLog('冒険者を救った！ お礼に【血晶の指輪】を受け取った！', 'gold');
+                endEvent();
+              }
+            },
+            {
+              text: '持ち物を強奪する (悪徳行為)',
+              action: () => {
+                const stolenGold = 60;
+                state.dungeonGold += stolenGold;
+                playSound('hit');
+                addLog(`冒険者から ${stolenGold}G を奪い取った...`, 'danger');
+                endEvent();
+              }
+            },
+            {
+              text: '関わらずに見捨てる',
+              action: () => { addLog('冷酷に見捨てて立ち去った。', 'normal'); endEvent(); }
+            }
+          ]
+        };
+      } else {
+        state.currentEvent = {
+          title: '🥚 脈動する黒卵',
+          icon: '🥚',
+          text: '岩肌に紫色の脈打つ巨大な卵が張り付いている。持ち帰れば地上で何か起こるかもしれない…',
+          choices: [
+            {
+              text: '卵を慎重に採取する',
+              action: () => {
+                giveItemToBag({ id: 'egg_1', name: '深淵の黒卵', icon: '🥚', rarity: 'Epic', type: 'relic', desc: '地上に持ち帰ると孵化する？' });
+                addLog('脈動する黒卵をバッグに収めた！', 'gold');
+                endEvent();
+              }
+            },
+            {
+              text: '危険なので卵を叩き割る',
+              action: () => {
+                state.hp = Math.max(1, state.hp - 10);
+                playSound('hit');
+                addLog('卵を割ると腐食性の酸が飛び散った！ HP -10', 'danger');
+                endEvent();
+              }
+            }
+          ]
+        };
+      }
+      render();
+    }
+
+    function endEvent() {
+      state.screen = 'door_select';
+      state.floor++;
+      generateDoorsForFloor();
+    }
+
+    /* ==========================================================================
+       TOWN & CAMP GROWTH (拠点の成長)
+       ========================================================================== */
+    function upgradeCampFacility(fac) {
+      initAudio();
+      const cost = state.camp[fac] * 120;
+      if (state.vaultGold < cost) {
+        addLog(`ゴールドが足りません！ 必要: ${cost}G`, 'danger');
+        render();
+        return;
+      }
+      state.vaultGold -= cost;
+      state.camp[fac]++;
+      if (fac === 'vaultSize') state.camp.vaultSize += 10;
+      playSound('heal');
+      addLog(`拠点施設をレベルアップ！ 現在 Lv.${state.camp[fac]}`, 'gold');
+      saveState();
+      updateHeader();
+      render();
+    }
+
+    function upgradeTalent(key) {
+      initAudio();
+      const cost = (state.talents[key] + 1) * 80;
+      if (state.vaultGold < cost) {
+        addLog(`ゴールド不足！ 必要: ${cost}G`, 'danger');
+        render();
+        return;
+      }
+      state.vaultGold -= cost;
+      state.talents[key]++;
+      playSound('heal');
+      addLog(`神殿の永久加護を強化しました！`, 'gold');
+      saveState();
+      updateHeader();
+      render();
+    }
+
+    function equipItem(index, fromVault = false) {
+      initAudio();
+      playSound('click');
+      const list = fromVault ? state.storage : state.inventory;
+      const item = list[index];
+      if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return;
+
+      const slot = item.type;
+      const oldEquip = state.equipped[slot];
+
+      state.equipped[slot] = item;
+      list.splice(index, 1);
+      if (oldEquip) list.push(oldEquip);
+
+      saveState();
+      updateHeader();
+      render();
+    }
+
+    function usePotion(index) {
+      initAudio();
+      const item = state.inventory[index];
+      if (!item || item.type !== 'potion') return;
+
+      const stats = getPlayerStats();
+      const healed = Math.min(stats.maxHp - state.hp, item.heal);
+      state.hp += healed;
+      playSound('heal');
+      addLog(`${item.name} を服用。HP +${healed} 回復！`, 'heal');
+      state.inventory.splice(index, 1);
+      updateHeader();
+      render();
+    }
+
+    /* ==========================================================================
+       UI RENDERING
+       ========================================================================== */
+    function setTab(tab) {
+      initAudio();
+      playSound('click');
+      state.activeTab = tab;
+      document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('tab-btn-' + tab);
+      if (activeBtn) activeBtn.classList.add('active');
+      renderSubPanel();
+    }
+
+    function updateHeader() {
+      const stats = getPlayerStats();
+      const inDungeon = (state.floor > 0);
+
+      document.getElementById('ui-floor-icon').textContent = inDungeon ? '🪜' : '🏕️';
+      document.getElementById('ui-floor-name').textContent = inDungeon ? `B${state.floor}F` : '地上 拠点';
+      
+      const area = inDungeon ? getCurrentArea() : null;
+      document.getElementById('ui-area-tag').textContent = inDungeon ? area.tag : '生存者の野営地';
+
+      // Goal Nudge (短い目標の常時表示)
+      const nudge = document.getElementById('ui-goal-nudge');
+      if (inDungeon) {
+        const nextSafe = Math.ceil(state.floor / 5) * 5;
+        const remain = nextSafe - state.floor;
+        if (state.floor === 10 || state.floor === 20 || state.floor === 30) {
+          nudge.textContent = `💀 BOSS FLOOR: 決死の戦い！`;
+        } else if (remain === 0) {
+          nudge.textContent = `🏰 帰還転移門 到達！ 生還可能！`;
+        } else {
+          nudge.textContent = `🎯 安全帰還まで: あと${remain}階`;
+        }
+      } else {
+        const nextUpgradeCost = (state.talents.hpLv + 1) * 80;
+        nudge.textContent = `🪙 強化まで: あと${Math.max(0, nextUpgradeCost - state.vaultGold)}G`;
+      }
+
+      // HP
+      const hpPct = Math.max(0, Math.min(100, (state.hp / stats.maxHp) * 100));
+      document.getElementById('ui-hp-bar').style.width = hpPct + '%';
+      document.getElementById('ui-hp-text').textContent = `${Math.round(state.hp)} / ${stats.maxHp}`;
+
+      // Stats
+      document.getElementById('ui-atk').textContent = stats.atk;
+      document.getElementById('ui-def').textContent = stats.def;
+      document.getElementById('ui-crit').textContent = stats.crit + '%';
+      document.getElementById('ui-gold').textContent = inDungeon ? state.dungeonGold : state.vaultGold;
+      document.getElementById('ui-core').textContent = state.abyssCores;
+
+      // Badges
+      document.getElementById('ui-bag-count').textContent = state.inventory.length;
+
+      // Codex count
+      const totalCodexKnown = Object.keys(state.codex.items).length + Object.keys(state.codex.enemies).length;
+      document.getElementById('ui-codex-pct').textContent = `${totalCodexKnown}種`;
+    }
+
+    function render() {
+      updateHeader();
+      const vp = document.getElementById('viewport');
+
+      // VIEW: TOWN / BASE CAMP
+      if (state.screen === 'town') {
+        vp.innerHTML = `
+          <div class="card" style="text-align:center; background: radial-gradient(circle at 50% 20%, #1e293b, #0f172a);">
+            <div style="font-size:36px; margin-bottom:4px;">🏕️</div>
+            <h2 style="font-size:18px; font-weight:900; color:#fff;">生存者の野営キャンプ</h2>
+            <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">深淵から生還した者だけがこの拠点を発展させられる。</p>
+            <button class="btn btn-gold" style="font-size:16px; padding:14px;" onclick="startDungeonRun()">
+              🪜 地下迷宮へ潜る (探索開始)
+            </button>
+          </div>
+
+          <!-- Camp Facilities Grid (鍛冶屋, 道具屋, 神殿, 倉庫) -->
+          <div class="card">
+            <div class="card-title">
+              <span>🏛️ 拠点施設・発展</span>
+              <span style="font-size:11px; color:var(--muted);">所持金: ${state.vaultGold}G / 核: ${state.abyssCores}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                <div style="font-size:12px; font-weight:bold; color:#fff;">🔨 鍛冶屋 Lv.${state.camp.blacksmith}</div>
+                <div style="font-size:10.5px; color:#94a3b8;">初期武器の威力向上</div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('blacksmith')">強化 (${state.camp.blacksmith * 120}G)</button>
+              </div>
+
+              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                <div style="font-size:12px; font-weight:bold; color:#fff;">🏪 道具屋 Lv.${state.camp.shop}</div>
+                <div style="font-size:10.5px; color:#94a3b8;">Lv2で傷薬を持込開始</div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('shop')">拡張 (${state.camp.shop * 120}G)</button>
+              </div>
+
+              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                <div style="font-size:12px; font-weight:bold; color:#fff;">📦 倉庫枠 (${state.camp.vaultSize}個)</div>
+                <div style="font-size:10.5px; color:#94a3b8;">保管スロット+10</div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('vaultSize')">増築 (150G)</button>
+              </div>
+
+              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                <div style="font-size:12px; font-weight:bold; color:#fff;">🍺 冒険者の酒場 Lv.${state.camp.tavern}</div>
+                <div style="font-size:10.5px; color:#94a3b8;">深淵の噂と依頼</div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('tavern')">改築 (${state.camp.tavern * 120}G)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Permanent Upgrades (神殿) -->
+          <div class="card">
+            <div class="card-title">⛩️ 神殿の永久加護 (死亡時も引き継がれる力)</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div class="item-row">
+                <div>
+                  <div style="font-size:12px; font-weight:bold;">❤️ 体力強化 (Lv.${state.talents.hpLv})</div>
+                  <div style="font-size:10.5px; color:#94a3b8;">初期HP +${state.talents.hpLv * 15}</div>
+                </div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeTalent('hpLv')">強化 (${(state.talents.hpLv + 1) * 80}G)</button>
+              </div>
+              <div class="item-row">
+                <div>
+                  <div style="font-size:12px; font-weight:bold;">⚔️ 腕力強化 (Lv.${state.talents.atkLv})</div>
+                  <div style="font-size:10.5px; color:#94a3b8;">初期攻撃力 +${state.talents.atkLv * 3}</div>
+                </div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeTalent('atkLv')">強化 (${(state.talents.atkLv + 1) * 80}G)</button>
+              </div>
+              <div class="item-row">
+                <div>
+                  <div style="font-size:12px; font-weight:bold;">🍀 強運の祈り (Lv.${state.talents.luckLv})</div>
+                  <div style="font-size:10.5px; color:#94a3b8;">宝箱レア率 +${state.talents.luckLv * 6}%</div>
+                </div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeTalent('luckLv')">強化 (${(state.talents.luckLv + 1) * 80}G)</button>
+              </div>
+              <div class="item-row">
+                <div>
+                  <div style="font-size:12px; font-weight:bold;">🛡️ 遺品守護符 (Lv.${state.talents.keepItemLv})</div>
+                  <div style="font-size:10.5px; color:#94a3b8;">死亡時に持ち帰れるアイテム: ${state.talents.keepItemLv}個</div>
+                </div>
+                <button class="btn btn-sub btn-xs" onclick="upgradeTalent('keepItemLv')">強化 (${(state.talents.keepItemLv + 1) * 150}G)</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // VIEW: DOOR SELECT (毎階2〜3個の扉・部屋の選択肢)
+      else if (state.screen === 'door_select') {
+        const area = getCurrentArea();
+        let doorsHtml = state.currentDoors.map((d, i) => `
+          <div class="door-card danger-${d.risk}" onclick="selectDoor(${i})">
+            <div class="door-icon">${d.icon}</div>
+            <div class="door-info">
+              <div class="door-sign">
+                <span>${d.sign}</span>
+                <span class="door-risk risk-${d.risk}">${d.riskText}</span>
+              </div>
+              <div class="door-desc">${d.desc}</div>
+            </div>
+            <div style="font-size:18px; color:var(--gold);">❯</div>
+          </div>
+        `).join('');
+
+        vp.innerHTML = `
+          <div class="scene-box">
+            <div class="scene-art">🚪</div>
+            <div class="scene-title">地下 ${state.floor} 階: 通路の分岐</div>
+            <div class="scene-text">
+              暗闇の先から異なる気配が漂っている。どの通路を進むか選択せよ。<br>
+              <b style="color:var(--gold);">※安全帰還は5階ごとの転移門のみ可能です。</b>
+            </div>
+          </div>
+          <div class="door-grid">
+            ${doorsHtml}
+          </div>
+        `;
+      }
+
+      // VIEW: BATTLE (戦闘)
+      else if (state.screen === 'battle') {
+        const e = state.currentEnemy;
+        const eHpPct = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
+        vp.innerHTML = `
+          <div class="scene-box">
+            <div class="scene-art">${e.icon}</div>
+            <div class="scene-title">${e.name}</div>
+            <div class="enemy-card ${e.isBoss ? 'boss' : ''}">
+              <div class="enemy-header">
+                <span>HP: ${e.hp} / ${e.maxHp}</span>
+                <span class="enemy-intent-badge">${e.pendingAction || '構え'}</span>
+              </div>
+              <div class="hp-bar-bg" style="height:10px;">
+                <div class="hp-bar-fill" style="width:${eHpPct}%; background:linear-gradient(90deg,#991b1b,#ef4444);"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; margin-top:2px;">
+                <span>攻撃力: ${e.atk}</span>
+                <span>防御力: ${state.bossBarrier ? e.def * 3 + ' (障壁)' : e.def}</span>
+              </div>
+            </div>
+
+            <!-- Combat Actions -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%; margin-top:6px;">
+              <button class="btn btn-red" onclick="playerCombatAction('attack')">⚔️ 攻撃する</button>
+              <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 身を守る (防御)</button>
+              ${e.isBoss && state.bossBarrier ? `
+                <button class="btn btn-purple" style="grid-column:1 / -1;" onclick="playerCombatAction('disrupt_barrier')">
+                  ⚡ ルーン障壁を解除する (好機!)
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      // VIEW: EVENT
+      else if (state.screen === 'event') {
+        const ev = state.currentEvent;
+        let choicesHtml = ev.choices.map((c, i) => `
+          <button class="btn btn-sub" style="text-align:left; justify-content:flex-start; padding:12px;" onclick="state.currentEvent.choices[${i}].action()">
+            ▶ ${c.text}
+          </button>
+        `).join('');
+
+        vp.innerHTML = `
+          <div class="scene-box">
+            <div class="scene-art">${ev.icon}</div>
+            <div class="scene-title">${ev.title}</div>
+            <div class="scene-text">${ev.text}</div>
+            <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:8px;">
+              ${choicesHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      renderSubPanel();
+    }
+
+    function renderSubPanel() {
+      const panel = document.getElementById('sub-panel');
+      const stats = getPlayerStats();
+
+      if (state.activeTab === 'equip') {
+        // Equipment slots & Synergies
+        const slots = [
+          { k: 'weapon', label: '武器', icon: '🗡️' },
+          { k: 'armor', label: '防具', icon: '🥋' },
+          { k: 'accessory', label: '装飾品', icon: '💍' }
+        ];
+
+        let synHtml = stats.activeSyn.length > 0
+          ? stats.activeSyn.map(s => `<div class="synergy-tag">${s.name}: ${s.desc}</div>`).join('')
+          : '<div style="font-size:11px; color:#94a3b8;">発動中のシナジーなし（特定の装備組み合わせで発動）</div>';
+
+        let equipHtml = slots.map(s => {
+          const item = state.equipped[s.k];
+          return `
+            <div class="item-row ${item ? 'r-' + item.rarity : ''}">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:18px;">${item ? item.icon : s.icon}</span>
+                <div>
+                  <div class="item-name">${item ? item.name : '（未装備）'}</div>
+                  <div class="item-stats">${item ? getItemStatSummary(item) : s.label}</div>
+                  ${item && item.isCurse ? `<div class="item-curse-note">⚠️ 呪詛: ${item.desc}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        panel.innerHTML = `
+          <div style="font-size:12px; font-weight:bold; color:var(--gold); margin-bottom:4px;">発動中装備シナジー:</div>
+          <div class="synergy-list">${synHtml}</div>
+          <div style="font-size:12px; font-weight:bold; color:#fff; margin:8px 0 4px;">現在の装備品:</div>
+          <div style="display:flex; flex-direction:column; gap:4px;">${equipHtml}</div>
+        `;
+      } else if (state.activeTab === 'bag') {
+        const list = (state.screen === 'town') ? state.storage : state.inventory;
+        const title = (state.screen === 'town') ? `地上倉庫 (${list.length}/${state.camp.vaultSize})` : `探索バッグ (${list.length}個)`;
+
+        let listHtml = list.length === 0
+          ? '<div style="font-size:11px; color:#94a3b8; text-align:center; padding:20px;">アイテムはありません</div>'
+          : list.map((it, idx) => `
+            <div class="item-row r-${it.rarity}">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:16px;">${it.icon}</span>
+                <div>
+                  <div class="item-name">${it.name} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
+                  <div class="item-stats">${getItemStatSummary(it)}</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:4px;">
+                ${['weapon', 'armor', 'accessory'].includes(it.type) ? `
+                  <button class="btn btn-sub btn-xs" onclick="equipItem(${idx}, ${state.screen === 'town'})">装備</button>
+                ` : ''}
+                ${it.type === 'potion' ? `
+                  <button class="btn btn-green btn-xs" onclick="usePotion(${idx})">使う</button>
+                ` : ''}
+              </div>
+            </div>
+          `).join('');
+
+        panel.innerHTML = `
+          <div style="font-size:12px; font-weight:bold; color:#fff; margin-bottom:6px;">${title}</div>
+          <div style="display:flex; flex-direction:column; gap:4px;">${listHtml}</div>
+        `;
+      } else if (state.activeTab === 'codex') {
+        // 図鑑 (Codex)
+        const totalItems = Object.keys(UNIQUE_ITEMS).length + 12;
+        const knownItems = Object.keys(state.codex.items).length;
+        const loreList = LORE_RECORDS.map(l => {
+          const unlocked = state.codex.lore[l.id];
+          return `
+            <div class="codex-item ${unlocked ? '' : 'locked'}">
+              <span>📜</span>
+              <div>
+                <b style="color:${unlocked ? '#fbbf24' : '#64748b'};">${unlocked ? l.title : '？？？ (未解読の記録)'}</b>
+                <div style="font-size:10px; color:#cbd5e1; margin-top:2px;">${unlocked ? l.text : '深層を探索して発見せよ'}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        panel.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:var(--gold); margin-bottom:6px;">
+            <span>深淵図鑑 & 記録</span>
+            <span>収集率: ${knownItems}種</span>
+          </div>
+          <div style="font-size:11px; font-weight:bold; color:#fff; margin-bottom:4px;">地下の記録 (ロア):</div>
+          <div style="display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto;">
+            ${loreList}
+          </div>
+        `;
+      } else if (state.activeTab === 'log') {
+        const logHtml = state.logs.map(l => `
+          <div style="font-size:11px; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.04); color:${
+            l.type === 'danger' ? '#f87171' : (l.type === 'gold' ? '#fbbf24' : (l.type === 'heal' ? '#4ade80' : '#cbd5e1'))
+          };">
+            <span style="opacity:0.5;">[${l.time}]</span> ${l.msg}
+          </div>
+        `).join('');
+
+        panel.innerHTML = `
+          <div style="font-size:12px; font-weight:bold; color:#fff; margin-bottom:4px;">冒険の軌跡</div>
+          <div style="display:flex; flex-direction:column; gap:2px;">${logHtml || '<div style="font-size:11px; color:#94a3b8;">記録なし</div>'}</div>
+        `;
+      }
+    }
+
+    function getItemStatSummary(it) {
+      if (!it) return '';
+      let s = [];
+      if (it.baseAtk) s.push(`攻+${it.baseAtk}`);
+      if (it.baseDef) s.push(`防+${it.baseDef}`);
+      if (it.hp) s.push(`HP+${it.hp}`);
+      if (it.crit) s.push(`会心+${it.crit}%`);
+      if (it.vamp) s.push(`吸血+${it.vamp}`);
+      if (it.goldRate) s.push(`金+${it.goldRate}%`);
+      if (it.rareRate) s.push(`幸運+${it.rareRate}%`);
+      if (it.heal) s.push(`回復+${it.heal}`);
+      return s.join(' | ') || it.desc;
+    }
+
+    function triggerShake() {
+      const c = document.getElementById('game-container');
+      c.classList.remove('shake');
+      void c.offsetWidth;
+      c.classList.add('shake');
+    }
+
+    /* ==========================================================================
+       RESULT MODAL (帰還 / 死亡結果画面)
+       ========================================================================== */
+    function showResultModal(data) {
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex';
+      m.className = 'legendary-modal';
+
+      let itemsDetail = '';
+      if (data.isDeath) {
+        itemsDetail = `
+          <div style="text-align:left; font-size:11.5px; width:100%;">
+            <div style="color:#f87171; font-weight:bold;">失った未保管アイテム (${data.lostItems.length}個):</div>
+            <div style="max-height:90px; overflow-y:auto; margin:4px 0; display:flex; flex-direction:column; gap:2px;">
+              ${data.lostItems.map(i => `<div style="color:#94a3b8; font-size:11px;">✕ ${i.icon} ${i.name} [${i.rarity}]</div>`).join('') || '<div style="color:#64748b;">なし</div>'}
+            </div>
+            ${data.keptItems.length > 0 ? `
+              <div style="color:#4ade80; font-weight:bold; margin-top:4px;">遺品守護符で持ち帰れたアイテム (${data.keptItems.length}個):</div>
+              <div style="color:#e2e8f0;">${data.keptItems.map(i => `${i.icon} ${i.name}`).join(', ')}</div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        itemsDetail = `
+          <div style="text-align:left; font-size:11.5px; width:100%;">
+            <div style="color:var(--gold); font-weight:bold;">倉庫に保管された戦利品 (${data.items.length}個):</div>
+            <div style="max-height:100px; overflow-y:auto; margin:4px 0; display:flex; flex-direction:column; gap:2px;">
+              ${data.items.map(i => `<div style="color:#e2e8f0; font-size:11px;">✔ ${i.icon} ${i.name} [${i.rarity}]</div>`).join('') || '<div style="color:#64748b;">なし</div>'}
+            </div>
+          </div>
+        `;
+      }
+
+      m.innerHTML = `
+        <div class="card" style="max-width:440px; width:100%; border:2px solid ${data.isDeath ? '#ef4444' : '#f59e0b'}; text-align:center; padding:18px;">
+          <h2 style="font-size:18px; font-weight:900; color:#fff; margin-bottom:4px;">${data.title}</h2>
+          <p style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">${data.subtitle}</p>
+
+          <div style="background:rgba(0,0,0,0.5); padding:8px; border-radius:6px; font-size:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div>到達階層: <b style="color:#fff;">B${state.floor}F</b></div>
+            <div>討伐数: <b style="color:#f87171;">${state.runKills}体</b></div>
+            ${data.isDeath ? `
+              <div style="color:#f87171; grid-column:1 / -1;">失ったゴールド: -${data.lostGold}G</div>
+              ${data.keptGold > 0 ? `<div style="color:#4ade80; grid-column:1 / -1;">回収できたゴールド: +${data.keptGold}G</div>` : ''}
+            ` : `
+              <div style="color:var(--gold); grid-column:1 / -1;">獲得ゴールド: +${data.gold}G</div>
+            `}
+          </div>
+
+          ${itemsDetail}
+
+          <button class="btn btn-gold" style="margin-top:12px;" onclick="closeResultModal()">
+            地上拠点へ戻る
+          </button>
+        </div>
+      `;
+    }
+
+    function closeResultModal() {
+      initAudio();
+      playSound('click');
+      document.getElementById('modal-layer').style.display = 'none';
+      render();
+    }
+
+    /* ==========================================================================
+       INITIALIZE ON LOAD
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      render();
+    });
+
+    window.addEventListener('click', () => {
+      initAudio();
+    }, { once: true });
+  </script>
+</body>
+</html>
