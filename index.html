@@ -884,6 +884,7 @@
         <div class="goal-nudge" id="ui-goal-nudge">🎯 5F安全帰還まで: あと5階</div>
         <div style="display:flex; gap:4px; align-items:center;">
           <button class="btn btn-outline btn-xs" onclick="showUpdateNotes(false)">📋 更新履歴</button>
+          <button class="btn btn-outline btn-xs" style="color:#fca5a5;border-color:#7f1d1d;" onclick="showResetSaveConfirmation()">⚠️ 初期化</button>
           <button id="help-btn" class="btn btn-outline btn-xs" onclick="showTutorialModal()">❓ 遊び方</button>
           <button id="sound-btn" class="btn btn-outline btn-xs" onclick="toggleSound()">🔊 音 ON</button>
         </div>
@@ -1149,7 +1150,7 @@
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
     const MAX_DUNGEON_FLOOR = 30;
-    const GAME_VERSION = '0.5.0';
+    const GAME_VERSION = '0.5.1';
     const UPDATE_NOTES = [
       '戦闘UIに通常攻撃・強攻撃・防御・武器固有スキルを接続',
       '出撃前支援と煙玉による通常戦闘からの逃走を実装',
@@ -1162,7 +1163,8 @@
       '防御連打・盾カウンターを弱体化し、JUST GUARDとガード疲労を追加',
       'Legendary出現率を大幅に調整し、神話級Mythic・深淵級Abyssalを追加',
       '超希少装備のPity・初発見記録・専用演出を追加',
-      '6段階の共通ドロップテーブルとレアリティ別図鑑を実装'
+      '6段階の共通ドロップテーブルとレアリティ別図鑑を実装',
+      '確認画面付きの安全なセーブデータ初期化機能を追加'
     ];
 
     // Underground Lore & Mysteries (地下世界の真相)
@@ -1546,6 +1548,9 @@
       rarityProgress: { mythicPity: 0, abyssalPity: 0, mythicTotalDrops: 0, abyssalTotalDrops: 0, upperDropHistory: [] }
     };
 
+    // Immutable baseline used by the save reset flow and development tests.
+    const INITIAL_STATE = JSON.parse(JSON.stringify(state));
+
     function saveState() {
       try {
         const d = {
@@ -1605,6 +1610,44 @@
         }
       } catch (e) {
         initStarterItems();
+      }
+    }
+
+    function showResetSaveConfirmation() {
+      const m = document.getElementById('modal-layer');
+      m.style.display = 'flex';
+      m.className = 'legendary-modal';
+      m.innerHTML = `
+        <div class="card" style="max-width:460px;width:100%;border:2px solid #ef4444;padding:22px;text-align:center;box-shadow:0 0 40px rgba(239,68,68,.3);">
+          <div style="font-size:38px;">⚠️</div>
+          <h2 style="font-size:19px;color:#fca5a5;margin-bottom:10px;">セーブデータを初期化</h2>
+          <p style="font-size:12px;line-height:1.7;color:#e2e8f0;margin-bottom:16px;">
+            本当にセーブデータを初期化しますか？<br>
+            装備、倉庫、ゴールド、施設、図鑑、永久強化、進行状況などがすべて失われます。<br>
+            <b style="color:#f87171;">この操作は元に戻せません。</b>
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button class="btn btn-sub" onclick="closeGenericModal()">キャンセル</button>
+            <button class="btn btn-red" onclick="resetGameSave()">完全に初期化する</button>
+          </div>
+        </div>`;
+    }
+
+    function resetGameSave(reloadPage = true) {
+      // Never use localStorage.clear(): only keys owned by this game are removed.
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem('ABYSS_TUTORIAL_SEEN');
+
+      state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      initStarterItems();
+      saveState();
+
+      if (reloadPage) {
+        window.location.reload();
+      } else {
+        closeGenericModal();
+        updateHeader();
+        render();
       }
     }
 

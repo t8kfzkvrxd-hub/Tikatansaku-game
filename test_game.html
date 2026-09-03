@@ -146,6 +146,14 @@ window.addEventListener('load', () => setTimeout(() => {
 
     w.localStorage.setItem('lastSeenVersion', game.GAME_VERSION);
     check(w.localStorage.getItem('lastSeenVersion') === game.GAME_VERSION, '更新通知の確認バージョンを保存できる');
+    w.localStorage.setItem('UNRELATED_TEST_KEY', 'keep-me');
+    game.state.vaultGold = 9876; w.saveState();
+    w.showResetSaveConfirmation();
+    check(d.getElementById('modal-layer').textContent.includes('完全に初期化する') && d.getElementById('modal-layer').textContent.includes('この操作は元に戻せません'), '初期化前に警告と確認ボタンを表示');
+    w.resetGameSave(false);
+    check(game.state.vaultGold === 0 && game.state.equipped.weapon?.key === 'starter_w', '初期stateと初期装備を再生成');
+    check(w.localStorage.getItem('UNRELATED_TEST_KEY') === 'keep-me', 'ゲームと無関係なlocalStorageを保持');
+    check(w.localStorage.getItem('lastSeenVersion') === game.GAME_VERSION, 'lastSeenVersionを保持');
     results.push('ALL TESTS PASSED');
   } catch (error) {
     results.push(`ERROR: ${error.message}`);
