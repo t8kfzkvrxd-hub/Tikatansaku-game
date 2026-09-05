@@ -46,7 +46,32 @@ body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto
 @keyframes home-glow{0%,100%{opacity:.3}50%{opacity:.85}}
 @keyframes home-lamp{0%,100%{opacity:.3;transform:translateX(0)}35%{opacity:.6}60%{opacity:.4;transform:translateX(1px)}80%{opacity:.55}}
 @keyframes home-presence{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-2px);opacity:.6}}
-body.home-reduced #home-screen *{animation:none!important}
+.home-scene{position:absolute;inset:0;pointer-events:none}
+.home-breath-patch{position:absolute;inset:0;background-size:100% 100%;background-repeat:no-repeat;transform-origin:33% 66%;mask-image:radial-gradient(ellipse 8% 17% at 33% 50%,#000 35%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 8% 17% at 33% 50%,#000 35%,transparent 100%);animation:home-local-breath 5.2s ease-in-out infinite;pointer-events:none}
+@supports not ((mask-image:linear-gradient(#000,transparent)) or (-webkit-mask-image:linear-gradient(#000,transparent))){.home-breath-patch{display:none}}
+.home-character-elna{--breath:6.4s;--phase:-1.7s}
+.home-character-hero{--breath:7.8s;--phase:-4s}
+.home-character-elna .home-character-rim{background:radial-gradient(ellipse at 65% 40%,#ffdab038,transparent 64%)}
+.home-character-elna .home-character-wind{left:14%;top:19%;width:28%;height:30%;background:radial-gradient(ellipse at 40% 50%,#c4e4ff28,transparent 66%);animation:home-hair-wind 7.7s ease-in-out -2s infinite}
+.home-character-elna .home-character-wind::after{content:"";position:absolute;left:65%;top:12%;width:40%;height:95%;background:radial-gradient(ellipse,#e8dcce26,transparent 65%);animation:home-hair-wind 9.1s ease-in-out -5s infinite}
+.home-character-elna .home-character-rim::after{content:"";position:absolute;left:14%;top:4%;width:31%;height:23%;background:radial-gradient(ellipse,#cee4ff28,transparent 65%);animation:home-cloth-wind 8.6s ease-in-out -3s infinite}
+.home-breath-patch{animation:home-local-breath 5.2s ease-in-out infinite,home-local-balance 12.6s ease-in-out -4s infinite}
+@keyframes home-local-balance{0%,100%{translate:0 0}50%{translate:.65px 0}}
+.home-character-cloth{position:absolute;left:29%;top:53%;width:18%;height:41%;background:radial-gradient(ellipse at 44% 60%,#c7ddff25,transparent 62%);animation:home-cloth-wind 9.3s ease-in-out -5s infinite}
+.home-character-hero .home-character-cloth{left:1%;top:57%;width:25%;height:40%;animation-duration:11.7s;animation-delay:-3s;background:radial-gradient(ellipse,#a6c8eb1c,transparent 65%)}
+.home-character-dust{position:absolute;left:22%;top:38%;width:2px;height:2px;border-radius:50%;background:#d5eaff;box-shadow:38px -29px 1px #bedaff,70px 35px 1px #daeaff;animation:home-near-dust 8s linear -3s infinite}
+.home-character-hero .home-character-dust{left:8%;top:61%;animation-duration:10s;animation-delay:-6s}
+.home-distant-light{position:absolute;left:40%;top:3%;width:15%;height:23%;background:radial-gradient(ellipse at 24% 60%,#ff786019,transparent 32%),radial-gradient(ellipse at 75% 20%,#b6deff30,transparent 37%);animation:home-glow 7.3s ease-in-out -3s infinite}
+.home-mist{animation-name:home-fog-rise;animation-duration:18s;animation-timing-function:linear;background:radial-gradient(ellipse at 43% 84%,#b9d5ef2c,transparent 44%),radial-gradient(ellipse at 66% 78%,#abcce023,transparent 38%)}
+.home-mist-second{animation-duration:23s;animation-delay:-11s}
+@keyframes home-local-breath{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(.5px,-.6px) scale(1.003)}}
+@keyframes home-hair-wind{0%,100%{transform:translate(0,1px);opacity:.15}50%{transform:translate(2px,-2px);opacity:.85}}
+@keyframes home-cloth-wind{0%,100%{transform:translate(0,0) rotate(0);opacity:.15}50%{transform:translate(1px,-1px) rotate(.15deg);opacity:.7}}
+@keyframes home-near-dust{0%{transform:translate(-10px,14px);opacity:0}25%,70%{opacity:.45}100%{transform:translate(22px,-28px);opacity:0}}
+@keyframes home-fog-rise{0%{transform:translate(-1%,6%);opacity:0}25%,70%{opacity:.65}100%{transform:translate(1%,-8%);opacity:0}}
+body.home-reduced #home-screen *,body.home-reduced #home-screen *::after{animation:none!important}
+body.home-reduced .home-breath-patch,body.home-reduced .home-character-dust,body.home-reduced .home-particles{display:none}
+@media(prefers-reduced-motion:reduce){#home-screen *::after{animation:none!important}.home-breath-patch,.home-character-dust{display:none}.home-character-atmosphere,.home-distant-light,.home-mist{opacity:.25}}
 @media(prefers-reduced-motion:reduce){#home-screen *{animation:none!important;transition:none!important}.home-particles{display:none}}
 @media(max-width:700px) and (orientation:portrait){
  .home-art{height:65%;min-height:360px;max-height:520px}.home-background{object-position:left center}

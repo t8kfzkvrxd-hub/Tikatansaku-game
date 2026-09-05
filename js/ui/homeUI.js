@@ -1,4 +1,22 @@
 const HomeScreen={active:true,loaded:false};
+function fitHomeArtwork(home){
+ HomeScreen.artObserver?.disconnect();
+ const art=home.querySelector('.home-art'),image=art.querySelector('.home-background');
+ const scene=document.createElement('div');scene.className='home-scene';
+ while(art.firstChild)scene.append(art.firstChild);art.append(scene);
+ const breath=document.createElement('div');breath.className='home-breath-patch';
+ breath.style.backgroundImage=`url("${image.getAttribute('src')}")`;scene.append(breath);
+ const distant=document.createElement('div');distant.className='home-distant-light';scene.append(distant);
+ const fit=()=>{
+  if(!image.naturalWidth||!art.clientWidth||!art.clientHeight)return;
+  const scale=Math.max(art.clientWidth/image.naturalWidth,art.clientHeight/image.naturalHeight);
+  const width=image.naturalWidth*scale,height=image.naturalHeight*scale;
+  const leftAligned=getComputedStyle(image).objectPosition.startsWith('0%');
+  Object.assign(scene.style,{width:width+'px',height:height+'px',left:(leftAligned?0:(art.clientWidth-width)/2)+'px',top:(art.clientHeight-height)/2+'px'});
+ };
+ image.addEventListener('load',fit,{once:true});
+ HomeScreen.artObserver=new ResizeObserver(fit);HomeScreen.artObserver.observe(art);fit();
+}
 function getHomeBackgroundByStoryProgress(){return 'assets/home-background.png';}
 function homeSaveInfo(){
  try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return {exists:false,valid:false};const data=JSON.parse(raw);return {exists:true,valid:!!(data&&typeof data==='object'&&data.equipped&&data.camp)};}
@@ -19,10 +37,11 @@ function showHomeScreen(){
  const art=home.querySelector('.home-art');
  for(const person of ['elna','hero']){
   const layer=document.createElement('div');layer.className=`home-character-atmosphere home-character-${person}`;layer.dataset.character=person;
-  layer.innerHTML='<div class="home-character-rim"></div><div class="home-character-wind"></div>';
+  layer.innerHTML='<div class="home-character-rim"></div><div class="home-character-wind"></div><div class="home-character-cloth"></div><div class="home-character-dust"></div>';
   art.append(layer);
  }
  const ambient=document.createElement('div');ambient.className='home-ambient';art.append(ambient);
+ fitHomeArtwork(home);
  if(localStorage.getItem('lastSeenVersion')!==GAME_VERSION)home.querySelector('.home-version').insertAdjacentHTML('beforebegin','<p class="home-update-hint">新しいお知らせがあります</p>');
  document.getElementById(save.valid?'home-continue':'home-new').focus({preventScroll:true});
 }

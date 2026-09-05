@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html" style="border:0;width:1366px;height:768px"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),w=frame.contentWindow,d=w.document,out=[];
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS '+label)};
+ try{
+  await d.querySelector('.home-background').decode();await wait(100);
+  const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+  for(const [width,height] of [[1920,1080],[1366,768],[844,390],[932,430],[740,360]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await wait(150);
+   const scene=d.querySelector('.home-scene').getBoundingClientRect(),base=d.querySelector('.home-background').getBoundingClientRect();
+   check(Math.abs(scene.width-base.width)<1&&Math.abs(scene.height-base.height)<1,'art and effects aligned '+width+'x'+height);
+   check(d.getElementById('home-screen').scrollWidth<=width+1,'no horizontal overflow '+width+'x'+height);
+  }
+  const selectors=['.home-breath-patch','.home-character-elna .home-character-wind','.home-character-cloth','.home-mist','.home-blue'];
+  const reduced=w.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduced)check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'reduced also stops pseudo-elements');
+  const samples=[];
+  for(let i=0;i<=4;i++){
+   samples.push(selectors.map(s=>{const c=w.getComputedStyle(d.querySelector(s));return c.transform+' '+c.opacity}));
+   if(i<4)await wait(2500);
+  }
+  for(let i=0;i<selectors.length;i++)check(reduced?new Set(samples.map(s=>s[i])).size===1:new Set(samples.map(s=>s[i])).size>1,'10 second motion / reduced '+selectors[i]);
+  check(w.getComputedStyle(d.querySelector('.home-background')).transform==='none','base image and feet remain stationary');
+  check(!d.querySelector('#home-screen canvas,#home-screen video'),'no canvas or video');
+  check(d.querySelectorAll('.home-particles i').length===10,'bounded particles');
+  check(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')===saved,'save untouched');
+  d.body.classList.add('home-reduced');
+  check(w.getComputedStyle(d.querySelector('.home-breath-patch')).display==='none','manual reduced disables patch');
+  check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'manual reduced stops all animations');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>
