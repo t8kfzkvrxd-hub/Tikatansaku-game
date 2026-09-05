@@ -344,7 +344,7 @@
       else if (state.screen === 'door_select') {
         const area = getCurrentArea();
         let doorsHtml = state.currentDoors.map((d, i) => `
-          <div class="door-card danger-${d.risk}" onclick="selectDoor(${i})">
+          <div class="door-card danger-${d.risk}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDoor(${i})}" onclick="selectDoor(${i})">
             <div class="door-icon">${d.icon}</div>
             <div class="door-info">
               <div class="door-sign">
@@ -495,7 +495,7 @@
       } else if (state.activeTab === 'bag') {
         const isTown = (state.screen === 'town');
         const list = isTown ? state.storage : state.inventory;
-        const title = isTown ? `地上倉庫 (${list.length}/${state.camp.vaultSize}枠)` : `探索バッグ (${list.length}個)`;
+        const title = isTown ? `地上倉庫：装備 ${vaultUsed()}/${state.camp.vaultSize}枠 ／ 素材 ${materialKinds()}種類（枠不要）` : `探索バッグ (${list.length}個)`;
 
         let controlsHtml = '';
         if (isTown) {
@@ -510,7 +510,7 @@
                 </div>
               </div>
               <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
-                <span style="color:var(--gold); font-weight:bold;">💰 一括売却:</span>
+                <span style="color:var(--gold); font-weight:bold;">💰 現在の表示条件で一括売却:</span>
                 <div style="display:flex; gap:4px;">
                   <button class="btn btn-sub btn-xs" style="padding:2px 6px; font-size:10px;" onclick="bulkSellStorage('Common')">Common一括</button>
                   <button class="btn btn-gold btn-xs" style="padding:2px 6px; font-size:10px;" onclick="bulkSellStorage('Rare')">Rare以下一括</button>
@@ -521,11 +521,17 @@
           `;
         }
 
-        if (isTown) controlsHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${[['all','すべて'],['weapon','武器'],['head','頭'],['armor','胴'],['arms','腕'],['legs','脚'],['accessory','アクセ'],['material','素材'],['consumable','消耗品']].map(([key,label]) => `<button class="btn btn-${storageCategory === key ? 'gold' : 'sub'} btn-xs" onclick="setStorageCategory('${key}')">${label}</button>`).join('')}</div>`;
-        const rows = isTown ? getStorageRows(list, storageCategory) : list.map((it,idx) => ({it,idx,count:1}));
+        if (isTown) controlsHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${[['all','装備・道具'],['weapon','武器'],['head','頭'],['armor','胴'],['arms','腕'],['legs','脚'],['accessory','アクセ'],['material','素材'],['consumable','消耗品']].map(([key,label]) => `<button class="btn btn-${storageCategory === key ? 'gold' : 'sub'} btn-xs" onclick="setStorageCategory('${key}')">${label}</button>`).join('')}</div>`;
+        if(isTown)controlsHtml+=warehouseControls();
+        const baseRows=isTown?getStorageRows(list,storageCategory).filter(r=>storageCategory!=='all'||r.it.type!=='material'):[];
+        if(isTown&&storageCategory==='material'&&state.abyssCores>0)baseRows.push({it:{...MATERIALS.abyss_core,key:'abyss_core',type:'material',currency:true},idx:-1,count:state.abyssCores});
+        const allRows = isTown ? filteredWarehouseRows(baseRows) : list.map((it,idx) => ({it,idx,count:1}));
+        if(isTown){warehouseFilters.page=Math.max(0,Math.min(warehouseFilters.page,Math.ceil(allRows.length/24)-1));controlsHtml+=`<div class="forge-actions"><button class="btn btn-sub btn-xs" ${warehouseFilters.page===0?'disabled':''} onclick="warehouseFilters.page--;renderSubPanel()">前へ</button>${warehouseFilters.page+1}/${Math.max(1,Math.ceil(allRows.length/24))}<button class="btn btn-sub btn-xs" ${(warehouseFilters.page+1)*24>=allRows.length?'disabled':''} onclick="warehouseFilters.page++;renderSubPanel()">次へ</button></div>`;}
+        const rows=isTown?allRows.slice(warehouseFilters.page*24,warehouseFilters.page*24+24):allRows;
         let listHtml = rows.length === 0
           ? '<div style="font-size:11px; color:#94a3b8; text-align:center; padding:20px;">アイテムはありません</div>'
           : rows.map(({it, idx, count}) => {
+            if(it.currency)return `<div class="item-row"><div>${uiEscape(it.name)} ×${count} [${it.rarity}]${materialSourceHtml(it.key)}</div><button class="btn btn-sub btn-xs" onclick="openMaterialDetail('${it.key}')">入手先・用途</button></div>`;
             const diffs = getEquipComparison(it);
             let diffHtml = '';
             if (diffs.length > 0) {
@@ -553,7 +559,8 @@
                     <div class="item-name">${it.name}${it.type === 'material' ? ` ×${count}` : ''} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
                     <div class="item-stats">${getItemStatSummary(it)}</div>
                     ${diffHtml}
-                    ${isTown&&it.type==='material'&&MATERIALS[it.key]?`<button class="btn btn-sub btn-xs" onclick="openMaterialRecipes('${it.key}')">この素材で作れる装備</button>`:''}
+                    ${isTown&&it.type==='material'?materialSourceHtml(it.key):''}
+                    ${isTown&&it.type==='material'&&MATERIALS[it.key]?`<button class="btn btn-sub btn-xs" onclick="openMaterialDetail('${it.key}')">入手先・用途</button>`:''}
                     ${isTown&&['weapon','armor','accessory'].includes(it.type)?`<details><summary>特殊効果も比較</summary>${compareEquipmentHtml(state.equipped[equipmentSlot(it)],it)}</details>`:''}
                   </div>
                 </div>

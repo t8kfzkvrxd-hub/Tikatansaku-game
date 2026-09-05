@@ -10,6 +10,10 @@
 .forge-missing{color:#fca5a5}.forge-ready{color:#86efac}
 .gear-compare{margin:8px 0;padding:8px;background:#0f172a;border-radius:5px;overflow-wrap:anywhere;font-size:11px;line-height:1.7}
 .forge-recipe h3{font-size:14px;margin:2px 0 5px}
+.material-link{display:block;min-height:44px;max-width:100%;white-space:normal;margin:5px 0;text-align:left}
+#sub-panel .item-row{min-width:0;flex-wrap:wrap;gap:6px}
+#sub-panel .item-row>div{min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(orientation:landscape) and (max-height:500px){.forge-filters{gap:6px;margin:6px 0}.forge-filters input,.forge-filters select{padding:5px;min-height:36px}.forge-recipe{padding:8px;margin:6px 0}.forge-recipe .btn{min-height:40px}}
 #forge-results>p{font-size:12px;word-break:break-all}
 .forge-recipe .btn,.update-notes-actions .btn{white-space:normal;max-width:100%}
 .home-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0}

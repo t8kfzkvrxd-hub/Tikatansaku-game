@@ -72,7 +72,7 @@ function equipmentSynergies() {
 function unequipItem(slot) {
  const item=state.equipped[slot];if(!item)return;
  const list=state.screen==='town'?state.storage:state.inventory;
- if(state.screen==='town'&&list.length>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return;}
+ if(state.screen==='town'&&vaultUsed()>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return;}
  list.push(item);state.equipped[slot]=null;saveState();render();
 }
 function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.hp) {

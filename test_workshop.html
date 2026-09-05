@@ -53,7 +53,7 @@ window.onload=async()=>{
   w.resetForgeFilters();w.setForgeFilter('newOnly',true);w.acknowledgeRecipes();check(w.filteredForgeRecipes().every(x=>!s.craftProgress.seen[x.id]),'新規解放・確認済みを区別');
   w.openMaterialRecipes(key);check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.materials[key]),'素材から全使用レシピを逆引き');
   s.craftProgress.materials[key]=true;s.activeTab='codex';w.renderSubPanel();check(w.document.querySelector(`#sub-panel button[onclick="openMaterialRecipes('${key}')"]`),'素材図鑑から鍛冶屋へのリンク');
-  s.storage.push({...w.__equipmentDebug.materials[key],id:'mat',key,type:'material'});s.activeTab='bag';w.renderSubPanel();check(w.document.querySelector(`#sub-panel button[onclick="openMaterialRecipes('${key}')"]`),'倉庫素材から逆引きリンク');
+  s.storage.push({...w.__equipmentDebug.materials[key],id:'mat',key,type:'material'});s.activeTab='bag';w.setStorageCategory('material');check(w.document.querySelector(`#sub-panel button[onclick="openMaterialDetail('${key}')"]`),'倉庫素材から詳細・逆引きリンク');
   w.resetForgeFilters();w.openCrafting('tree');const parent={...w.__equipmentDebug.recipes.iron_sword,id:'parent-test',key:'iron_sword',name:'鉄の剣(+10)',baseAtk:42,refineCount:10};s.storage.push(parent);
   w.openRecipeDetail('forge_1_normal');check(w.document.querySelector('.gear-compare').textContent.includes('42 → 18')&&w.document.getElementById('modal-layer').textContent.includes('必要強化：+10'),'派生に実際の+10性能を比較');
   check(w.document.querySelector('.forge-missing'),'素材不足を赤字表示');

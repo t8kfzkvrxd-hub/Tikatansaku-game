@@ -1503,8 +1503,8 @@
 
     function returnToTown(safeReturn = true) {
       if (safeReturn) {
-        const freeSlots = state.camp.vaultSize - state.storage.length;
-        if (state.inventory.length > freeSlots && freeSlots >= 0) {
+        const freeSlots = vaultFree();
+        if (vaultUsed(state.inventory) > freeSlots) {
           // Warehouse overflow! Prevent item loss by letting player manage items
           openWarehouseOverflowModal(freeSlots);
           return;
@@ -1518,6 +1518,7 @@
 
     function finalizeSafeReturn() {
       if(state.screen==='town'||state.returnResolved)return;
+      if(!canStoreItems(state.inventory)){openWarehouseOverflowModal(vaultFree());return;}
       state.returnResolved=true;
       playSound('escape');
       state.vaultGold += state.dungeonGold;
@@ -1525,7 +1526,7 @@
       // Move inventory into storage
       const savedItems = [...state.inventory];
       state.inventory.forEach(item => {
-        if (state.storage.length < state.camp.vaultSize) {
+        if (!usesVaultSlot(item) || vaultUsed() < state.camp.vaultSize) {
           state.storage.push(item);
         }
       });
@@ -1590,7 +1591,7 @@
       }
 
       keptItems.forEach(i => {
-        if (state.storage.length < state.camp.vaultSize) state.storage.push(i);
+        if (!usesVaultSlot(i) || vaultUsed() < state.camp.vaultSize) state.storage.push(i);
       });
       state.inventory = [];
 
@@ -1628,11 +1629,11 @@
 
     function renderWarehouseOverflowContent() {
       const m = document.getElementById('modal-layer');
-      const freeSlots = state.camp.vaultSize - state.storage.length;
+      const freeSlots = vaultFree();
       const upgradeCost = getVaultUpgradeCost(state.camp.vaultLevel);
-      const canUpgrade = state.vaultGold >= upgradeCost;
+      const canUpgrade = upgradeCost!==null&&state.vaultGold >= upgradeCost;
 
-      const itemsHtml = state.inventory.map((it, idx) => `
+      const itemsHtml = state.inventory.map((it, idx) => !usesVaultSlot(it)?'':`
         <div class="item-row r-${it.rarity}" style="margin-bottom:4px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:16px;">${it.icon}</span>
@@ -1652,7 +1653,7 @@
           <div style="font-size:32px; margin-bottom:4px;">⚠️📦</div>
           <h2 style="font-size:18px; font-weight:900; color:#fff;">倉庫の保管枠が不足しています！</h2>
           <p style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">
-            持ち帰った戦利品 <b style="color:#fbbf24;">${state.inventory.length}個</b> に対し、現在の倉庫空き枠は <b style="color:${freeSlots <= 0 ? '#ef4444' : '#4ade80'};">${freeSlots}枠</b> です。<br>
+            持ち帰った戦利品 <b style="color:#fbbf24;">${vaultUsed(state.inventory)}枠分（素材は枠不要）</b> に対し、現在の倉庫空き枠は <b style="color:${freeSlots <= 0 ? '#ef4444' : '#4ade80'};">${freeSlots}枠</b> です。<br>
             不要なアイテムを売却するか、倉庫を拡張してすべてのアイテムを安全に収めてください。
           </p>
 
@@ -1682,8 +1683,8 @@
             <button class="btn btn-sub" style="flex:1;" onclick="bulkSellInventoryOverflow()">
               💰 Common品を全売却
             </button>
-            <button class="btn btn-gold" style="flex:1;" ${state.inventory.length <= freeSlots ? '' : 'disabled'} onclick="confirmWarehouseStorage()">
-              ${state.inventory.length <= freeSlots ? '✔ 倉庫へ収めて帰還' : `あと${state.inventory.length - freeSlots}個整理が必要`}
+            <button class="btn btn-gold" style="flex:1;" ${vaultUsed(state.inventory) <= freeSlots ? '' : 'disabled'} onclick="confirmWarehouseStorage()">
+              ${vaultUsed(state.inventory) <= freeSlots ? '✔ 倉庫へ収めて帰還' : `あと${vaultUsed(state.inventory) - freeSlots}個整理が必要`}
             </button>
           </div>
         </div>
@@ -1719,7 +1720,7 @@
       initAudio();
       let earned = 0;
       for (let i = state.inventory.length - 1; i >= 0; i--) {
-        if (state.inventory[i].rarity === 'Common' && canSellStoredItem(state.inventory[i])) {
+        if (usesVaultSlot(state.inventory[i]) && state.inventory[i].rarity === 'Common' && canSellStoredItem(state.inventory[i])) {
           earned += getItemSellPrice(state.inventory[i]);
           state.inventory.splice(i, 1);
         }
@@ -1733,7 +1734,7 @@
     function upgradeVaultInOverflow() {
       initAudio();
       const cost = getVaultUpgradeCost(state.camp.vaultLevel);
-      if (state.vaultGold < cost) return;
+      if (cost===null || state.vaultGold < cost) return;
       state.vaultGold -= cost;
       state.camp.vaultLevel = (state.camp.vaultLevel || 1) + 1;
       state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
@@ -1788,11 +1789,11 @@
       const keptItems = state.inventory.filter((_, idx) => selected.has(idx));
       const lostItems = state.inventory.filter((_, idx) => !selected.has(idx));
 
-      if (keptItems.length > state.camp.vaultSize - state.storage.length) {
+      if (!canStoreItems(keptItems)) {
         addLog('⚠️ 倉庫容量不足です。地上倉庫を整理してから帰還してください。', 'danger');
         document.getElementById('modal-layer').style.display = 'none';
         state.inventory = keptItems;
-        openWarehouseOverflowModal(state.camp.vaultSize - state.storage.length);
+        openWarehouseOverflowModal(vaultFree());
         return;
       }
 
@@ -2982,7 +2983,7 @@
     }
 
     let storageCategory = 'all';
-    function setStorageCategory(category) { storageCategory = category; renderSubPanel(); }
+    function setStorageCategory(category) { storageCategory = category; warehouseFilters.page=0; renderSubPanel(); }
     function getStorageRows(list, filter = 'all', rarity = null, tag = null) {
       const rows = [];
       list.forEach((it, idx) => {
@@ -3024,12 +3025,14 @@
     function bulkSellStorage(maxRarity = 'Common') {
       initAudio();
       const allowedRarities = {Common:['Common'],Rare:['Common','Rare'],Epic:['Common','Rare','Epic']}[maxRarity] || [];
+      const rows=filteredWarehouseRows(getStorageRows(state.storage,storageCategory).filter(r=>storageCategory!=='all'||r.it.type!=='material'));
+      const targets=new Set(rows.map(r=>r.it)),materialKeys=new Set(rows.filter(r=>r.it.type==='material').map(r=>r.it.key||r.it.name));
       let soldCount = 0;
       let totalEarned = 0;
 
       for (let i = state.storage.length - 1; i >= 0; i--) {
         const item = state.storage[i];
-        if (allowedRarities.includes(item.rarity) && canSellStoredItem(item)) {
+        if (allowedRarities.includes(item.rarity) && canSellStoredItem(item) && (targets.has(item)||item.type==='material'&&materialKeys.has(item.key||item.name))) {
           const price = getItemSellPrice(item);
           totalEarned += price;
           soldCount++;
@@ -3052,31 +3055,7 @@
       renderSubPanel();
     }
 
-    function sortStorage(criteria = 'rarity') {
-      initAudio();
-      playSound('click');
-      const rarityRank = { Abyssal: 6, Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
-      const typeRank = { weapon: 1, armor: 2, accessory: 3, potion: 4, relic: 5 };
-
-      state.storage.sort((a, b) => {
-        if (criteria === 'rarity') {
-          const diff = (rarityRank[b.rarity] || 0) - (rarityRank[a.rarity] || 0);
-          if (diff !== 0) return diff;
-          return (b.baseAtk || b.baseDef || 0) - (a.baseAtk || a.baseDef || 0);
-        } else if (criteria === 'atk') {
-          return (b.baseAtk || 0) - (a.baseAtk || 0);
-        } else if (criteria === 'def') {
-          return (b.baseDef || 0) - (a.baseDef || 0);
-        } else if (criteria === 'type') {
-          return (typeRank[a.type] || 99) - (typeRank[b.type] || 99);
-        }
-        return 0;
-      });
-
-      addLog(`倉庫のアイテムを【${criteria === 'rarity' ? 'レア度順' : (criteria === 'atk' ? '攻撃力順' : (criteria === 'def' ? '防御力順' : '種別順'))}】に並べ替えました。`, 'normal');
-      saveState();
-      renderSubPanel();
-    }
+    function sortStorage(criteria = 'rarity') { setWarehouseFilter('sort',criteria); }
 
     function claimTavernBounty() {
       initAudio();
@@ -3288,10 +3267,12 @@
   <script src="chapter-story.js"></script>
   <script src="chapter-system.js"></script>
   <script src="companion-equipment.js"></script>
+  <script src="js/systems/storageRules.js"></script>
   <script src="js/systems/characterLevel.js"></script>
   <script src="js/systems/enemyScaling.js"></script>
   <script src="js/systems/inputSafety.js"></script>
   <script src="forge-ui.js"></script>
+  <script src="js/ui/materialUI.js"></script>
   <script src="js/ui/homeUI.js"></script>
   <script src="js/ui/orientationUI.js"></script>
   <script src="js/ui/lobbyUI.js"></script>

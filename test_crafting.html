@@ -21,7 +21,7 @@ window.onload=()=>setTimeout(()=>{
   s.storage=[];s.camp.vaultSize=200;s.dungeonGold=0;s.floor=1;w.returnToTown(true);w.closeGenericModal();
   check(s.storage.length===2&&w.getStorageRows(s.storage,'material')[0].count===2,'帰還して素材が倉庫へスタック表示');
   s.screen='town';s.vaultGold=100000;s.abyssCores=30;s.camp.blacksmith=2;
-  w.openCrafting('create');w.document.querySelector('button[onclick="craftEquipment(\'iron_sword\')"]').click();
+  w.openCrafting('create');w.document.querySelector('button[onclick="openRecipeDetail(\'iron_sword\')"]').click();w.document.querySelector('.update-notes-actions .btn-gold').click();
   check(s.storage.some(i=>i.key==='iron_sword'),'鍛冶屋UIから基本武器作成');w.closeGenericModal();
   const iron=s.storage.find(i=>i.key==='iron_sword');w.equipItem(s.storage.indexOf(iron),true);
   for(let i=0;i<11;i++)w.refineEquippedItem('weapon');check(s.equipped.weapon.refineCount===10,'+10強化上限');
@@ -43,7 +43,7 @@ window.onload=()=>setTimeout(()=>{
   const parent={id:'awaken-parent',key:'forge_1_upper',name:'狂牙剣(+10)',type:'weapon',rarity:'Epic',refineCount:10};s.storage.push(parent);
   s.floor=10;w.startBossBattle(w.__gameDebug.AREAS[0].boss);w.dropMonsterMaterials(s.currentEnemy,()=>.5);w.dropMonsterMaterials(s.currentEnemy,()=>.5);s.storage.push(...s.inventory);s.inventory=[];s.screen='town';
   const cores=s.abyssCores;check(w.craftEquipment('forge_1_awaken',parent.id)&&s.abyssCores===cores-3&&!s.storage.some(i=>i.id===parent.id),'覚醒で親武器・ボス素材・深淵の核を消費');w.closeGenericModal();
-  const capacity=s.camp.vaultSize;s.camp.vaultSize=s.storage.length;const goldBefore=s.vaultGold;check(!w.craftEquipment('iron_sword')&&s.vaultGold===goldBefore,'倉庫満杯で無消費・作成停止');s.camp.vaultSize=capacity;
+  const capacity=s.camp.vaultSize;s.camp.vaultSize=w.vaultUsed();const goldBefore=s.vaultGold;check(!w.craftEquipment('iron_sword')&&s.vaultGold===goldBefore,'倉庫満杯で無消費・作成停止');s.camp.vaultSize=capacity;
   s.screen='battle';s.floor=1;s.hp=1000;s.equipped.weapon={key:'test',name:'試験武器',type:'weapon',baseAtk:20,archetype:'sword',craftEffect:'elite_hunter'};s.mystery.eggHatched=false;s.equipped.armor=null;s.equipped.accessory=null;
   w.Math.random=()=>.5;
   const hit=(isElite)=>{s.currentEnemy={name:'標的',hp:10000,maxHp:10000,atk:1,def:0,isElite,actionType:'normal'};s.playerAttackBuff=1;s.guaranteedCrit=false;w.playerCombatAction('attack');return 10000-s.currentEnemy.hp;};

@@ -125,7 +125,7 @@ function setCharacterEquipment(id,slot,itemId){
 }
 function removeCharacterEquipment(id,slot){
  const slots=characterEquipment(id);if(state.screen!=='town'||!slots?.[slot])return false;
- if(state.storage.length>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return false;}
+ if(vaultUsed()>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return false;}
  if(id==='player')unequipItem(slot);else{state.storage.push(slots[slot]);slots[slot]=null;saveState();render();}
  return true;
 }

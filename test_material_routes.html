@@ -1,0 +1,55 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow,s=w.__gameDebug.state;
+ const check=(ok,n)=>{if(!ok)throw Error(n);out.push('PASS '+n)},pause=()=>new Promise(r=>setTimeout(r,100));
+ try{
+ w.closeGenericModal();s.chapter.pending=null;s.chapter.checkpoint=null;s.chapter.mode='skip';s.chapter.contract=true;s.screen='town';s.vaultGold=100000;s.camp.vaultSize=20;s.camp.vaultLevel=1;
+ const data=w.__equipmentDebug,key=Object.keys(data.materials).find(k=>k.endsWith('_common')),material={...data.materials[key],key,type:'material'};
+ s.storage=Array.from({length:5000},(_,i)=>({...material,id:'material-'+i,locked:i===0}));
+ check(w.vaultUsed()===0&&w.materialCount(key,true)===5000,'5000 materials consume zero slots');
+ const saved=JSON.stringify(s.storage);w.saveState();await new Promise(r=>{frame.onload=r;w.location.reload()});w=frame.contentWindow;s=w.__gameDebug.state;w.closeGenericModal();
+ check(JSON.stringify(s.storage)===saved&&w.vaultUsed()===0,'actual reload preserves all material instances and lock');
+ s.screen='town';s.vaultGold=10000;s.storage.push(...Array.from({length:20},(_,i)=>({id:'gear-'+i,type:'weapon',name:'test',key:'test'})));
+ check(w.vaultUsed()===20&&w.craftingIssue('iron_sword').includes('容量'),'only gear fills capacity');
+ s.screen='door_select';s.returnResolved=false;s.inventory=[{...material,id:'return-mat'}];s.dungeonGold=12;
+ w.finalizeSafeReturn();check(s.screen==='town'&&s.storage.some(i=>i.id==='return-mat')&&w.materialCount(key,true)===5001,'materials return into full gear vault');w.closeGenericModal();
+ s.screen='door_select';s.returnResolved=false;s.inventory=[{id:'no-room',type:'weapon',name:'keep me',rarity:'Rare'}];const gold=s.vaultGold;
+ w.finalizeSafeReturn();check(s.inventory.length===1&&s.vaultGold===gold&&!s.returnResolved,'direct return cannot silently discard equipment');w.closeGenericModal();
+ s.screen='town';s.inventory=[];s.storage=s.storage.filter(i=>i.type==='material');
+ check(w.craftEquipment('iron_sword')&&w.vaultUsed()===1,'craft with 5000 materials succeeds and consumes one gear slot');
+ w.openCrafting('create');w.setForgeFilter('build','poison');check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>w.buildTags({item:x.r}).has('poison')),'build filter');
+ w.resetForgeFilters();w.setForgeFilter('weapon','dagger');check(w.filteredForgeRecipes().every(x=>x.r.weaponType==='dagger'),'weapon filter');
+ w.resetForgeFilters();w.setForgeFilter('rarity','Rare');check(w.filteredForgeRecipes().every(x=>x.r.rarity==='Rare'),'rarity filter');
+ w.resetForgeFilters();w.setForgeFilter('query','鉄の剣');check(w.filteredForgeRecipes().some(x=>x.id==='iron_sword'),'name search');
+ w.resetForgeFilters();w.setForgeFilter('available',true);check(w.filteredForgeRecipes().every(x=>!w.craftingIssue(x.id,w.craftingParents(x.r)[0]?.id)),'available filter');
+ w.resetForgeFilters();w.setForgeFilter('sort','atk');const sorted=w.filteredForgeRecipes().filter(x=>w.recipeVisible(x.id));check(sorted.every((x,i)=>!i||(sorted[i-1].r.baseAtk||0)>=(x.r.baseAtk||0)),'forge sorting');
+ const source=w.materialSources(key)[0];s.craftProgress.materials[key]=true;s.codex.enemies[source.enemy.name]={name:source.enemy.name};
+ w.openMaterialDetail(key);check(w.document.getElementById('modal-layer').textContent.includes(source.enemy.name)&&w.document.getElementById('modal-layer').textContent.includes('1〜4F'),'source data and exact nonboss floors');
+ const hidden=Object.keys(data.materials).find(k=>k.endsWith('_rare')&&!s.craftProgress.materials[k]);w.openMaterialDetail(hidden);check(!w.document.getElementById('modal-layer').textContent.includes(data.materials[hidden].name),'undiscovered material hidden');
+ const rid=Object.keys(data.recipes).find(id=>data.recipes[id].materials[key]&&w.recipeVisible(id));w.openRecipeDetail(rid);const link=w.document.querySelector('.material-link');check(link,'clickable required material');link.click();check(w.document.querySelector('.update-notes-body').textContent.includes('入手方法'),'material detail opens from recipe');
+ w.closeGenericModal();s.activeTab='bag';w.setStorageCategory('material');check(w.getStorageRows(s.storage,'material').reduce((n,r)=>n+r.count,0)===5001&&w.document.getElementById('sub-panel').textContent.includes('素材'),'warehouse stack and separate counters');
+ w.setWarehouseFilter('query',material.name);check(w.filteredWarehouseRows(w.getStorageRows(s.storage,'material')).every(r=>r.it.name===material.name),'warehouse name search');
+ const beforeSort=s.storage.map(i=>i.id).join();w.sortStorage('rarity');w.sortStorage('acquired');check(s.storage.map(i=>i.id).join()===beforeSort,'sort preserves saved acquisition order and indices');
+ w.setWarehouseFilter('query','');w.setStorageCategory('all');const countBeforeSale=w.materialCount(key,true);w.bulkSellStorage('Epic');check(w.materialCount(key,true)===countBeforeSale,'equipment bulk sale never sells hidden material tab');
+ let zero=0,all=0;const positions=new Set(),types=new Set();s.chapter.mode='skip';s.hp=10000;
+ for(let i=0;i<120;i++){s.floor=2+i%3;s.screen='door_select';w.generateDoorsForFloor();const doors=s.currentDoors,b=doors.filter(d=>['battle_normal','elite_battle'].includes(d.type));if(!b.length)zero++;if(b.length===doors.length)all++;doors.forEach((d,n)=>{if(b.includes(d)){positions.add(n);types.add(d.type)}});}
+ check(zero===0&&all===0&&positions.size===3&&types.size===2,'120 draws: zero combat=0 all combat=0 randomized slots and enemy kinds');
+ s.floor=10;w.generateDoorsForFloor();check(s.currentEnemy?.isBoss,'boss flow preserved');
+ s.floor=5;w.generateDoorsForFloor();check(s.screen==='safe_point','safe point preserved');
+ s.screen='town';s.inventory=[];w.closeGenericModal();
+ for(const [width,height]of [[1920,1080],[1366,768],[740,360],[844,390],[932,430]]){
+  frame.style.width=width+'px';frame.style.height=height+'px';await pause();
+  for(const show of [()=>w.openCrafting('create'),()=>w.openRecipeDetail(rid),()=>w.openMaterialDetail(key),()=>{w.setStorageCategory('material');w.openLobbyFacility('warehouse')}]){
+   show();await pause();const body=w.document.querySelector('.update-notes-body'),card=w.document.querySelector('.update-notes-card');
+   check(body&&body.scrollWidth<=body.clientWidth+1,'no modal horizontal overflow '+width);
+   const rect=card.getBoundingClientRect();check(rect.top>=0&&rect.bottom<=height&&rect.left>=0&&rect.right<=width,'modal fits '+width);
+   for(const b of w.document.querySelectorAll('.update-notes-actions button')){const r=b.getBoundingClientRect();check(r.bottom<=height&&r.top>=0&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,'footer reachable '+width);}
+  }
+  w.closeGenericModal();w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.floor=4;s.hp=10000;w.generateDoorsForFloor();await pause();
+  const doors=[...w.document.querySelectorAll('#viewport .door-card')];check(doors.length===3&&doors.some(d=>d.textContent.includes('戦闘')),'visible combat option '+width);
+  for(const door of doors){door.scrollIntoView({block:'center'});await pause();const r=door.getBoundingClientRect();check(r.width>=44&&r.height>=44&&door.contains(w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),'door tap area '+width);}
+  s.screen='town';w.render();
+ }
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};</script>

@@ -1,3 +1,15 @@
+    function chooseExplorationDoors(pool,count=3,rng=Math.random){
+      const battleTypes=['battle_normal','elite_battle'];
+      const pick=xs=>xs[Math.min(xs.length-1,Math.floor(rng()*xs.length))];
+      const normal=pool.filter(d=>d.type==='battle_normal'),elite=pool.filter(d=>d.type==='elite_battle');
+      const eliteChance=Math.min(.4,.1+Math.max(0,state.floor)*.0015+(state.greedLevel||0)*.04);
+      const combat=pick(rng()<eliteChance&&elite.length?elite:normal.length?normal:elite);
+      const selected=[combat,pick(pool.filter(d=>!battleTypes.includes(d.type)))].filter(Boolean);
+      while(selected.length<count){const available=pool.filter(d=>!selected.some(s=>s.type===d.type));if(!available.length)break;selected.push(pick(available));}
+      for(let i=selected.length-1;i>0;i--){const j=Math.min(i,Math.floor(rng()*(i+1)));[selected[i],selected[j]]=[selected[j],selected[i]];}
+      return selected.map(d=>({...d,sign:battleTypes.includes(d.type)?'⚔️ 戦闘：'+d.sign:d.sign}));
+    }
+
     function getCurrentArea() {
       return AREAS.find(area => state.floor >= area.min && state.floor <= area.max) || AREAS[AREAS.length - 1];
     }
@@ -49,21 +61,21 @@
           type: 'battle_normal',
           icon: '⚔️',
           sign: '敵の気配',
-          desc: '通常の魔物が徘徊している。討伐でゴールドと装備獲得。',
+          desc: '通常の魔物が徘徊している。討伐でゴールドと素材獲得。',
           risk: 'mid', riskText: '中危険'
         },
         {
           type: 'chest_normal',
           icon: '🎁',
           sign: '金色の光',
-          desc: '施錠されていない宝箱の気配。レア装備やゴールドの期待。',
+          desc: '施錠されていない宝箱の気配。レア素材やゴールドの期待。',
           risk: 'low', riskText: '低危険'
         },
         {
           type: 'cursed_chest',
           icon: '👁️',
           sign: '呪われた黒櫃',
-          desc: '【呪い宝箱】Epic以上の強力装備確定。代わりに最大HP減少。',
+          desc: '【呪い宝箱】進行に応じたEpic以上の素材確定。代わりに最大HP減少。',
           risk: 'curse', riskText: 'ハイリスク'
         },
         {
@@ -155,10 +167,8 @@
         });
       }
 
-      // Pick 3 random distinct doors
-      const shuffled = doorPool.sort(() => 0.5 - Math.random());
       const hasObserver = equippedAccessories().some(i=>i.key === 'abyssal_observer');
-      state.currentDoors = shuffled.slice(0, hasObserver ? 4 : 3);
+      state.currentDoors = chooseExplorationDoors(doorPool,hasObserver?4:3);
       if(state.chapter?.contract&&!state.chapter.read[10]&&state.chapter.mode!=='skip'&&TUTORIAL_STEPS[state.floor]){
         const training=doorPool.find(d=>d.type===TUTORIAL_STEPS[state.floor][2]);
         if(training)state.currentDoors=[{...training,sign:'🌻 '+training.sign}];

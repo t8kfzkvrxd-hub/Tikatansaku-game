@@ -43,9 +43,8 @@ function craftingIssue(id, parentId) {
  if(r.parent&&!craftingParents(r).some(it=>it.id===parentId))return '未ロックの親武器+10が必要';
  if(state.vaultGold<r.gold)return 'G不足';
  if(Object.entries(r.materials).some(([key,n])=>materialCount(key)<n))return '素材不足（ロック品は対象外）';
- const consumed=Object.entries(r.materials).filter(([key])=>key!=='abyss_core').reduce((sum,[,n])=>sum+n,0);
  const parentInStorage=r.parent&&state.storage.some(it=>it.id===parentId);
- if(state.storage.length-consumed-(parentInStorage?1:0)+1>state.camp.vaultSize)return '倉庫容量不足';
+ if(vaultUsed()-(parentInStorage?1:0)+1>state.camp.vaultSize)return '倉庫容量不足';
  return '';
 }
 function craftEquipment(id,parentId) {
