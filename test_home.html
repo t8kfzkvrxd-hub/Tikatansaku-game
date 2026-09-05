@@ -27,7 +27,7 @@ window.onload=async()=>{
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();
    const home=w.document.getElementById('home-screen');check(home.scrollWidth<=width+1,width+'×'+height+' 横はみ出しなし');
    for(const b of w.document.querySelectorAll('.home-button,.home-sub-actions button')){b.scrollIntoView({block:'center'});await pause();const r=b.getBoundingClientRect();check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,width+'×'+height+' メニューへ到達');}
-   if(width<height){const r=image.getBoundingClientRect(),scale=Math.max(r.width/image.naturalWidth,r.height/image.naturalHeight);check(160*scale<width&&620*scale<width,'スマホで両人物の顔位置を保持');}
+   {const r=image.getBoundingClientRect();check(r.width>=width-1&&r.height>=height-1,'回転案内時も背景全面cover');}
   }
   frame.style.width='1280px';frame.style.height='720px';await pause();
   w.openHomeSettings();click('背景演出');check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','設定でモーション停止');
@@ -38,6 +38,11 @@ window.onload=async()=>{
   check(!w.document.getElementById('home-continue').disabled&&w.document.getElementById('home-continue').classList.contains('home-primary'),'セーブありは続きが主ボタン');
   w.newGameFromHome();check(w.localStorage.getItem(key)===saved,'既存セーブ上書き前に確認');click('キャンセル');check(w.localStorage.getItem(key)===saved,'新規キャンセルで保持');
   await reload();w.closeGenericModal();check(w.localStorage.getItem(key)===saved,'再起動したホームでセーブ不変');w.continueFromHome();check(w.__gameDebug.state.vaultGold===54321,'続きで既存G復元');
+  for(let i=0;i<3;i++){
+   w.showHomeScreen();await reload();await pause();w.continueFromHome();w.closeGenericModal();
+   check(!w.document.documentElement.classList.contains('at-home'),'ゲーム側へ高さ制約を残さない '+i);
+   w.showHomeScreen();await pause();check(w.document.documentElement.classList.contains('at-home')&&w.localStorage.getItem(key)===saved,'再読込と往復でもセーブ・ホーム状態維持 '+i);
+  }
   w.showHomeScreen();w.localStorage.setItem('HOME_TEST_UNRELATED','keep');w.newGameFromHome();click('完全に初期化する');check(w.__gameDebug.state.vaultGold!==54321,'確認後のみ新規開始');check(w.localStorage.getItem('HOME_TEST_UNRELATED')==='keep','無関係な保存キーを保持');
   w.closeGenericModal();w.showHomeScreen();w.localStorage.setItem(key,'invalid');await reload();w.closeGenericModal();check(w.localStorage.getItem(key)==='invalid'&&w.document.getElementById('home-continue').disabled,'壊れたデータも無断上書きしない');
   out.push('ALL TESTS PASSED');

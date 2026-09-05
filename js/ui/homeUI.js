@@ -1,4 +1,18 @@
 const HomeScreen={active:true,loaded:false};
+function refreshHomeViewport(){
+ if(!HomeScreen.active)return;
+ document.documentElement.style.setProperty('--home-fallback-height',window.innerHeight+'px');
+ HomeScreen.fit?.();
+}
+function settleHomeViewport(){
+ refreshHomeViewport();
+ clearTimeout(HomeScreen.settleTimer);
+ HomeScreen.settleTimer=setTimeout(refreshHomeViewport,250);
+}
+window.addEventListener('resize',settleHomeViewport,{passive:true});
+window.addEventListener('orientationchange',settleHomeViewport,{passive:true});
+window.addEventListener('pageshow',settleHomeViewport);
+window.visualViewport?.addEventListener('resize',settleHomeViewport,{passive:true});
 function fitHomeArtwork(home){
  HomeScreen.artObserver?.disconnect();
  const art=home.querySelector('.home-art'),image=art.querySelector('.home-background');
@@ -17,7 +31,8 @@ function fitHomeArtwork(home){
   Object.assign(scene.style,{width:width+'px',height:height+'px',left:(leftAligned?0:(art.clientWidth-width)/2)+'px',top:(art.clientHeight-height)/2+'px'});
  };
  image.addEventListener('load',fit,{once:true});
- HomeScreen.artObserver=new ResizeObserver(fit);HomeScreen.artObserver.observe(art);fit();
+ HomeScreen.fit=fit;
+ HomeScreen.artObserver=new ResizeObserver(fit);HomeScreen.artObserver.observe(art);settleHomeViewport();
 }
 function getHomeBackgroundByStoryProgress(){return 'assets/home-background.png';}
 function homeSaveInfo(){

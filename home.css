@@ -54,9 +54,13 @@ body.home-reduced .environment-effects{opacity:.25}
 }
 @media(max-height:500px) and (orientation:landscape){.home-menu{padding:20px 0;width:34%;margin-left:62%}.home-menu h1{font-size:34px}.home-eyebrow,.home-subtitle{display:none}.home-rule{margin:15px}.home-button{padding:9px 12px}.home-sub-actions{margin:10px 0 4px}}
 html.at-home,body.at-home{width:100%;height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
-body.at-home #home-screen{width:100%;height:var(--game-viewport-height,100vh);min-height:0;overflow:hidden;box-sizing:border-box}
+body.at-home{padding:0}
+body.at-home #home-screen{width:100%;height:var(--home-fallback-height,100vh);min-height:0;overflow:hidden;box-sizing:border-box;padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);text-size-adjust:100%;-webkit-text-size-adjust:100%}
+@supports(height:100dvh){body.at-home #home-screen{height:100dvh}}
+#home-screen .home-art{height:100%;min-height:0;max-height:none}
 #home-screen .home-menu{height:100%;min-height:0;box-sizing:border-box;padding-top:clamp(8px,4vh,50px);padding-bottom:clamp(8px,4vh,50px)}
 #home-screen .home-menu>*{flex-shrink:0}
+#home-screen .home-menu{padding-right:0}
 @media(max-height:600px){
  #home-screen .home-menu{margin-left:62%;width:34%;padding:8px 0;justify-content:center}
  #home-screen .home-eyebrow,#home-screen .home-subtitle{display:none}

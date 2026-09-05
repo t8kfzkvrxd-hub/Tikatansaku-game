@@ -7,6 +7,18 @@ window.onload=async()=>{
  try{
   await d.querySelector('.home-background').decode();await wait(100);
   const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+  const layouts=new Map();
+  for(let round=0;round<3;round++)for(const [width,height] of [[360,740],[740,360],[740,320],[740,360],[390,844],[844,390],[844,350],[844,390],[430,932],[932,430]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';w.dispatchEvent(new Event('orientationchange'));await wait(300);
+   if(width<height)continue;
+   w.document.documentElement.style.setProperty('--game-viewport-height','900px');
+   if(round===1){w.showHomeScreen();await wait(300)}
+   const root=d.getElementById('home-screen'),art=d.querySelector('.home-background').getBoundingClientRect();
+   check(Math.abs(root.getBoundingClientRect().height-height)<1&&art.top<=0&&art.bottom>=height,'rotation/toolbar cover '+round+' '+width+'x'+height);
+   const layout=[...d.querySelectorAll('.home-button,.home-sub-actions button')].map(b=>{const r=b.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(n=>Math.round(n*10)/10)});
+   const key=width+'x'+height;
+   if(layouts.has(key))check(JSON.stringify(layout)===layouts.get(key),'repeat identical '+round+' '+key);else layouts.set(key,JSON.stringify(layout));
+  }
   for(const [width,height] of [[1920,1080],[1366,768],[844,390],[932,430],[740,360]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await wait(150);
    const scene=d.querySelector('.home-scene').getBoundingClientRect(),base=d.querySelector('.home-background').getBoundingClientRect();
