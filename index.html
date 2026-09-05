@@ -1152,8 +1152,11 @@
     const MAX_DUNGEON_FLOOR = 60;
     const BOSS_FLOORS = [10, 20, 30, 40, 50, 60];
     const SAFE_RETURN_FLOORS = [5, 15, 25, 35, 45, 55];
-    const GAME_VERSION = '0.7.0';
+    const GAME_VERSION = '0.8.0';
     const UPDATE_NOTES = [
+      '装備を7枠へ拡張。旧装備を保持して自動移行、アクセサリー2枠対応',
+      '素材レシピ145種・タグ効果・毒／会心／ガード／回避などの混成ビルドを追加',
+      '全7部位の装備・解除・+10強化、倉庫部位分類、効果と連携の表示を追加',
       '全敵に固有素材を追加。狩猟・帰還・作成・+10派生・ボス覚醒のループを実装',
       '鍛冶屋の作成／武器ツリー、隠し派生、素材図鑑を追加。既存セーブ対応',
       '敵の完成装備ドロップを低確率化。通常敵・EliteからMythic/Abyssal装備は出現しません',
@@ -1723,6 +1726,7 @@
       } catch (e) {
         initStarterItems();
       }
+      migrateEquipment();
     }
 
     function showResetSaveConfirmation() {
@@ -1768,6 +1772,7 @@
       state.equipped.armor = { key: 'starter_a', name: '擦り切れた革鎧', icon: '🥋', type: 'armor', rarity: 'Common', baseDef: 2, hp: 10, desc: '初期防具' };
       recordCodex('item', state.equipped.weapon);
       recordCodex('item', state.equipped.armor);
+      migrateEquipment();
     }
 
     function recordCodex(type, obj) {
@@ -1791,7 +1796,7 @@
        ========================================================================== */
     function getSynergyBreakdown() {
       const pieces = { blood: 0, gold: 0, curse: 0, titan: 0 };
-      ['weapon', 'armor', 'accessory'].forEach(slot => {
+      Object.keys(state.equipped).forEach(slot => {
         const it = state.equipped[slot];
         if (it) {
           if (it.setTag && pieces[it.setTag] !== undefined) pieces[it.setTag]++;
@@ -1831,7 +1836,7 @@
       let demeritDamage = 0;
 
       // Equipment stats
-      ['weapon', 'armor', 'accessory'].forEach(k => {
+      Object.keys(state.equipped).forEach(k => {
         const item = state.equipped[k];
         if (item) {
           if (item.baseAtk) atk += item.baseAtk;
@@ -1894,7 +1899,7 @@
 
       // 3. 👁️ 呪王ビルド: 呪い装備1つごとに超攻撃補正
       let curseCount = 0;
-      ['weapon', 'armor', 'accessory'].forEach(k => {
+      Object.keys(state.equipped).forEach(k => {
         if (state.equipped[k]?.isCurse) curseCount++;
       });
       if (curseCount > 0) {
@@ -1903,7 +1908,7 @@
       }
 
       // Berserk item check (狂戦士の指輪: HP50%以下で攻撃2倍)
-      if (state.equipped.accessory?.isBerserk && state.hp <= (maxHp * 0.5)) {
+      if (equippedAccessories().some(i=>i.isBerserk) && state.hp <= (maxHp * 0.5)) {
         atk *= 2;
       }
       if (state.equipped.weapon?.key === 'abyssal_devourer') atk += (state.abyssGrowth || 0);
@@ -2608,7 +2613,7 @@
 
       // Pick 3 random distinct doors
       const shuffled = doorPool.sort(() => 0.5 - Math.random());
-      const hasObserver = state.equipped.accessory?.key === 'abyssal_observer';
+      const hasObserver = equippedAccessories().some(i=>i.key === 'abyssal_observer');
       state.currentDoors = shuffled.slice(0, hasObserver ? 4 : 3);
       if (hasObserver && state.currentDoors[3]) {
         state.currentDoors[3].sign = `👁️ 隠された道：${state.currentDoors[3].sign}`;
@@ -2906,6 +2911,7 @@
       const enemy = state.currentEnemy;
       const weapon = state.equipped.weapon;
       const archetype = weapon?.archetype || 'sword';
+      equipmentAttackStats(stats,enemy,action);
       if (weapon?.craftEffect === 'elite_hunter' && enemy.isElite) stats.atk = Math.round(stats.atk * 2.5);
       if (weapon?.craftEffect === 'desperate' && state.hp <= stats.maxHp * 0.35) stats.atk = Math.round(stats.atk * 2);
       if (action === 'skill' && state.statusEffects.paralysis > 0) {
@@ -2919,7 +2925,7 @@
         addLog(`🧠 同じ行動「${action}」を読まれ、${memoryDmg}の記憶反撃！`,'danger');
         if(state.hp<=0){returnToTown(false);return;}
       }
-      if (state.equipped.accessory?.key === 'living_core_relic' && state.lastPlayerAction && state.lastPlayerAction !== action) {
+      if (equippedAccessories().some(i=>i.key === 'living_core_relic') && state.lastPlayerAction && state.lastPlayerAction !== action) {
         state.abyssGrowth=(state.abyssGrowth||0)+1;
         addLog('🫀 異なる行動の連鎖で攻撃力+1','gold');
       }
@@ -2933,7 +2939,7 @@
         addLog(`🐉 深淵の幼竜の加護でHPが${regen}回復した。`, 'heal');
         spawnFloatingFx(`🐉 +${regen}HP`, 'heal');
       }
-      const heartRegen = state.equipped.accessory?.turnRegen || 0;
+      const heartRegen = equippedAccessories().reduce((sum,i)=>sum+(i.turnRegen||0),0);
       if (heartRegen > 0 && state.hp < stats.maxHp) {
         const regen = Math.min(heartRegen, stats.maxHp - state.hp);
         state.hp += regen;
@@ -2969,7 +2975,7 @@
         let isCrit = Math.random() * 100 < stats.crit;
         if (state.guaranteedCrit) { isCrit = true; state.guaranteedCrit = false; }
 
-        let baseDmg = stats.atk * (isCrit ? 1.8 : 1.0) * (state.playerAttackBuff || 1.0);
+        let baseDmg = stats.atk * (isCrit ? 1.8 + Math.min(150,equipmentEffects().critDamage||0)/100 : 1.0) * (state.playerAttackBuff || 1.0);
         let targetDef = (enemy.isBoss && state.bossBarrier) ? enemy.def * 3 : enemy.def;
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 4 - 2)));
 
@@ -3015,6 +3021,7 @@
           addLog(`幼竜が火炎を吐き、${enemy.name} に ${flame} の追撃！`, 'gold');
         }
 
+        equipmentHit(enemy,action,isCrit);
         // Vampirism
         if (stats.vamp > 0) {
           const healed = Math.min(stats.maxHp - state.hp, stats.vamp);
@@ -3068,6 +3075,7 @@
 
         enemy.hp -= dmg;
         addThunderCharge(enemy, '強攻撃');
+        equipmentHit(enemy,action);
         if (hasDragon) {
           enemy.hp -= 8;
           spawnFloatingFx('🔥 幼竜の息吹 -8', 'crit');
@@ -3168,7 +3176,8 @@
           addLog(`【集中気勢斬り】研ぎ澄まされた刃で ${skillDmg} ダメージ！ 次の攻撃は会心確定！`, 'gold');
         }
 
-        state.skillCooldown = 2;
+        equipmentHit(enemy,action);
+        state.skillCooldown = Math.max(1,2-(equipmentEffects().skillHaste||0));
         addThunderCharge(enemy, '武器スキル');
 
         if (hasDragon) {
@@ -3213,6 +3222,13 @@
       if (!state.currentEnemy || state.hp <= 0) return;
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
+      equipmentPoisonTick(enemy);
+      if(enemy.hp<=0){onEnemyKilled();return;}
+      const gearEffects=equipmentEffects();
+      if(Math.random()*100<Math.min(45,gearEffects.dodge||0)) {
+        state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.dodgeAttack||0)/100);
+        addLog('💨 回避成功！'+(gearEffects.dodgeAttack?' 次の攻撃を強化':''),'gold');decideEnemyIntent();updateHeader();render();return;
+      }
       if (enemy.gimmick === 'rising_water') state.waterLevel=Math.min(100,state.waterLevel+15);
       if (enemy.gimmick === 'mother_tree' && enemy.actionType === 'heal_roots') {
         const heal=Math.min(55,enemy.maxHp-enemy.hp); enemy.hp+=heal;
@@ -3242,7 +3258,7 @@
         const fatigueReductions = [0, 0.55, 0.45, 0.30];
         let reduction = isJustGuard ? 0.80 : (fatigueReductions[Math.min(3, state.guardFatigue)] || 0);
         if (state.equipped.armor?.key === 'guardian_aegis') reduction = Math.min(0.85, reduction + 0.15);
-        if (state.equipped.accessory?.lowHpGuard && state.hp <= stats.maxHp * 0.35) reduction = Math.min(0.90, reduction + 0.10);
+        if (equippedAccessories().some(i=>i.lowHpGuard) && state.hp <= stats.maxHp * 0.35) reduction = Math.min(0.90, reduction + 0.10);
         dmg = Math.max(Math.ceil(enemyAtk * (isJustGuard ? 0.10 : 0.18)), Math.round(baseDmg * (1 - reduction)));
       } else if (state.guardBroken) {
         dmg = Math.max(1, Math.round(baseDmg * 1.35));
@@ -3254,6 +3270,10 @@
       }
 
       state.hp -= dmg;
+      if(state.hp>0&&isPlayerDefending&&!isGrab&&!state.guardBroken) {
+        if(gearEffects.guardHeal){const heal=Math.max(0,Math.min(stats.maxHp-state.hp,gearEffects.guardHeal));state.hp+=heal;addLog(`🛡️ ガード回復 +${heal}HP`,'heal');}
+        if(isJustGuard&&gearEffects.justAttack){state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.justAttack)/100);addLog('🛡️ JUST GUARD連携：次撃強化','gold');}
+      }
       if (state.equipped.armor?.archetype === 'thunder') addThunderCharge(enemy, '被弾');
       playSound('player_hurt');
       triggerShake();
@@ -3365,6 +3385,7 @@
     function onEnemyKilled() {
       const enemy = state.currentEnemy;
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
+      if(enemy.gearPoison&&equipmentEffects().poisonHeal){const heal=equipmentEffects().poisonHeal;state.hp=Math.min(getPlayerStats().maxHp,state.hp+heal);addLog(`☠️ 毒敵撃破回復 +${heal}HP`,'heal');}
       dropMonsterMaterials(enemy);
       state.runKills++;
       if (state.equipped.weapon?.key === 'abyssal_devourer') {
@@ -3712,7 +3733,7 @@
        ========================================================================== */
     function getEquipComparison(item) {
       if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return [];
-      const current = state.equipped[item.type];
+      const current = state.equipped[equipmentSlot(item)];
       const diffs = [];
 
       if (item.type === 'weapon') {
@@ -3855,6 +3876,7 @@
     }
 
     function giveItemToBag(item) {
+      normalizeEquipment(item);
       const wasUnknown = !state.codex.items[item.name];
       if (item.rarity === 'Mythic' || item.rarity === 'Abyssal') item.locked = true;
       recordCodex('item', item);
@@ -4534,6 +4556,10 @@
         playSound('heal');
         spawnFloatingFx(`🛡️ 防具強化 +2防 / +10HP！`, 'heal');
         addLog(`防具の装甲を鍛錬した！ 防御力+2 / 最大HP+10 (強化+${item.refineCount})`, 'gold');
+      } else {
+        item.baseDef=(item.baseDef||0)+1;item.hp=(item.hp||0)+3;
+        item.name=item.name.replace(/\(\+\d+\)/,'')+`(+${item.refineCount})`;
+        addLog('鍛錬：防御+1 / HP+3','gold');
       }
       saveState();
       updateHeader();
@@ -4706,10 +4732,12 @@
 
     let storageCategory = 'all';
     function setStorageCategory(category) { storageCategory = category; renderSubPanel(); }
-    function getStorageRows(list, filter = 'all') {
+    function getStorageRows(list, filter = 'all', rarity = null, tag = null) {
       const rows = [];
       list.forEach((it, idx) => {
-        const category = ['weapon','armor','accessory','material'].includes(it.type) ? it.type : ['potion','escape_item','consumable'].includes(it.type) ? 'consumable' : 'other';
+        const category = ['weapon','armor','accessory'].includes(it.type) ? equipmentSlot(it) : it.type==='material'?'material':['potion','escape_item','consumable'].includes(it.type) ? 'consumable' : 'other';
+        if(rarity&&it.rarity!==rarity)return;
+        if(tag&&!(it.tags||[]).includes(tag))return;
         if (filter !== 'all' && category !== filter) return;
         const existing = it.type === 'material' && rows.find(r => r.it.type === 'material' && (r.it.key || r.it.name) === (it.key || it.name) && !!r.it.locked === !!it.locked);
         if (existing) existing.count++;
@@ -4830,14 +4858,15 @@
       addLog(`📜 ${defs[type].label}を受注した`,'gold');saveState();render();
     }
 
-    function equipItem(index, fromVault = false) {
+    function equipItem(index, fromVault = false, accessorySlot = null) {
       initAudio();
       playSound('click');
       const list = fromVault ? state.storage : state.inventory;
       const item = list[index];
       if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return;
 
-      const slot = item.type;
+      normalizeEquipment(item);
+      const slot = item.type==='accessory' ? (accessorySlot==='accessory2'?'accessory2':accessorySlot==='accessory'?'accessory':!state.equipped.accessory?'accessory':!state.equipped.accessory2?'accessory2':'accessory') : equipmentSlot(item);
       const oldEquip = state.equipped[slot];
 
       state.equipped[slot] = item;
@@ -5362,11 +5391,7 @@
 
       if (state.activeTab === 'equip') {
         // Equipment slots & Synergies
-        const slots = [
-          { k: 'weapon', label: '武器', icon: '🗡️' },
-          { k: 'armor', label: '防具', icon: '🥋' },
-          { k: 'accessory', label: '装飾品', icon: '💍' }
-        ];
+        const slots = EQUIPMENT_SLOTS;
 
         let synHtml = stats.activeSyn.length > 0
           ? stats.activeSyn.map(s => `<div class="synergy-tag">${s.name}: ${s.desc}</div>`).join('')
@@ -5379,7 +5404,8 @@
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:18px;">${item ? item.icon : s.icon}</span>
                 <div>
-                  <div class="item-name">${item ? item.name : '（未装備）'}</div>
+                  <div class="item-name">${s.label}：${item ? item.name : '（未装備）'}</div>
+                  ${item ? `<div style="font-size:10px">${effectDescription(item.effects)||item.desc||''}</div><button class="btn btn-sub btn-xs" onclick="unequipItem('${s.k}')">解除</button>${state.screen==='town'&&state.camp.blacksmith>=2?`<button class="btn btn-gold btn-xs" ${item.refineCount>=10?'disabled':''} onclick="refineEquippedItem('${s.k}')">${item.refineCount>=10?'MAX +10':`強化 ${getRefineCost(item)}G`}</button>`:''}`:''}
                   <div class="item-stats">${item ? getItemStatSummary(item) : s.label}</div>
                   ${item && item.isCurse ? `<div class="item-curse-note">⚠️ 呪詛: ${item.desc}</div>` : ''}
                 </div>
@@ -5391,6 +5417,7 @@
         panel.innerHTML = `
           <div style="font-size:12px; font-weight:bold; color:var(--gold); margin-bottom:4px;">発動中装備シナジー:</div>
           <div class="synergy-list">${synHtml}</div>
+          <div style="font-size:11px">${equipmentSynergies().join('<br>')}<br>総能力：攻${stats.atk} / 防${stats.def} / HP${stats.maxHp} / 会心${stats.crit}%<br>${effectDescription(equipmentEffects())}</div>
           <div style="font-size:12px; font-weight:bold; color:#fff; margin:8px 0 4px;">現在の装備品:</div>
           <div style="display:flex; flex-direction:column; gap:4px;">${equipHtml}</div>
         `;
@@ -5423,7 +5450,7 @@
           `;
         }
 
-        if (isTown) controlsHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${[['all','すべて'],['weapon','武器'],['armor','防具'],['accessory','アクセサリー'],['material','素材'],['consumable','消耗品']].map(([key,label]) => `<button class="btn btn-${storageCategory === key ? 'gold' : 'sub'} btn-xs" onclick="setStorageCategory('${key}')">${label}</button>`).join('')}</div>`;
+        if (isTown) controlsHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${[['all','すべて'],['weapon','武器'],['head','頭'],['armor','胴'],['arms','腕'],['legs','脚'],['accessory','アクセ'],['material','素材'],['consumable','消耗品']].map(([key,label]) => `<button class="btn btn-${storageCategory === key ? 'gold' : 'sub'} btn-xs" onclick="setStorageCategory('${key}')">${label}</button>`).join('')}</div>`;
         const rows = isTown ? getStorageRows(list, storageCategory) : list.map((it,idx) => ({it,idx,count:1}));
         let listHtml = rows.length === 0
           ? '<div style="font-size:11px; color:#94a3b8; text-align:center; padding:20px;">アイテムはありません</div>'
@@ -5465,6 +5492,7 @@
                   ` : ''}
                   ${['weapon', 'armor', 'accessory'].includes(it.type) ? `
                     <button class="btn btn-sub btn-xs" onclick="equipItem(${idx}, ${isTown})">装備</button>
+                    ${it.type==='accessory'?`<button class="btn btn-sub btn-xs" onclick="equipItem(${idx}, ${isTown}, 'accessory')">アクセ1</button><button class="btn btn-sub btn-xs" onclick="equipItem(${idx}, ${isTown}, 'accessory2')">アクセ2</button>`:''}
                   ` : ''}
                   ${it.type === 'potion' ? `
                     <button class="btn btn-green btn-xs" onclick="usePotion(${idx})">使う</button>
@@ -5684,5 +5712,6 @@
     }, { once: true });
   </script>
   <script src="crafting.js"></script>
+  <script src="equipment.js"></script>
 </body>
 </html>

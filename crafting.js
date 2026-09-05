@@ -53,6 +53,7 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  const roll=rng();
  const tier=enemy.isBoss?3:enemy.isElite?(roll<.015?4:roll<.08?3:roll<.55?2:1):(roll<.002?4:roll<.01?3:roll<.05?2:roll<.20?1:0);
  const keys=[source.keys[tier]];
+ if(rng()*100<Math.min(50,equipmentEffects().materialChance||0))keys.push(source.keys[enemy.isBoss?3:enemy.isElite?1:0]);
  if(enemy.isBoss&&rng()<.05)keys.push(source.keys[4]);
  keys.forEach(key=>{
   discoverMaterial(key);
@@ -95,7 +96,7 @@ function craftEquipment(id,parentId) {
   else for(let i=0;i<n;i++)state.storage.splice(state.storage.findIndex(it=>it.type==='material'&&it.key===key&&!it.locked),1);
  }
  state.vaultGold-=r.gold;
- const item={key:id,id:crypto.randomUUID(),name:r.name,icon:r.icon,rarity:r.rarity,type:r.type,archetype:r.archetype,baseAtk:r.baseAtk||0,baseDef:r.baseDef||0,hp:r.hp||0,desc:r.desc,craftEffect:r.craftEffect,refineCount:0,locked:['Mythic','Abyssal'].includes(r.rarity)};
+ const item={key:id,id:crypto.randomUUID(),name:r.name,icon:r.icon,rarity:r.rarity,type:r.type,slot:r.slot,tags:[...(r.tags||[])],effects:{...(r.effects||{})},quarrySource:r.quarrySource,crit:r.crit||0,archetype:r.archetype,baseAtk:r.baseAtk||0,baseDef:r.baseDef||0,hp:r.hp||0,desc:r.desc,craftEffect:r.craftEffect,refineCount:0,locked:['Mythic','Abyssal'].includes(r.rarity)};
  state.storage.push(item);state.craftProgress.crafted[id]=(state.craftProgress.crafted[id]||0)+1;
  recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し倉庫へ保管しました。`,'gold');render();openCrafting(forgeTab);return true;
 }

@@ -1,0 +1,54 @@
+<!doctype html><meta charset="utf-8"><title>Seven slot equipment tests</title>
+<iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=()=>setTimeout(()=>{
+ const w=document.querySelector('iframe').contentWindow,out=[];
+ const check=(ok,name)=>{if(!ok)throw Error(name);out.push('PASS: '+name);};
+ try {
+  const s=w.__gameDebug.state,d=w.__equipmentDebug;w.closeGenericModal();w.setTimeout=()=>0;w.confirm=()=>true;
+  const old={weapon:{id:'old-w',key:'old-w',name:'旧剣',type:'weapon',baseAtk:10},armor:{id:'old-a',name:'旧鎧',type:'armor',baseDef:6},accessory:{id:'old-r',name:'旧指輪',type:'accessory',crit:10},unknown:{id:'odd',name:'移行不能品',type:'relic'}};
+  w.localStorage.setItem('ABYSS_ROGUE_SAVED_V2',JSON.stringify({equipped:old,storage:[],vaultGold:99}));w.loadState();
+  check(Object.keys(s.equipped).length===7&&s.equipped.armor.id==='old-a'&&s.equipped.accessory.id==='old-r','旧3枠→7枠移行');
+  check(s.storage.some(i=>i.id==='odd')&&s.equipped.weapon.id==='old-w','旧装備・移行不能品の消失なし');
+  w.saveState();w.loadState();check(s.storage.length===1&&s.equipped.weapon.tags.length,'再読み込みで重複なし・タグ補完');
+  s.screen='town';s.camp.vaultSize=1000;s.camp.blacksmith=2;s.vaultGold=100000;s.abyssCores=100;
+  for(const slot of d.slots)w.unequipItem(slot.k);
+  const empty=w.getPlayerStats();
+  for(const slot of d.slots){
+   const category=slot.k==='accessory2'?'accessory':slot.k;
+   const [id,r]=Object.entries(d.recipes).find(([,r])=>r.slot===category&&!r.parent&&r.effects);
+   for(const [key,n]of Object.entries(r.materials))if(key!=='abyss_core')for(let j=0;j<n;j++)s.storage.push({...d.materials[key],key,type:'material',id:crypto.randomUUID()});
+   const gold=s.vaultGold;check(w.craftEquipment(id),'新装備クラフト '+slot.label);w.closeGenericModal();
+   check(s.vaultGold===gold-r.gold&&Object.keys(r.materials).filter(k=>k!=='abyss_core').every(k=>w.materialCount(k)===0),'レシピ消費 '+slot.label);
+   const item=s.storage.find(i=>i.key===id);w.equipItem(s.storage.indexOf(item),true,slot.k);
+   check(!!s.equipped[slot.k],'装備 '+slot.label);
+   for(let n=0;n<11;n++)w.refineEquippedItem(slot.k);
+   check(s.equipped[slot.k].refineCount===10,'強化上限 '+slot.label);
+  }
+  check(s.equipped.accessory.id!==s.equipped.accessory2.id,'アクセサリー2個装備');
+  const expectedDef=empty.def+Object.values(s.equipped).reduce((n,i)=>n+(i.baseDef||0),0);
+  check(w.getPlayerStats().def===expectedDef,'7枠の総防御が正しく集計');
+  s.activeTab='equip';w.renderSubPanel();check(d.slots.every(slot=>w.document.getElementById('sub-panel').textContent.includes(slot.label))&&w.document.body.textContent.includes('総能力'),'7部位・総能力・効果UI');
+  const ids=Object.values(s.equipped).map(i=>i.id);w.saveState();w.loadState();check(Object.values(s.equipped).every(i=>ids.includes(i.id)),'7枠保存復元');
+  for(const slot of d.slots){const id=s.equipped[slot.k].id;w.unequipItem(slot.k);check(!s.equipped[slot.k]&&s.storage.some(i=>i.id===id),'解除 '+slot.label);}
+  for(const slot of ['weapon','head','armor','arms','legs','accessory'])check(w.getStorageRows(s.storage,slot).every(r=>w.equipmentSlot(r.it)===slot),'倉庫分類 '+slot);
+  s.equipped.weapon={key:'test',name:'検証剣',type:'weapon',baseAtk:10};s.equipped.arms={type:'armor',slot:'arms',rarity:'Common',effects:{justAttack:80}};
+  s.hp=100;s.guardFatigue=1;s.guardBroken=false;s.currentEnemy={name:'標的',hp:10000,maxHp:10000,atk:5,def:0,actionType:'heavy',nextMult:1};
+  w.Math.random=()=>.5;w.enemyTurn(true);check(s.playerAttackBuff>=1.8,'Common腕のJUST GUARD効果');
+  const mythic=Object.values(d.recipes).find(r=>r.rarity==='Mythic'&&r.effects&&r.baseAtk>=85);
+  s.equipped.weapon={...mythic};check(s.equipped.weapon.baseAtk>=85&&w.equipmentEffects().justAttack===80,'高レア基礎性能＋低レア混成');
+  s.equipped.accessory={type:'accessory',effects:{poisonChance:80}};s.equipped.accessory2={type:'accessory',effects:{poisonBonus:120,poisonHeal:8}};
+  check(w.equipmentSynergies().some(t=>t.includes('毒特効')),'異種装備の毒連携表示');
+  const enemy={hp:10000,maxHp:10000,def:0};w.equipmentHit(enemy,'attack');check(enemy.gearPoison===3,'毒付与発動');
+  const stats={atk:100,crit:5,maxHp:100};w.equipmentAttackStats(stats,enemy,'attack');check(stats.atk===220,'Rare毒特効+120%発動');
+  w.equipmentPoisonTick(enemy);check(enemy.hp<10000,'敵毒の継続ダメージ');
+  s.equipped.legs={effects:{dodge:40,dodgeAttack:80}};s.equipped.arms=null;s.equipped.accessory=null;s.equipped.accessory2=null;
+  s.currentEnemy={name:'回避標的',hp:100,maxHp:100,atk:50,def:0};s.playerAttackBuff=1;const before=s.hp;w.Math.random=()=>0;w.enemyTurn(false);check(s.hp===before&&s.playerAttackBuff>=1.8,'回避→次撃強化');
+  const counts={};Object.values(d.catalog).forEach(r=>{const slot=w.equipmentSlot(r);counts[slot]=(counts[slot]||0)+1;});
+  check(Object.keys(d.recipes).length>=100,'100種類以上のクラフト');
+  out.push('CATALOG '+JSON.stringify(counts)+' / RECIPES '+Object.keys(d.recipes).length);
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+},300);
+</script>
