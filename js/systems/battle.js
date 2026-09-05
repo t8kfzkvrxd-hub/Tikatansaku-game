@@ -1,4 +1,5 @@
     function startNormalBattle(isElite = false) {
+      resetBattleBuilds();
       const area = getCurrentArea();
       let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
       
@@ -34,6 +35,7 @@
     }
 
     function startBossBattle(bossTemplate) {
+      resetBattleBuilds();
       playSound('hit');
       const scaled=scaledEnemyStats(bossTemplate,getCurrentArea(),state.floor,'boss',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel,labLevel:state.camp.lab});
       state.currentEnemy = {
@@ -714,6 +716,7 @@
       const enemy = state.currentEnemy;
       awardBattleExperience(enemy);
       buildKill(state,state.equipped,getPlayerStats().maxHp);
+      const buildCompanion=companionCombatUnit();if(buildCompanion?.hp>0)buildKill(buildCompanion,characterEquipment(buildCompanion.id),companionStats(buildCompanion.id).maxHp);
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.lastDefeatedEnemy={atk:enemy.atk,trait:enemy.trait};
       if(enemy.trait==='death_pulse'){state.pendingEnemyPulse=3;addLog('🫀 肉塊の治癒脈動が次の敵へ伝わった（3T・毎ターン最大HP6%回復）','danger');}

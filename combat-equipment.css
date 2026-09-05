@@ -2,3 +2,7 @@
 .combat-number-space{grid-column:1/-1;height:66px;pointer-events:none}
 .battle-readout>.combat-actions{grid-column:1/-1}
 @media(max-height:500px) and (orientation:landscape){body:has(.battle-readout) #status-bar>.hp-box{display:none}.combat-number-space{height:48px}.battle-readout .combat-actions{gap:4px!important;margin-top:0!important}.battle-readout .combat-actions .btn{padding:5px;min-height:44px}.battle-unit{min-height:74px}}
+ .build-detail{padding:8px;margin:6px 0;border:1px solid #687b8b;border-radius:6px;overflow-wrap:anywhere}.build-detail p{margin:6px 0;font-size:13px;line-height:1.5}.build-chips{display:flex;gap:3px;flex-wrap:wrap}.build-state{font-size:11px;color:#acb5c1;border:1px solid #526070;border-radius:4px;padding:2px}.build-state.active{color:#ffe6a3;border-color:#dcb85e;box-shadow:0 0 5px #dcb85e55}.build-mini{font-size:12px;color:#e5eaf3;background:#182331;border:1px solid #72839a;min-height:44px;border-radius:5px;cursor:pointer}
+.combat-float.summon{border:1px solid #ba9bfc;background:#211831dd;box-shadow:-8px 2px 0 #9673d533,8px -2px 0 #9673d522;padding:5px;border-radius:8px}
+.battle-unit .build-mini{position:absolute;right:3px;top:2px;width:44px;padding:0}.battle-unit:has(.build-mini)>strong{padding-right:44px}.build-chips{flex-wrap:nowrap;overflow:hidden;height:20px}.build-chips .build-state{white-space:nowrap}.build-chips:empty{display:none}
+@media(max-height:500px){.combat-number-space{height:28px}.build-chips .build-state{font-size:11px}.build-chips .build-state:nth-child(n+2){display:none}}

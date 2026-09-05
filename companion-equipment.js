@@ -93,7 +93,7 @@ function companionTurn(enemy){
  unit.attackBuff=1;enemy.hp-=damage;equipmentHit(enemy,action,crit,slots);applyRootProtection(enemy,before);
  healFromWeaponDamage(unit,stats,enemy,Math.max(0,before-Math.max(0,enemy.hp)),slots,crit);
  addLog(`${CHARACTER_DATA[id]?.name||id}の${action==='skill'?'スキル':action==='heavy'?'強攻撃':'通常攻撃'}！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
- if(enemy.hp<=0){buildKill(unit,slots,stats.maxHp);if(enemy.gearPoison)unit.hp=Math.min(stats.maxHp,unit.hp+(stats.effects.poisonHeal||0));}
+ if(enemy.hp<=0&&enemy.gearPoison)unit.hp=Math.min(stats.maxHp,unit.hp+(stats.effects.poisonHeal||0));
  if(enemy.hp<=0){enemy.hp=0;onEnemyKilled();return true;}
  return false;
 }

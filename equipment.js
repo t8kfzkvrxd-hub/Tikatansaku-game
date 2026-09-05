@@ -11,7 +11,7 @@ const EQUIPMENT_EFFECTS = {
  skillPower:['スキル威力','%'],skillHaste:['スキルCT短縮','T'],
  justAttack:['JUST GUARD後の次撃','%'],guardHeal:['ガード成功時回復','HP'],
  dodge:['回避率','%'],dodgeAttack:['回避後の次撃','%'],
- breakPower:['強攻撃時の敵防御破壊',''],lowHpPower:['HP35%以下の攻撃力','%'],
+ breakPower:['部位破壊力加算・強攻撃DEF削り',''],lowHpPower:['HP35%以下の攻撃力','%'],
  materialChance:['追加素材率','%'],critPoison:['会心時の毒付与率','%'],quarryPower:['素材元の敵への攻撃力','%']
 };
 const GEAR_PROFILES = {

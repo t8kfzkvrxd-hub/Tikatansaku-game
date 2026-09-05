@@ -15,7 +15,7 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  const companionBonus=companion?.hp>0?(companionStats(companion.id).effects.materialChance||0):0;
  if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[Math.min(materialTierLimit(),enemy.isBoss?3:enemy.isElite?1:0)]);
  if(enemy.isBoss&&rng()<.05)keys.push(source.keys[Math.min(materialTierLimit(),4)]);
- const rareBonus=(equipmentEffects().rareMaterial||0)+(companion?.hp>0?companionStats(companion.id).effects.rareMaterial||0:0)+(enemy.buildBroken&&buildTags(state.equipped).has('farming')?5:0);
+ const rareBonus=(equipmentEffects().rareMaterial||0)+(companion?.hp>0?companionStats(companion.id).effects.rareMaterial||0:0)+(enemy.buildBroken&&(buildTags(state.equipped).has('farming')||companion?.hp>0&&buildTags(characterEquipment(companion.id)).has('farming'))?5:0);
  if(rng()*100<Math.min(25,rareBonus))keys.push(source.keys[Math.min(materialTierLimit(),2)]);
  if(materialTierLimit()>=5&&rng()<.03)keys.push(source.keys[5]);
  if(clearedMaterialMilestone(1000)&&rng()<.05)keys.push('post_abyss');

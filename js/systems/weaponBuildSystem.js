@@ -9,10 +9,18 @@ function buildTags(slots){
  return tags;
 }
 function buildRuntime(unit){return unit.buildRuntime ||= {hits:0,hurt:0,kills:0,shield:0,charge:0};}
-function buildAttack(stats,enemy,action,slots,hp){
- const tags=buildTags(slots),unit=slots===state.equipped?state:companionCombatUnit();if(!unit)return;
- const runtime=buildRuntime(unit),statuses=enemy.buildStatuses||{},active=Object.values(statuses).filter(v=>v>0).length;
- const conditions={singleStrike:action==='heavy',lowHp:hp<stats.maxHp*.35,highHp:hp>=stats.maxHp*.9,normalAttack:action==='attack',heavyAttack:action==='heavy',skillPower:action==='skill',onKill:runtime.kills>0,longFight:enemy.turnCount>=4,burst:(enemy.turnCount||0)<2,onHurt:runtime.hurt>0,unhurt:runtime.hurt===0,boss:enemy.isBoss,mob:!enemy.isBoss,statusHunter:active>0,deep:state.floor>=61,abyssal:state.floor>=500,counter:runtime.charge>0};
+function resetBattleBuilds(){for(const unit of [state,...Object.values(state.companionBattle||{})]){const kills=unit.buildRuntime?.kills||0;unit.buildRuntime={hits:0,hurt:0,kills,shield:0,charge:0};}}
+function buildConditions(stats,enemy,action,hp,runtime){
+ const active=enemy.gearPoison>0||Object.values(enemy.buildStatuses||{}).some(v=>v>0);
+ return {singleStrike:action==='heavy'&&runtime.hits%3===0,lowHp:hp<stats.maxHp*.35,highHp:hp>=stats.maxHp*.9,normalAttack:action==='attack',heavyAttack:action==='heavy',skillPower:action==='skill',onKill:runtime.kills>0,longFight:(enemy.turnCount||0)>=4,burst:(enemy.turnCount||0)<2,onHurt:runtime.hurt>0,unhurt:runtime.hurt===0,boss:!!enemy.isBoss,mob:!enemy.isBoss,statusHunter:!!active,deep:state.floor>=61,abyssal:state.floor>=500,counter:runtime.charge>0};
+}
+function buildAttack(stats,enemy,action,slots,hp,previewRuntime=null){
+ const tags=buildTags(slots),unit=previewRuntime?{}:slots===state.equipped?state:companionCombatUnit();if(!unit)return;
+ const runtime=previewRuntime||buildRuntime(unit),statuses=enemy.buildStatuses||{};
+ const conditions=buildConditions(stats,enemy,action,hp,runtime);
+ const activeTags=[...tags].filter(t=>conditions[t]);
+ const newlyActive=activeTags.filter(t=>!(runtime.activeTags||[]).includes(t));runtime.activeTags=activeTags;
+ if(!previewRuntime&&state.screen==='battle'&&action!=='defend'&&newlyActive.length)addLog(`[${unit===state?'主人公':CHARACTER_DATA[unit.id]?.name||unit.id}] ${newlyActive.slice(0,3).map(t=>BUILD_CATALOG[t]).join('・')} 発動`,'gold');
  let bonus=0;for(const [tag,condition]of Object.entries(conditions))if(tags.has(tag)&&condition)bonus+=tag==='singleStrike'?(runtime.hits%3===0?.5:0):tag==='normalAttack'||tag==='heavyAttack'?.3:.2;
  if(tags.has('crit'))stats.crit+=15;
  if(statuses.bleed>0)stats.crit+=equipmentEffects(slots).bleedCrit||0;
@@ -35,14 +43,14 @@ function buildHit(enemy,action,crit,slots){
  if(tags.has('break')&&action==='heavy'){enemy.def=Math.max(0,enemy.def-3);if(typeof ensureEnemyParts!=='function')enemy.buildBroken=true;}
  const stats=slots===state.equipped?getPlayerStats():companionStats(unit.id);
  const triggers={multiHit:runtime.hits%3===0,speed:runtime.hits%2===0,extraAttack:Math.random()<Math.min(.65,(enemy.buildStatuses.shock?.45:.25)+(effects.extraChance||0)/100),summon:runtime.hits%4===0};
- for(const [tag,trigger]of Object.entries(triggers))if(tags.has(tag)&&trigger){const damage=Math.max(1,Math.round(stats.atk*(tag==='summon'?.35*(1+Math.min(100,(effects.summonPower||0)+(tags.has('skillPower')?20:0))/100):tag==='speed'?.1:.2)));enemy.hp-=damage;const label=tag==='summon'?'影の分身が攻撃':tag==='extraAttack'?'追加ヒット':BUILD_CATALOG[tag];combatApplied(slots===state.equipped?'player':unit.id,'enemy',-damage,label);addLog(`${label}！ ${damage}ダメージ`,'gold');if(tag==='extraAttack'&&tags.has('status')&&Math.random()<chance)enemy.gearPoison=3;}
+ for(const [tag,trigger]of Object.entries(triggers))if(tags.has(tag)&&trigger){const damage=Math.max(1,Math.round(stats.atk*(tag==='summon'?.35*(1+Math.min(100,(effects.summonPower||0)+(tags.has('skillPower')?20:0))/100):tag==='speed'?.1:.2)));enemy.hp-=damage;const label=tag==='summon'?'影の分身 SUMMON':tag==='extraAttack'?'ADDITIONAL 追加攻撃':BUILD_CATALOG[tag];combatApplied(slots===state.equipped?'player':unit.id,'enemy',-damage,label);addLog(`${label}！ ${damage}ダメージ`,'gold');if(tag==='extraAttack'&&tags.has('status')&&Math.random()<chance)enemy.gearPoison=3;}
  if(tags.has('followUp')&&(enemy.gearPoison||Object.values(enemy.buildStatuses).some(n=>n>0))){enemy.pendingBuildFollowUps ||= [];enemy.pendingBuildFollowUps.push({actor:slots===state.equipped?'player':unit.id,damage:Math.max(1,Math.round(stats.atk*.2))});}
- if(tags.has('conversion')){enemy.buildStatuses.shock=Math.min(5,(enemy.buildStatuses.shock||0)+(enemy.buildStatuses.fire||1));enemy.buildStatuses.fire=0;}
- if(tags.has('hybrid')){const count=Object.values(enemy.buildStatuses).filter(n=>n>0).length;enemy.hp-=Math.max(1,Math.round(stats.atk*.05*Math.min(3,count+1)));}
+ if(tags.has('conversion')&&enemy.buildStatuses.fire>0){enemy.buildStatuses.shock=Math.min(5,(enemy.buildStatuses.shock||0)+enemy.buildStatuses.fire);enemy.buildStatuses.fire=0;}
+ if(tags.has('hybrid')){const count=Object.values(enemy.buildStatuses).filter(n=>n>0).length,damage=Math.max(1,Math.round(stats.atk*.05*Math.min(3,count+1)));enemy.hp-=damage;combatApplied(slots===state.equipped?'player':unit.id,'enemy',-damage,'HYBRID 属性複合');}
 }
 function buildStatusTick(enemy){
  const pending=enemy.pendingBuildFollowUps||[];enemy.pendingBuildFollowUps=[];
- for(const hit of pending){if(enemy.hp<=0)break;enemy.hp-=hit.damage;combatApplied(hit.actor,'enemy',-hit.damage,'敵行動前追撃');addLog(`${hit.actor==='player'?'主人公':CHARACTER_DATA[hit.actor]?.name||hit.actor}：敵行動前追撃 ${hit.damage}`,'gold');}
+ for(const hit of pending){if(enemy.hp<=0)break;enemy.hp-=hit.damage;combatApplied(hit.actor,'enemy',-hit.damage,'FOLLOW-UP 敵行動前追撃');addLog(`${hit.actor==='player'?'主人公':CHARACTER_DATA[hit.actor]?.name||hit.actor}：FOLLOW-UP 敵行動前追撃 ${hit.damage}`,'gold');}
  const s=enemy.buildStatuses;if(!s)return;
  for(const tag of Object.keys(s)){
   if(s[tag]<=0)continue;
@@ -51,15 +59,19 @@ function buildStatusTick(enemy){
   s[tag]--;
  }
 }
-function healFromWeaponDamage(unit,stats,enemy,damage,slots,crit=false){
- const tags=buildTags(slots),effects=equipmentEffects(slots),runtime=buildRuntime(unit);
+function buildLifestealValues(unit,stats,enemy,slots,crit=false){
+ const tags=buildTags(slots),effects=equipmentEffects(slots);
  let rate=(stats.vamp||0)+(effects.lifestealRate||0)+(tags.has('lifesteal')?4:0);
  if(tags.has('lowHp')&&unit.hp<stats.maxHp*.5)rate+=5;
  if(crit&&tags.has('crit'))rate*=1.2;
  if(enemy.buildStatuses?.bleed>0&&tags.has('lifesteal'))rate*=1.25;
  if(enemy.buildStatuses?.bleed>0)rate+=effects.bleedLeech||0;
- rate=Math.min(25,rate)*(enemy.isBoss?.5:1);
+ const conditional=rate;rate=Math.min(25,rate)*(enemy.isBoss?.5:1);
  const resistance=Math.max(0,1-(enemy.healingSuppression||0)-(enemy.isBoss?(enemy.turnCount||0)/30:0));
+ return {base:tags.has('lifesteal')?4:0,equipment:(stats.vamp||0)+(effects.lifestealRate||0),conditional,rate,resistance,cap:25};
+}
+function healFromWeaponDamage(unit,stats,enemy,damage,slots,crit=false){
+ const tags=buildTags(slots),runtime=buildRuntime(unit),{rate,resistance}=buildLifestealValues(unit,stats,enemy,slots,crit);
  const heal=Math.floor(Math.min(Math.max(0,damage)*rate/100,stats.maxHp*.08)*resistance);
  const applied=Math.min(Math.max(0,stats.maxHp-unit.hp),heal);unit.hp+=applied;
  if(tags.has('overheal')){const beforeShield=runtime.shield;runtime.shield=Math.min(Math.round(stats.maxHp*.15),runtime.shield+heal-applied);if(runtime.shield>beforeShield)combatEmit(unit===state?'player':unit.id,unit===state?'player':unit.id,runtime.shield-beforeShield,'SHIELD','shield');}
@@ -73,7 +85,7 @@ function buildIncomingDamage(damage,enemy,slots,unit,maxHp,guard=false){
  if(tags.has('safe'))damage=Math.round(damage*.95);
  if(tags.has('guard')&&guard)damage=Math.round(damage*.9);
  if(guard&&(tags.has('counter')||tags.has('justGuard')&&['heavy','critical_smash'].includes(enemy.actionType)))r.charge=1;
- if(tags.has('reflect'))enemy.hp=Math.max(1,enemy.hp-Math.min(20,Math.round(damage*.15)));
+ if(tags.has('reflect')){const before=enemy.hp;enemy.hp=Math.max(1,enemy.hp-Math.min(20,Math.round(damage*.15)));if(before>enemy.hp)addLog(`[反射] ${before-enemy.hp}ダメージ`,'gold');}
  if(damage>0)r.hurt++;return Math.max(0,damage);
 }
 function buildKill(unit,slots,maxHp){const r=buildRuntime(unit);r.kills++;if(buildTags(slots).has('onKill'))unit.hp=Math.min(maxHp,unit.hp+Math.ceil(maxHp*.03));}
