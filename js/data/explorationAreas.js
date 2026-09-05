@@ -28,3 +28,10 @@ const EXPLORATION_ROUTES={
 EXTENDED_AREAS.forEach((area,i)=>{
  const d=EXTENDED_AREA_DATA[i];explorationAreas.push({id:`area_${area.id}`,floorMin:area.min,floorMax:area.max,name:area.tag,enabled:true,backgrounds:[{src:`assets/images/exploration/explore-${area.id}-placeholder.png`,position:'center',label:'仮背景'}],effects:d[8].split(','),titles:{battle_normal:[d[9],d[10]],elite_battle:[d[9]+' ― 強大な気配'],chest_normal:[area.tag+'に残された資材箱'],cursed_chest:[area.tag+'の封じられた箱'],deep_area_event:[area.tag+'の素材採取地点'],heal_spring:[area.tag+'の休息地点']},lines:[d[11]]});
 });
+const EXPLORATION_GATHER_TITLES=['岩壁に鉱石が光っている','瓦礫の中に素材が見える','壁際に発光苔が群生している','光る菌類が群生している','祭壇に副葬品が残っている','壁から異質な組織が露出する','記憶片が地面に散らばる','割れた鏡に光が残っている','床に記憶の欠片が落ちている','空間から結晶片がこぼれる','黒曜石の鉱脈が露出している','停止した炉に部材が残る','毒水の岸に発光菌が群れる','崩れた祭壇に欠片が光る','結晶の根元に破片が集まる','無人の家に遺物が残る','沈んだ橋に資材が引っかかる','赤い霧の下で鉱片が光る','浮遊する瓦礫に素材が見える','門前に古い資材が残る'];
+explorationAreas.forEach((area,i)=>{
+ if(i>=10)area.titles.deep_area_event=[EXPLORATION_GATHER_TITLES[i]];
+ area.effects=[...new Set([...area.effects,...[['embers'],['dust'],['dust'],['blue'],['blue'],[],['blue'],['memory'],['dust'],['blue'],[],['reflection'],['spores'],[],[],['black-dust'],[],['black-dust'],['shimmer'],[]][i]])];
+});
+EXPLORATION_ROUTES.cursed_chest.tone='cursed';
+EXPLORATION_ROUTES.heal_spring.tone='rest';

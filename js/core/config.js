@@ -1,8 +1,9 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.24.0';
+    const GAME_VERSION = '0.24.1';
     const UPDATE_NOTES = [
+      '探索ルートカードの種類・危険度・報酬表示と選択演出を改善。1〜200Fの環境演出を補強し、境界階・ボス・探索表示を検証',
       '探索を200Fまで拡張。101〜200Fの10エリア・敵・ボス・素材・製作レシピを追加。新規ストーリーは追加せず、既存チェックポイントとHUDを維持',
       '探索2.0を1〜100Fへ拡張。10エリアの専用仮背景・環境演出・探索文言・エルナ台詞を追加。状態差分HUDとボス・安全地点進行を維持',
       '探索HUDのエルナ瀕死画像を透過PNGへ差し替え。状態切替・HP閾値・表示枠は変更なし',
