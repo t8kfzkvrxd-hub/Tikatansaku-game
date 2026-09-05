@@ -77,6 +77,7 @@ function unequipItem(slot) {
  list.push(item);state.equipped[slot]=null;saveState();render();
 }
 function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.hp) {
+ if(typeof ensureEnemyParts==='function'){ensureEnemyParts(enemy);enemy.partHitStart ||= {};enemy.partHitStart[slots===state.equipped?'player':'companion']=enemy.hp;}
  const e=equipmentEffects(slots);
  const quarry=Object.values(slots).filter(i=>i?.quarrySource&&i.quarrySource===enemy.materialSource).reduce((sum,i)=>sum+(i.effects?.quarryPower||0),0);
  stats.atk*=1+Math.min(60,quarry)/100;
@@ -88,6 +89,7 @@ function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.h
  buildAttack(stats,enemy,action,slots,hp);
 }
 function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
+ if(typeof hitEnemyPart==='function')hitEnemyPart(enemy,action,slots);
  buildHit(enemy,action,isCrit,slots);
  const e=equipmentEffects(slots);
  if(e.fireDamage){enemy.hp-=e.fireDamage;addLog(`🔥 炎追撃 ${e.fireDamage}ダメージ`,'gold');}

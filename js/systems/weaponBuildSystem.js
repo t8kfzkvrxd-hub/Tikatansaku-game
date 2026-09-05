@@ -32,7 +32,7 @@ function buildHit(enemy,action,crit,slots){
  for(const tag of ['bleed','fire','freeze','shock','curse'])if(tags.has(tag)&&Math.random()<chance)enemy.buildStatuses[tag]=Math.min(tag==='bleed'?5+Math.min(5,effects.bleedCap||0):5,(enemy.buildStatuses[tag]||0)+1+(tag==='bleed'?Math.min(2,effects.bleedStacks||0):0));
  if((tags.has('poison')||tags.has('status'))&&Math.random()<chance)enemy.gearPoison=3;
  if(tags.has('defDown'))enemy.def=Math.max(0,enemy.def-1);
- if(tags.has('break')&&action==='heavy'){enemy.def=Math.max(0,enemy.def-3);enemy.buildBroken=true;}
+ if(tags.has('break')&&action==='heavy'){enemy.def=Math.max(0,enemy.def-3);if(typeof ensureEnemyParts!=='function')enemy.buildBroken=true;}
  const stats=slots===state.equipped?getPlayerStats():companionStats(unit.id);
  const triggers={multiHit:runtime.hits%3===0,speed:runtime.hits%2===0,extraAttack:Math.random()<Math.min(.65,(enemy.buildStatuses.shock?.45:.25)+(effects.extraChance||0)/100),summon:runtime.hits%4===0};
  for(const [tag,trigger]of Object.entries(triggers))if(tags.has(tag)&&trigger){const damage=Math.max(1,Math.round(stats.atk*(tag==='summon'?.35*(1+Math.min(100,(effects.summonPower||0)+(tags.has('skillPower')?20:0))/100):tag==='speed'?.1:.2)));enemy.hp-=damage;const label=tag==='summon'?'影の分身が攻撃':tag==='extraAttack'?'追加ヒット':BUILD_CATALOG[tag];combatApplied(slots===state.equipped?'player':unit.id,'enemy',-damage,label);addLog(`${label}！ ${damage}ダメージ`,'gold');if(tag==='extraAttack'&&tags.has('status')&&Math.random()<chance)enemy.gearPoison=3;}

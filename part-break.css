@@ -1,0 +1,3 @@
+.enemy-parts{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}.enemy-parts button{min-height:44px;flex:1 1 85px;padding:5px;color:#e2e8f0;background:#172033;border:1px solid #64748b;border-radius:6px;font-size:13px;touch-action:manipulation;cursor:pointer}.enemy-parts button[aria-pressed=true]{border-color:#fbbf24;background:#493a21}.enemy-parts small{display:block;font-size:11px}.part-help{display:block;font-size:11px;color:#cbd5e1}.enemy-parts button:disabled{opacity:.6;cursor:default}
+.battle-readout>.enemy-parts,.battle-readout>.part-help{grid-column:1/-1}
+@media(max-height:500px) and (orientation:landscape){.battle-readout:has(.enemy-parts) .combat-number-space{height:0}.battle-readout>.part-help{display:none}.enemy-parts{margin:0}.enemy-parts button{padding:3px}}

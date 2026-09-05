@@ -10,7 +10,7 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  if(enemy.isBoss)discoverMaterial('abyss_core');
  const roll=rng();
  const tier=enemy.isBoss?3:enemy.isElite?(roll<.015?4:roll<.08?3:roll<.55?2:1):(roll<.002?4:roll<.01?3:roll<.05?2:roll<.20?1:0);
- const keys=[source.keys[Math.min(materialTierLimit(),tier)]];
+ const keys=[source.keys[Math.min(materialTierLimit(),tier)],...(typeof partRewardRolls==='function'?partRewardRolls(enemy,rng):[])];
  const companion=companionCombatUnit();
  const companionBonus=companion?.hp>0?(companionStats(companion.id).effects.materialChance||0):0;
  if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[Math.min(materialTierLimit(),enemy.isBoss?3:enemy.isElite?1:0)]);
