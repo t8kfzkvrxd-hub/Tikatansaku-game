@@ -56,7 +56,7 @@ for(const [root,base]of EVOLUTION_ROOTS){
    const id=`evolve_${root}_${branch}_${stage.id}`,tier=stageTier;
    const source=base.quarrySource||AREAS[0].boss.materialSource;
    const material=stage.clear===1000?'post_abyss':MONSTER_MATERIALS[source].keys[tier];
-   const r={...base,name:`${base.name}・${profile.name}${stage.id==='deep'?'深淵':stage.rarity}`,parent,awakening:true,hiddenMaterial:null,unlockFloor:stage.clear,inheritRefinement:true,evolutionRoot:root,secondaryBuildTags:[...new Set([...(base.secondaryBuildTags||[]),profile.secondary])],effects:{...(base.effects||{}),...profile.effects},materials:{[material]:3,abyss_core:2},gold:stage.clear*5,desc:`${base.desc||''} / ${profile.name}派生：強化値・追加特性を継承 / ${stage.clear}Fクリア後`};
+   const r={...base,name:`${base.name}・${profile.name}${stage.id==='deep'?'深淵':stage.rarity}`,parent,awakening:true,hiddenMaterial:null,unlockFloor:stage.clear,inheritRefinement:true,evolutionRoot:root,secondaryBuildTags:[...new Set([...(base.secondaryBuildTags||[]),profile.secondary])],effects:{...(base.effects||{}),...profile.effects},materials:{[material]:3,abyss_core:2},gold:stage.clear*5,desc:`${base.desc||''} / ${profile.name}派生：覚醒後+0・追加特性を継承 / ${stage.clear}Fクリア後`};
    // Different branches emphasize effects, rather than multiplying every base stat.
    r.rarity=stage.rarity;
    r.primaryBuildTag=profile.primary||base.primaryBuildTag;

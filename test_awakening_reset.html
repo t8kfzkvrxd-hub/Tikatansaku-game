@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[],check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)};try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.screen='town';s.chapter.owned.elna=true;s.camp.vaultSize=9999;s.vaultGold=9999999;s.abyssCores=9999;s.bossFirstKills[100]=true;
+ const recipes=w.__equipmentDebug.recipes,id=Object.keys(recipes).find(k=>recipes[k].awakening&&recipes[k].inheritRefinement&&recipes[k].unlockFloor===100),r=recipes[id];check(!!r,'real awakening recipe');
+ let prompt='',calls=0;w.confirm=t=>{prompt=t;calls++;return true};
+ for(const owner of ['storage','player','elna'])for(const level of [0,3,5,10]){
+  s.equipped=w.emptyEquipmentSlots();s.chapter.equipment.elna=w.emptyEquipmentSlots();s.storage=[];
+  const parent={...recipes[r.parent],key:r.parent,id:crypto.randomUUID(),refineCount:level,enhanceLevel:level,baseAtk:999,locked:false,affix:'critical',evolutionHistory:['prior']};
+  if(owner==='storage')s.storage.push(parent);else w.characterEquipment(owner).weapon=parent;
+  for(const [key,n]of Object.entries(r.materials))if(key!=='abyss_core')for(let i=0;i<n;i++)s.storage.push({...w.__equipmentDebug.materials[key],key,id:crypto.randomUUID(),type:'material'});
+  w.openRecipeDetail(id,parent.id);check(w.document.body.textContent.includes('覚醒すると強化値はリセットされます'),'UI reset warning');
+  const before=calls;check(w.craftEquipment(id,parent.id),owner+' +'+level+' awakening');const item=owner==='storage'?s.storage.find(i=>i.key===id):w.characterEquipment(owner).weapon;
+  check(item.refineCount===0&&item.enhanceLevel===0&&item.baseAtk===r.baseAtk,'+0 and no inherited ATK');check(item.id!==parent.id&&item.affix==='critical'&&item.evolutionHistory.includes('prior')&&item.tags.length&&item.awakening,'identity / affix / history / tags / awakened');check(calls===before+1&&prompt.includes('→ +0')&&(level===0||prompt.includes('失われます')),'single confirmation');
+  w.saveState();w.loadState();const loaded=owner==='storage'?s.storage.find(i=>i.id===item.id):w.characterEquipment(owner).weapon;check(loaded.refineCount===0&&loaded.id===item.id,'save / load');
+ }
+ const parent={...recipes[r.parent],key:r.parent,id:'locked-parent',refineCount:10,locked:true};s.storage.push(parent);const gold=s.vaultGold;check(!w.craftEquipment(id,parent.id)&&s.storage.includes(parent)&&s.vaultGold===gold,'locked equipment protected');
+ parent.locked=false;w.confirm=()=>false;check(!w.craftEquipment(id,parent.id)&&s.storage.includes(parent)&&s.vaultGold===gold,'cancel leaves source intact');
+ out.push('ALL TESTS PASSED');}catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n')};
+</script>

@@ -33,28 +33,37 @@ function materialCount(key, includeLocked=false) {
 }
 function recipeVisible(id) { const r=CRAFT_RECIPES[id]; return r && (!r.hiddenMaterial || state.craftProgress.recipes[id]); }
 function craftingParents(recipe) {
- return [...state.storage,...Object.values(state.equipped).filter(Boolean)].filter(it=>it.key===recipe.parent && !it.locked && (!equipmentOwner(it)||equipmentOwner(it)==='player') && (Number(it.refineCount)||0)>=10);
+ const equipped=recipe.awakening?[state.equipped,...Object.values(state.chapter.equipment||{})]:[state.equipped];
+ return [...new Map([...state.storage,...equipped.flatMap(slots=>Object.values(slots).filter(Boolean))].map(it=>[it.id,it])).values()].filter(it=>it.key===recipe.parent && !it.locked && (recipe.awakening || ((!equipmentOwner(it)||equipmentOwner(it)==='player') && (Number(it.refineCount)||0)>=10)));
 }
 function craftingIssue(id, parentId) {
  const r=CRAFT_RECIPES[id];
  if(state.screen!=='town'||!recipeVisible(id))return '未解放';
  if(materialProgressionIssue(r.rarity))return materialProgressionIssue(r.rarity);
  if(r.unlockFloor&&!clearedMaterialMilestone(r.unlockFloor))return `${r.unlockFloor}Fクリア後に解禁`;
- if(r.parent&&!craftingParents(r).some(it=>it.id===parentId))return '未ロックの親武器+10が必要';
+ if(r.parent&&!craftingParents(r).some(it=>it.id===parentId))return r.awakening?'未ロックの覚醒元武器が必要':'未ロックの親武器+10が必要';
  if(state.vaultGold<r.gold)return 'G不足';
  if(Object.entries(r.materials).some(([key,n])=>materialCount(key)<n))return '素材不足（ロック品は対象外）';
  const parentInStorage=r.parent&&state.storage.some(it=>it.id===parentId);
- if(vaultUsed()-(parentInStorage?1:0)+1>state.camp.vaultSize)return '倉庫容量不足';
+ const replacingEquipped=r.awakening&&craftingParents(r).some(it=>it.id===parentId&&equipmentOwner(it));
+ if(!replacingEquipped&&vaultUsed()-(parentInStorage?1:0)+1>state.camp.vaultSize)return '倉庫容量不足';
  return '';
 }
 function craftEquipment(id,parentId) {
  const issue=craftingIssue(id,parentId); if(issue){addLog(issue,'danger');return false;}
  const r=CRAFT_RECIPES[id];
- let inherited=null;
+ let inherited=null, replacement=null;
  if(r.parent) {
   const parent=craftingParents(r).find(it=>it.id===parentId);
-  if(!window.confirm(`【${parent.name}】を消費して【${r.name}】へ${r.awakening?'覚醒':'派生'}します。${r.inheritRefinement?'強化値・追加特性を引き継ぎます。':'強化値・追加特性は引き継ぎません。'}よろしいですか？`))return false;
-  if(r.inheritRefinement)inherited={refineCount:Math.max(0,Number(parent.refineCount)||0),affix:parent.affix,evolutionHistory:[...(parent.evolutionHistory||[]),parent.key]};
+  const level=Math.max(0,Number(parent.refineCount)||0);
+  const warning=r.awakening?`覚醒すると強化値はリセットされます。\n${parent.name} +${level} → ${r.name} +0\n強化値：+${level} → +0\n${level>0?`強化値+${level}は失われます。本当に覚醒しますか？`:'覚醒しますか？'}`:`【${parent.name}】を消費して【${r.name}】へ派生します。${r.inheritRefinement?'強化値・追加特性を引き継ぎます。':'強化値・追加特性は引き継ぎません。'}よろしいですか？`;
+  if(!window.confirm(warning))return false;
+  if(r.inheritRefinement||r.awakening)inherited={refineCount:r.awakening?0:level,...(r.inheritRefinement?{affix:parent.affix}:{}),evolutionHistory:[...(parent.evolutionHistory||[]),parent.key]};
+  if(r.awakening){
+   const owner=equipmentOwner(parent),slots=owner?characterEquipment(owner):null;
+   const slot=slots&&Object.keys(slots).find(k=>slots[k]?.id===parent.id);
+   if(slot)replacement={slots,slot};
+  }
   const at=state.storage.indexOf(parent);if(at>=0)state.storage.splice(at,1);
   else for(const slot of Object.keys(state.equipped))if(state.equipped[slot]===parent)state.equipped[slot]=null;
  }
@@ -66,9 +75,11 @@ function craftEquipment(id,parentId) {
  const item={key:id,id:crypto.randomUUID(),name:r.name,icon:r.icon,rarity:r.rarity,type:r.type,slot:r.slot,tags:[...(r.tags||[])],effects:{...(r.effects||{})},quarrySource:r.quarrySource,crit:r.crit||0,archetype:r.archetype,baseAtk:r.baseAtk||0,baseDef:r.baseDef||0,hp:r.hp||0,desc:r.desc,craftEffect:r.craftEffect,refineCount:0,locked:['Mythic','Abyssal'].includes(r.rarity)};
  for(const [key,value]of Object.entries(r))if(!(key in item)&&!['materials','gold','parent','hiddenMaterial'].includes(key))item[key]=structuredClone(value);
  if(inherited){Object.assign(item,inherited);item.baseAtk+=inherited.refineCount*3;}
+ if(r.awakening){item.refineCount=0;item.enhanceLevel=0;}
  normalizeEquipment(item);
- state.storage.push(item);state.craftProgress.crafted[id]=(state.craftProgress.crafted[id]||0)+1;
- recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し倉庫へ保管しました。`,'gold');render();openCrafting(forgeTab);return true;
+ if(replacement)replacement.slots[replacement.slot]=item;else state.storage.push(item);
+ state.craftProgress.crafted[id]=(state.craftProgress.crafted[id]||0)+1;
+ recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し${replacement?'装備を更新':'倉庫へ保管'}しました。`,'gold');render();openCrafting(forgeTab);return true;
 }
 let forgeTab='create';
 function openCrafting(tab='create') {

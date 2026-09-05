@@ -16,7 +16,7 @@ window.onload=()=>{
  for(const [key,n]of Object.entries(r.materials))if(key!=='abyss_core')for(let i=0;i<n;i++)s.storage.push({...w.__equipmentDebug.materials[key],key,type:'material',id:crypto.randomUUID()});
  const confirm=w.confirm;w.confirm=()=>true;
  check(w.craftEquipment(id,'parent'),'evolution craft');const item=s.storage.find(i=>i.key===id);
- check(item.refineCount===10&&item.affix==='critical'&&item.rarity==='Legendary','evolution preserves refinement affix');
+ check(item.refineCount===0&&item.affix==='critical'&&item.rarity==='Legendary','awakening resets refinement and preserves affix');
  const after=s.storage.length;check(!w.craftEquipment(id,'parent')&&s.storage.length===after,'no double craft without parent');w.confirm=confirm;
  const unit={hp:10},stats={maxHp:100,vamp:200},enemy={isBoss:true},slots={weapon:{primaryBuildTag:'lifesteal'}};
  const heal=w.healFromWeaponDamage(unit,stats,enemy,10000,slots);check(heal<=8,'lifesteal max HP cap');
