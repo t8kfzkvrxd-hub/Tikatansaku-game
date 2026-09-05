@@ -872,6 +872,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
   </style>
+  <link rel="stylesheet" href="workshop.css">
 </head>
 <body>
   <!-- Low HP Danger Vignette -->
@@ -894,8 +895,9 @@
         </div>
         <div class="goal-nudge" id="ui-goal-nudge">🎯 5F安全帰還まで: あと5階</div>
         <div style="display:flex; gap:4px; align-items:center;">
+          <details><summary class="btn btn-outline btn-xs">⚙️ 設定・履歴</summary>
           <button class="btn btn-outline btn-xs" onclick="showUpdateNotes(false)">📋 更新履歴</button>
-          <button class="btn btn-outline btn-xs" style="color:#fca5a5;border-color:#7f1d1d;" onclick="showResetSaveConfirmation()">⚠️ 初期化</button>
+          <button class="btn btn-outline btn-xs" style="color:#fca5a5;border-color:#7f1d1d;" onclick="showResetSaveConfirmation()">⚠️ 初期化</button></details>
           <button id="help-btn" class="btn btn-outline btn-xs" onclick="showTutorialModal()">❓ 遊び方</button>
           <button id="sound-btn" class="btn btn-outline btn-xs" onclick="toggleSound()">🔊 音 ON</button>
         </div>
@@ -1163,8 +1165,13 @@
     const MAX_DUNGEON_FLOOR = 100;
     const BOSS_FLOORS = [10,20,30,40,50,60,70,80,90,100];
     const SAFE_RETURN_FLOORS = [5,15,25,35,45,55,65,75,85,95];
-    const GAME_VERSION = '0.9.0';
+    const GAME_VERSION = '0.10.0';
     const UPDATE_NOTES = [
+      '同行キャラ専用7枠装備と保存・比較画面を追加。同一装備の重複使用を防止',
+      '100Fエルナ戦に装備の基礎能力・会心・炎追撃・スキル・回避・ガード回復を反映',
+      '地上に行き先メニューを追加。設定・初期化・更新履歴を通常導線から分離',
+      '鍛冶屋を作成・強化・武器ツリー・覚醒に整理。部位/武器種/レア度/作成可否の絞り込みと名前・素材・タグ検索を追加',
+      'レシピのお気に入り・新規解放・未作成表示、12件ページング、素材逆引き・派生比較に対応',
       '地下100Fまで拡張。記憶墓地・鏡写しの街・忘却回廊・境界層と4体のボスを追加',
       '第1章全10話、幼馴染エルナの無料同行登録、3モードの実地チュートリアル、記憶の書庫を追加',
       '100F通常ボス後の乱入・エルナ操作の物語戦・第1章の結末を追加。物語の途中再開に対応',
@@ -4578,8 +4585,11 @@
     }
 
     function refineEquippedItem(slot) {
+      return refineEquipmentItem(state.equipped[slot], slot);
+    }
+
+    function refineEquipmentItem(item, slot) {
       initAudio();
-      const item = state.equipped[slot];
       if (!item) {
         addLog('鍛え直す装備を身に着けていません！', 'danger');
         render();
@@ -4778,7 +4788,7 @@
     }
 
     function canSellStoredItem(item) {
-      return !!item && !item.locked && !Object.values(state.equipped).some(e => e && (e === item || (e.id && e.id === item.id)));
+      return !!item && !item.locked && !equipmentOwner(item);
     }
 
     let storageCategory = 'all';
@@ -4915,6 +4925,7 @@
       const list = fromVault ? state.storage : state.inventory;
       const item = list[index];
       if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return;
+      if (equipmentOwner(item)) return;
 
       normalizeEquipment(item);
       const slot = item.type==='accessory' ? (accessorySlot==='accessory2'?'accessory2':accessorySlot==='accessory'?'accessory':!state.equipped.accessory?'accessory':!state.equipped.accessory2?'accessory2':'accessory') : equipmentSlot(item);
@@ -5088,7 +5099,8 @@
         const selectedPolicyObj = policies.find(p => p.key === currentPolicy) || policies[0];
 
         vp.innerHTML = `
-          <div class="card" style="text-align:center; background: radial-gradient(circle at 50% 20%, #1e293b, #0f172a);">
+          ${townShortcutsHtml()}
+          <div id="town-expedition" class="card" style="text-align:center; background: radial-gradient(circle at 50% 20%, #1e293b, #0f172a);">
             <div style="font-size:36px; margin-bottom:4px;">🏕️</div>
             <h2 style="font-size:18px; font-weight:900; color:#fff;">生存者の野営キャンプ</h2>
             <div style="font-size:10px;color:#64748b;margin-bottom:3px;">Version ${GAME_VERSION}</div>
@@ -5129,7 +5141,7 @@
               <span>🏛️ 拠点施設・発展</span>
               <span style="font-size:11px; color:var(--muted);">🏦 地上保管G: ${state.vaultGold} / 核: ${state.abyssCores} / 結晶: ${state.deepCrystals}</span>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div class="town-facilities">
               <!-- Blacksmith -->
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
@@ -5139,7 +5151,7 @@
                 <div style="font-size:10.5px; color:#94a3b8;">
                   ${state.camp.blacksmith >= 2 ? '装備を鍛え直して基礎威力を強化可能' : 'Lv2で装備の鍛錬・強化が解放'}
                 </div>
-                <div style="display:flex;gap:4px"><button class="btn btn-sub btn-xs" onclick="closeGenericModal()">強化</button><button class="btn btn-gold btn-xs" onclick="openCrafting('create')">作成</button><button class="btn btn-sub btn-xs" onclick="openCrafting('tree')">武器ツリー</button></div>
+                <div class="forge-actions"><button class="btn btn-sub btn-xs" onclick="openCrafting('refine')">強化</button><button class="btn btn-gold btn-xs" onclick="openCrafting('create')">作成</button><button class="btn btn-sub btn-xs" onclick="openCrafting('tree')">武器ツリー</button><button class="btn btn-sub btn-xs" onclick="openCrafting('awaken')">覚醒</button></div>
                 ${state.camp.blacksmith >= 2 ? `
                   <div style="display:flex; gap:4px; margin-top:2px; width:100%;">
                     ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" ${state.equipped.weapon.refineCount >= 10 ? 'disabled' : ''} onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (${state.equipped.weapon.refineCount >= 10 ? 'MAX +10' : getRefineCost(state.equipped.weapon)+'G'})</button>` : ''}
@@ -5155,7 +5167,7 @@
               </div>
 
               <!-- Shop -->
-              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+              <div id="town-shop" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🏪 道具屋 Lv.${state.camp.shop}</div>
                   <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('shop') ? 'disabled' : ''} onclick="upgradeCampFacility('shop')">${getFacilityButtonText('shop')}</button>
@@ -5183,7 +5195,7 @@
               </div>
 
               <!-- Tavern -->
-              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+              <div id="town-tavern" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🍺 冒険者の酒場 Lv.${state.camp.tavern}</div>
                   <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('tavern') ? 'disabled' : ''} onclick="upgradeCampFacility('tavern')">${getFacilityButtonText('tavern')}</button>
@@ -5209,7 +5221,7 @@
               </div>
 
               <!-- Laboratory -->
-              <div class="item-row" style="grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:4px;">
+              <div id="town-lab" class="item-row" style="grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:4px;">
                 <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
                   <div style="font-size:12px;font-weight:bold;color:#fff;">🔬 深淵研究所 Lv.${state.camp.lab}</div>
                   <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('lab') ? 'disabled' : ''} onclick="upgradeCampFacility('lab')">${getFacilityButtonText('lab')}</button>
@@ -5538,6 +5550,8 @@
                     <div class="item-name">${it.name}${it.type === 'material' ? ` ×${count}` : ''} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
                     <div class="item-stats">${getItemStatSummary(it)}</div>
                     ${diffHtml}
+                    ${isTown&&it.type==='material'&&MATERIALS[it.key]?`<button class="btn btn-sub btn-xs" onclick="openMaterialRecipes('${it.key}')">この素材で作れる装備</button>`:''}
+                    ${isTown&&['weapon','armor','accessory'].includes(it.type)?`<details><summary>特殊効果も比較</summary>${compareEquipmentHtml(state.equipped[equipmentSlot(it)],it)}</details>`:''}
                   </div>
                 </div>
                 <div style="display:flex; gap:4px; align-items:center;">
@@ -5773,5 +5787,7 @@
   <script src="depth-rules.js"></script>
   <script src="chapter-story.js"></script>
   <script src="chapter-system.js"></script>
+  <script src="companion-equipment.js"></script>
+  <script src="forge-ui.js"></script>
 </body>
 </html>

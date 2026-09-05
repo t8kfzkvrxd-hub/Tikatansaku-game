@@ -69,7 +69,7 @@ function materialCount(key, includeLocked=false) {
 }
 function recipeVisible(id) { const r=CRAFT_RECIPES[id]; return r && (!r.hiddenMaterial || state.craftProgress.recipes[id]); }
 function craftingParents(recipe) {
- return [...state.storage,...Object.values(state.equipped).filter(Boolean)].filter(it=>it.key===recipe.parent && !it.locked && (Number(it.refineCount)||0)>=10);
+ return [...state.storage,...Object.values(state.equipped).filter(Boolean)].filter(it=>it.key===recipe.parent && !it.locked && (!equipmentOwner(it)||equipmentOwner(it)==='player') && (Number(it.refineCount)||0)>=10);
 }
 function craftingIssue(id, parentId) {
  const r=CRAFT_RECIPES[id];
@@ -102,26 +102,12 @@ function craftEquipment(id,parentId) {
 }
 let forgeTab='create';
 function openCrafting(tab='create') {
- forgeTab=tab;
- const modal=document.getElementById('modal-layer');modal.style.display='flex';modal.className='legendary-modal';
- const rows=Object.entries(CRAFT_RECIPES).filter(([,r])=>tab==='tree'||!r.parent).map(([id,r])=>{
-  if(!recipeVisible(id))return `<div class="item-row">${CRAFT_RECIPES[r.parent]?.name||'？？？'} → ？？？（特殊素材を発見すると解放）</div>`;
-  const parents=r.parent?craftingParents(r):[]; const parentId=parents[0]?.id;
-  const issue=craftingIssue(id,parentId);
-  return `<div class="item-row r-${r.rarity}" style="display:block;margin:6px 0;">
-   <div>${r.parent?`${CRAFT_RECIPES[r.parent].name} +10 → `:''}${r.icon} <b>${r.name}</b> [${r.rarity}] ${state.craftProgress.crafted[id]?'✓ 作成済':''}</div>
-   <div style="font-size:11px">攻${r.baseAtk||0} / 防${r.baseDef||0} / HP${r.hp||0}：${r.desc}</div>
-   <div style="font-size:11px">${Object.entries(r.materials).map(([key,n])=>`${MATERIALS[key].name} ${materialCount(key)}/${n}`).join(' / ')||'素材不要'} / ${r.gold}G</div>
-   ${r.parent?`<select id="parent-${id}" aria-label="消費する親武器">${parents.map(p=>`<option value="${p.id}">${p.name}（${state.equipped.weapon===p?'装備中':'倉庫'} / ${p.affixName||'特性なし'}）</option>`).join('')}</select>`:''}
-   <button class="btn btn-gold btn-xs" ${issue?'disabled':''} onclick="craftEquipment('${id}',document.getElementById('parent-${id}')?.value)">${issue||(r.awakening?'覚醒':r.parent?'派生':'作成')}</button>
-  </div>`;
- }).join('');
- modal.innerHTML=`<div class="card" style="width:95%;max-width:660px;max-height:85vh;overflow:auto;padding:16px"><h2>🔨 鍛冶屋</h2><div style="display:flex;gap:5px"><button class="btn btn-sub btn-xs" onclick="closeGenericModal()">強化（地上）</button><button class="btn btn-sub btn-xs" onclick="openCrafting('create')">作成</button><button class="btn btn-sub btn-xs" onclick="openCrafting('tree')">武器ツリー</button></div><p style="font-size:11px">派生・覚醒は親武器+10を消費。新装備は+0で倉庫に入り、強化・特性は引き継ぎません。素材数は倉庫の未ロック品。</p>${rows}<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button></div>`;
+ renderForgeUi(tab);
 }
 function materialCodexHtml() {
  return `<details><summary>🦴 素材図鑑</summary>${Object.entries(MATERIALS).map(([key,m])=>{
  const found=state.craftProgress.materials[key]||(m.currency&&state.abyssCores>0);
- const uses=Object.entries(CRAFT_RECIPES).filter(([,r])=>r.materials[key]).map(([id,r])=>recipeVisible(id)?r.name:'？？？').join(' / ');
- return `<div class="item-row" style="display:block;font-size:11px">${found?m.icon+' '+m.name:'？？？'} [${m.rarity}] ${found?'発見済み / '+m.source:'未発見'}<br>所持 ${materialCount(key,true)} / 使用：${found?(uses||'現時点ではレシピなし'):'？？？'}</div>`;
+ const uses=(MATERIAL_RECIPES[key]||[]).map(id=>recipeVisible(id)?CRAFT_RECIPES[id].name:'？？？').join(' / ');
+ return `<div class="item-row" style="display:block;font-size:11px">${found?m.icon+' '+m.name:'？？？'} [${m.rarity}] ${found?'発見済み / '+m.source:'未発見'}<br>所持 ${materialCount(key,true)} / 使用：${found?(uses||'現時点ではレシピなし'):'？？？'}${found?`<button class="btn btn-sub btn-xs" onclick="openMaterialRecipes('${key}')">この素材で作れる装備</button>`:''}</div>`;
  }).join('')}</details>`;
 }

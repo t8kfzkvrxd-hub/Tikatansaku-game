@@ -1,0 +1,82 @@
+<!doctype html><meta charset="utf-8"><title>Companion and workshop tests</title>
+<iframe src="index.html" style="border:0;width:1280px;height:720px"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow,s=w.__gameDebug.state;
+ if(location.search.includes('preview')){document.body.style.margin='0';frame.style.width=(new URLSearchParams(location.search).get('width')||1280)+'px';frame.style.height='100vh';document.getElementById('results').hidden=true;s.screen='town';s.chapter.owned.elna=true;w.closeGenericModal();w.openCrafting('create');return;}
+ const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS: '+label);};
+ const pause=()=>new Promise(r=>setTimeout(r,70));
+ const reload=()=>new Promise(resolve=>{frame.onload=()=>{w=frame.contentWindow;s=w.__gameDebug.state;w.confirm=()=>true;resolve();};frame.contentWindow.location.reload();});
+ const click=text=>{const button=[...w.document.querySelectorAll('#modal-layer button')].find(b=>b.textContent.includes(text));check(button&&!button.disabled,'UIボタン '+text);button.click();};
+ try{
+  w.confirm=()=>true;w.closeGenericModal();s.screen='town';s.chapter.owned={elna:true};s.chapter.contract=true;s.chapter.mode='skip';s.chapter.pending=null;s.chapter.checkpoint=null;w.migrateCompanionEquipment();
+  s.camp.vaultSize=500;s.camp.vaultLevel=49;s.camp.blacksmith=2;s.vaultGold=100000;s.storage=[];
+  const heroBefore=JSON.stringify(s.equipped),ids=[];
+  for(const slot of w.__equipmentDebug.slots){
+   const r=Object.values(w.__equipmentDebug.recipes).find(r=>r.slot===(slot.k==='accessory2'?'accessory':slot.k)&&!r.parent);
+   const item={...r,id:'comp-'+slot.k,key:'comp-'+slot.k,refineCount:0};s.storage.push(item);ids.push(item.id);
+   w.openCharacterEquipment('elna',slot.k);click(item.name+'を装備');
+   check(s.chapter.equipment.elna[slot.k]?.id===item.id&&!s.storage.some(i=>i.id===item.id),'エルナ装備 '+slot.label);
+  }
+  check(JSON.stringify(s.equipped)===heroBefore,'主人公装備を変更しない');
+  const elnaWeapon=s.chapter.equipment.elna.weapon;s.storage.push({...elnaWeapon});
+  w.equipItem(s.storage.length-1,true);check(JSON.stringify(s.equipped)===heroBefore,'重複IDを主人公へ装備できない');
+  check(!w.canSellStoredItem(s.storage.at(-1)),'同行装備の重複参照も売却不可');s.storage.pop();
+  s.chapter.owned.mina=true;w.migrateCompanionEquipment();check(Object.keys(s.chapter.equipment.mina).length===7,'キャラIDごとの拡張用7枠');
+  check(!w.setCharacterEquipment('mina','weapon',elnaWeapon.id),'同行キャラ間でも重複不可');
+  const gold=s.vaultGold,cost=w.getRefineCost(elnaWeapon);w.refineCharacterItem('elna','weapon');
+  check(elnaWeapon.refineCount===1&&s.vaultGold===gold-cost&&JSON.stringify(s.equipped)===heroBefore,'同行強化は共通価格・主人公に影響なし');
+  w.saveState();await reload();w.closeGenericModal();
+  check(Object.values(s.chapter.equipment.elna).every(i=>ids.includes(i.id))&&s.chapter.equipment.elna.weapon.refineCount===1,'実リロードで同行7枠と強化維持');
+  const gear=w.companionStats();w.Math.random=()=>.99;w.startElnaLastStand();
+  check(s.chapter.lastStand.maxHp===gear.maxHp&&gear.maxHp>210&&s.chapter.lastStand.gear.atk>36,'100Fエルナ戦にHP・攻撃・防御反映');
+  const hp=s.chapter.lastStand.enemyHp;w.elnaAction('attack');check(s.chapter.lastStand.enemyHp<hp-36,'装備で実ダメージ増加');
+  const battle=JSON.stringify(s.chapter.lastStand.gear);await reload();
+  check(JSON.stringify(s.chapter.lastStand.gear)===battle,'物語戦の装備スナップショットをリロード維持');
+  s.chapter.pending=null;s.chapter.checkpoint=null;s.screen='town';w.closeGenericModal();
+  for(const slot of w.__equipmentDebug.slots){check(w.removeCharacterEquipment('elna',slot.k),'同行装備解除 '+slot.label);}
+  check(ids.every(id=>s.storage.some(i=>i.id===id)),'解除して倉庫へ全数返却');
+  w.openCrafting('create');
+  check(Object.keys(w.__equipmentDebug.recipes).length===241&&w.document.querySelectorAll('[data-recipe]').length===12,'241レシピを12件だけ描画');
+  const first=w.document.querySelector('[data-recipe]').dataset.recipe;w.forgePage(1);check(w.document.querySelector('[data-recipe]').dataset.recipe!==first,'ページ切替');
+  const select=(label,value)=>{const el=w.document.querySelector(`[aria-label="${label}"]`);el.value=value;el.dispatchEvent(new w.Event('change'));};
+  select('部位','head');check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.slot==='head'),'部位フィルター');
+  select('レアリティ','Rare');check(w.filteredForgeRecipes().every(x=>x.r.rarity==='Rare'),'レア度フィルター');
+  w.resetForgeFilters();select('武器カテゴリ','dagger');check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.archetype==='dagger'),'武器カテゴリ');
+  w.resetForgeFilters();const search=w.document.querySelector('[aria-label="レシピ検索"]');search.value='毒';search.dispatchEvent(new w.Event('input'));check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.search.includes('毒')),'名前・日本語タグ検索');
+  const entry=Object.entries(w.__equipmentDebug.recipes).find(([,r])=>r.slot==='head'),[rid,recipe]=entry,key=Object.keys(recipe.materials)[0];
+  w.setForgeFilter('query',w.__equipmentDebug.materials[key].name);check(w.filteredForgeRecipes().some(x=>x.id===rid),'素材名検索');
+  w.resetForgeFilters();s.storage=[];s.abyssCores=0;w.setForgeFilter('available',true);check(w.filteredForgeRecipes().length===1&&w.filteredForgeRecipes()[0].id==='iron_sword','作成可能のみ・素材不足除外');
+  w.resetForgeFilters();w.toggleRecipeFavorite(rid);w.setForgeFilter('favorite',true);check(w.filteredForgeRecipes().length===1&&w.filteredForgeRecipes()[0].id===rid,'お気に入り');
+  w.saveState();await reload();s.screen='town';w.closeGenericModal();check(s.craftProgress.favorites[rid],'お気に入り保存');
+  w.openCrafting('create');w.setForgeFilter('uncrafted',true);s.craftProgress.crafted[rid]=1;check(!w.filteredForgeRecipes().some(x=>x.id===rid),'未作成のみ');
+  w.resetForgeFilters();w.setForgeFilter('newOnly',true);w.acknowledgeRecipes();check(w.filteredForgeRecipes().every(x=>!s.craftProgress.seen[x.id]),'新規解放・確認済みを区別');
+  w.openMaterialRecipes(key);check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.materials[key]),'素材から全使用レシピを逆引き');
+  s.craftProgress.materials[key]=true;s.activeTab='codex';w.renderSubPanel();check(w.document.querySelector(`#sub-panel button[onclick="openMaterialRecipes('${key}')"]`),'素材図鑑から鍛冶屋へのリンク');
+  s.storage.push({...w.__equipmentDebug.materials[key],id:'mat',key,type:'material'});s.activeTab='bag';w.renderSubPanel();check(w.document.querySelector(`#sub-panel button[onclick="openMaterialRecipes('${key}')"]`),'倉庫素材から逆引きリンク');
+  w.resetForgeFilters();w.openCrafting('tree');const parent={...w.__equipmentDebug.recipes.iron_sword,id:'parent-test',key:'iron_sword',name:'鉄の剣(+10)',baseAtk:42,refineCount:10};s.storage.push(parent);
+  w.openRecipeDetail('forge_1_normal');check(w.document.querySelector('.gear-compare').textContent.includes('42 → 18')&&w.document.getElementById('modal-layer').textContent.includes('必要強化：+10'),'派生に実際の+10性能を比較');
+  check(w.document.querySelector('.forge-missing'),'素材不足を赤字表示');
+  const hidden='forge_1_hidden';delete s.craftProgress.recipes[hidden];w.openCrafting('tree');check(!w.document.getElementById('modal-layer').textContent.includes(w.__equipmentDebug.recipes[hidden].name),'未発見の名前を隠す');
+  w.discoverMaterial(w.__equipmentDebug.recipes[hidden].hiddenMaterial);check(w.recipeVisible(hidden),'希少素材で隠し派生解放');
+  w.resetForgeFilters();w.openRecipeDetail(rid);const goldBefore=s.vaultGold;check(!w.craftEquipment(rid)&&s.vaultGold===goldBefore,'素材不足で消費しない');
+  for(const [k,n]of Object.entries(recipe.materials))for(let j=0;j<n;j++)s.storage.push({...w.__equipmentDebug.materials[k],id:crypto.randomUUID(),key:k,type:'material'});
+  w.openRecipeDetail(rid);click('作成');check(s.storage.some(i=>i.key===rid)&&s.vaultGold===goldBefore-recipe.gold,'比較画面から作成・素材/G消費');
+  w.openCharacterEquipment('player','head');check(w.document.querySelector('.gear-compare'),'装備前に能力と特殊効果比較');
+  for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await pause();
+   for(const render of [()=>w.openCrafting('create'),()=>{w.openCrafting('create');w.document.querySelector('.forge-filter-panel').open=true;},()=>w.openRecipeDetail(rid),()=>w.openCharacterEquipment('elna','weapon')]){
+    render();await pause();const card=w.document.querySelector('.update-notes-card'),body=w.document.querySelector('.update-notes-body'),rect=card.getBoundingClientRect();
+    check(rect.left>=0&&rect.right<=width&&rect.top>=0&&rect.bottom<=height,width+'×'+height+' モーダル画面内');
+    if(body.scrollWidth>body.clientWidth+1)out.push('OVERFLOW '+body.scrollWidth+'/'+body.clientWidth+' '+JSON.stringify([...body.querySelectorAll('*')].filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent.slice(0,60),width:e.clientWidth,scroll:e.scrollWidth})).slice(0,8)));
+    check(body.scrollWidth<=body.clientWidth+1,width+'×'+height+' 横スクロール不要');
+    for(const b of w.document.querySelectorAll('.update-notes-actions button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,width+'×'+height+' 固定操作ボタンを押せる');}
+   }
+  }
+  w.closeGenericModal();w.render();check(w.document.querySelectorAll('.home-shortcuts button').length===8,'地上の8導線');
+  check(w.document.querySelector('button[onclick="showResetSaveConfirmation()"]').closest('details'),'初期化を設定へ分離');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

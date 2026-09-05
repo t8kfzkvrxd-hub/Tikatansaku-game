@@ -9,6 +9,7 @@ function migrateChapter(saved) {
  for(const floor of BOSS_FLOORS)if(state.bossFirstKills[floor])state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,Math.min(MAX_DUNGEON_FLOOR,floor+10));
  if(state.deepestFloorReached>=60)state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,70);
  if(c.pending&&c.checkpoint)Object.assign(state,c.checkpoint);
+ migrateCompanionEquipment();
 }
 function checkpointChapter() {
  const keys=['screen','floor','inventory','dungeonGold','hp','maxHp','currentEnemy','runKills','greedLevel','modifiers','statusEffects','skillCooldown','bossFirstKills','maxUnlockedFloor'];
@@ -35,6 +36,7 @@ function showFirstContract() {
 function registerFirstContract() {
  const c=state.chapter;if(c.contract)return;
  c.contract=true;c.owned.elna=true;c.companion='elna';
+ migrateCompanionEquipment();
  state.vaultGold+=200;
  const key=AREAS[0].enemies[0].materialSource+'_common';
  for(let i=0;i<3;i++)state.storage.push({...MATERIALS[key],key,id:crypto.randomUUID(),type:'material'});
@@ -111,25 +113,30 @@ function afterChapterBoss(floor) {
 }
 function startElnaLastStand(){
  const c=state.chapter;c.pending={kind:'lastStand',floor:100};
- c.lastStand={turn:0,hp:210,maxHp:210,enemyHp:360,enemyMaxHp:360,cooldown:0,reinforcements:0,log:'エルナを操作：退避路の扉を守る。通常探索とは異なる物語戦です。'};
+ const gear=companionStats('elna');
+ c.lastStand={turn:0,hp:gear.maxHp,maxHp:gear.maxHp,gear,weaponName:characterEquipment('elna')?.weapon?.name||'陽光剣',enemyHp:360,enemyMaxHp:360,cooldown:0,reinforcements:0,log:'エルナを操作：退避路の扉を守る。装備の能力を反映した物語戦です。'};
  checkpointChapter();renderElnaLastStand();
 }
 function renderElnaLastStand(){
  const b=state.chapter.lastStand;
- showChapterModal('🌻 エルナ ― 閉じる扉を守れ',`<p>正体不明の存在「照合に不要な記憶を排除する」</p><p>エルナ HP ${b.hp}/${b.maxHp}　敵 ${b.enemyHp}/${b.enemyMaxHp}</p><p>退避時間 ${b.turn}/8　修正の影 ${b.reinforcements}/2</p><p>${b.log}</p><p>物語戦：ここでの消耗は装備・素材・Gを失わせません。</p>`,
+ showChapterModal('🌻 エルナ ― 閉じる扉を守れ',`<p>正体不明の存在「照合に不要な記憶を排除する」</p><p>エルナ HP ${b.hp}/${b.maxHp}　敵 ${b.enemyHp}/${b.enemyMaxHp}</p>${b.gear?`<p>装備：${uiEscape(b.weaponName)} / ATK ${b.gear.atk} / DEF ${b.gear.def}<br>${uiEscape(effectDescription(b.gear.effects))}</p>`:''}<p>退避時間 ${b.turn}/8　修正の影 ${b.reinforcements}/2</p><p>${b.log}</p><p>物語戦：ここでの消耗は装備・素材・Gを失わせません。</p>`,
  `<button class="btn btn-gold btn-xs" onclick="elnaAction('attack')">斬り込む</button><button class="btn btn-blue btn-xs" onclick="elnaAction('defend')">扉を守る</button><button class="btn btn-purple btn-xs" ${b.cooldown?'disabled':''} onclick="elnaAction('skill')">陽光剣 ${b.cooldown?'あと'+b.cooldown+'T':''}</button><button class="btn btn-red btn-xs" ${b.turn<5?'disabled':''} onclick="elnaAction('ultimate')">約束の一閃</button><button class="btn btn-sub btn-xs" onclick="finishElnaLastStand()">物語戦をスキップ</button>`);
 }
 function elnaAction(action){
  const c=state.chapter,b=c.lastStand;if(c.pending?.kind!=='lastStand'||!b)return;
  if(!['attack','defend','skill','ultimate'].includes(action)||action==='skill'&&b.cooldown>0||action==='ultimate'&&b.turn<5)return;
- b.turn++;if(action!=='skill')b.cooldown=Math.max(0,b.cooldown-1);else b.cooldown=2;
- const damage={attack:36,defend:8,skill:70,ultimate:180}[action];
+ const gear=b.gear||{atk:36,def:0,crit:0,effects:{}},effects=gear.effects||{};
+ b.turn++;if(action!=='skill')b.cooldown=Math.max(0,b.cooldown-1);else b.cooldown=Math.max(1,2-(effects.skillHaste||0));
+ const critical=action!=='defend'&&Math.random()*100<Math.min(75,gear.crit||0);
+ const damage=Math.round(({attack:1,defend:8/36,skill:70/36,ultimate:5}[action]*gear.atk)*(action==='skill'?1+Math.min(100,effects.skillPower||0)/100:1)*(critical?1.5+Math.min(150,effects.critDamage||0)/100:1)+(action!=='defend'?(effects.fireDamage||0):0));
  b.enemyHp=Math.max(30,b.enemyHp-damage);
  b.reinforcements=Math.min(2,Math.floor(b.turn/3));
- const incoming=14+b.turn*4+b.reinforcements*8;
- b.hp=Math.max(0,b.hp-Math.round(incoming*(action==='defend'?.4:1)));
+ const incoming=Math.max(3,14+b.turn*4+b.reinforcements*8-Math.round(gear.def*.35));
+ const dodged=Math.random()*100<Math.min(50,effects.dodge||0);
+ b.hp=Math.max(0,b.hp-(dodged?0:Math.round(incoming*(action==='defend'?.4:1))));
+ if(b.hp>0&&action==='defend')b.hp=Math.min(b.maxHp,b.hp+(effects.guardHeal||0));
  if(b.turn>=4)b.enemyHp=Math.min(b.enemyMaxHp,b.enemyHp+35);
- b.log=`${action==='defend'?'扉を支え、攻撃を受け流した':action==='ultimate'?'幼い日の約束を込めた光が闇を裂いた':`刃が届いた。${damage}の手応え`}。${b.turn>=4?'傷が書き換えられ、影が増える。':''}`;
+ b.log=`${b.weaponName||'陽光剣'}：${action==='defend'?'扉を支え、攻撃を受け流した':action==='ultimate'?'幼い日の約束を込めた光が闇を裂いた':`刃が届いた。${damage}の手応え${critical?'（会心）':''}`}。${dodged?'攻撃を回避。':''}${b.turn>=4?'傷が書き換えられ、影が増える。':''}`;
  if(b.turn>=8||b.hp<=0||action==='ultimate'){finishElnaLastStand();return;}
  checkpointChapter();renderElnaLastStand();
 }
