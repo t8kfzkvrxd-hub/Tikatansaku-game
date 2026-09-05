@@ -66,7 +66,7 @@ function advanceTownGuide(){
 function openCompanionRegister(){
  const c=state.chapter;
  if(!c.contract){showFirstContract();return;}
- showChapterModal('同行登録',`<p>🌻 エルナ：所持・同行可能${c.complete?'（記憶の残響）':''}</p><p>${CHARACTER_DATA.elna.desc}</p>${c.complete?'<p>本人は戻っていない。それなのに、登録簿の名前は消えていない。</p>':''}<p>同行は現在、物語と案内を担当します。通常戦闘の追加キャラ枠ではありません。</p>`,`<button class="btn btn-gold" onclick="state.chapter.companion='elna';saveState();closeGenericModal();render()">エルナを同行登録</button><button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
+ openCharacterEquipment('elna');
 }
 function openMemoryArchive(){
  const c=state.chapter;

@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow,s=w.__gameDebug.state;
+ const check=(ok,name)=>{if(!ok)throw Error(name);out.push('PASS: '+name);};
+ const reload=()=>new Promise(r=>{frame.onload=()=>{w=frame.contentWindow;s=w.__gameDebug.state;r();};w.location.reload();});
+ try{
+  w.closeGenericModal();s.screen='town';s.chapter.owned.elna=true;s.chapter.contract=true;s.chapter.mode='skip';s.chapter.pending=null;s.chapter.checkpoint=null;w.migrateCompanionEquipment();w.selectCompanion('elna');
+  s.camp.vaultSize=100;s.storage=[];
+  for(const slot of w.__equipmentDebug.slots){const r=Object.values(w.__equipmentDebug.recipes).find(r=>r.slot===(slot.k==='accessory2'?'accessory':slot.k));s.storage.push({...r,id:'continuity-'+slot.k});check(w.setCharacterEquipment('elna',slot.k,'continuity-'+slot.k),'死亡前の7枠装備 '+slot.k);}
+  const p=w.characterProgress('elna');Object.assign(p,{level:12,exp:25,training:{attack:7},affection:42,costumes:['test'],selectedCostume:'test',limitBreak:2});
+  const before=JSON.stringify({equipment:s.chapter.equipment.elna,progress:p});
+  s.chapter.pending={kind:'farewell',floor:100};s.screen='chapter';s.floor=100;s.inventory=[];s.hp=100;w.completeChapterOne();
+  check(s.chapter.complete&&s.chapter.elnaFate==='lost'&&s.chapter.owned.elna,'物語死亡と所持状態を分離');
+  check(JSON.stringify({equipment:s.chapter.equipment.elna,progress:w.characterProgress('elna')})===before,'死亡時に装備・Lv・育成・拡張状態を変更しない');
+  await reload();w.closeGenericModal();
+  check(JSON.stringify({equipment:s.chapter.equipment.elna,progress:w.characterProgress('elna')})===before,'死亡後の実リロードで全状態保持');
+  w.openCompanionRegister();const b=[...w.document.querySelectorAll('#modal-layer button')].find(b=>b.textContent==='同行中'||b.textContent==='同行に選択');check(!!b,'死亡後も同行選択UI');b.click();
+  check(!w.document.getElementById('modal-layer').textContent.includes('再構築')&&!w.document.getElementById('modal-layer').textContent.includes('記憶の残響'),'真相を説明しない');
+  s.screen='battle';s.floor=1;s.hp=100;s.chapter.pending=null;s.currentEnemy={name:'検証敵',hp:10000,maxHp:10000,atk:1,def:0,actionType:'normal',nextMult:1};w.Math.random=()=>.99;
+  const enemy=s.currentEnemy,hp=enemy.hp;w.enemyTurn(false);check(enemy.hp<hp,'死亡後も通常戦闘の処理から支援攻撃');
+  s.screen='town';w.selectCompanion(null);const hp2=enemy.hp;w.enemyTurn(false);check(enemy.hp===hp2,'同行を外すと追撃しない');
+  w.selectCompanion('elna');const progress=w.characterProgress('elna');progress.exp=progress.level*30-10;const lv=progress.level;w.awardCompanionExperience({});check(progress.level===lv+1&&w.companionStats().atk>36,'死亡後も成長し実能力に反映');
+  check(w.removeCharacterEquipment('elna','head'),'死亡後も装備解除');check(w.setCharacterEquipment('elna','head','continuity-head'),'死亡後も装備変更');
+  const final=JSON.stringify(s.chapter.characters);w.saveState();await reload();check(JSON.stringify(s.chapter.characters)===final,'死亡後の育成更新も保存');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

@@ -1,6 +1,8 @@
 function emptyEquipmentSlots(){return Object.fromEntries(EQUIPMENT_SLOTS.map(s=>[s.k,null]));}
 function migrateCompanionEquipment(){
  const c=state.chapter;c.equipment ||= {};
+ c.characters ||= {};
+ for(const id of Object.keys(c.owned))characterProgress(id);
  const used=new Set(Object.values(state.equipped).filter(Boolean).map(i=>i.id));
  for(const id of new Set([...Object.keys(c.owned),...Object.keys(c.equipment)])){
   const next=emptyEquipmentSlots();
@@ -30,12 +32,40 @@ function characterEquipment(id='player'){
 }
 function companionStats(id='elna'){
  const slots=characterEquipment(id)||{},s={atk:36,def:0,maxHp:210,crit:5,vamp:0,effects:{}};
+ const growth=characterProgress(id);s.atk+=(growth.level-1)*2;s.def+=Math.floor((growth.level-1)/2);s.maxHp+=(growth.level-1)*5;
  for(const it of Object.values(slots).filter(Boolean)){
   s.atk+=Number(it.baseAtk)||0;s.def+=Number(it.baseDef)||0;s.maxHp+=Number(it.hp)||0;s.crit+=Number(it.crit)||0;s.vamp+=Number(it.vamp)||0;
   if(it.affix==='critical')s.crit+=8;if(it.affix==='lifesteal')s.vamp+=3;if(it.affix==='max_hp')s.maxHp+=25;
   for(const [key,n]of Object.entries(it.effects||{}))s.effects[key]=(s.effects[key]||0)+n;
  }
  return s;
+}
+function characterProgress(id){
+ state.chapter.characters ||= {};
+ const p=state.chapter.characters[id] ||= {};
+ p.level=Math.max(1,Math.min(100,Number(p.level)||1));p.exp=Math.max(0,Number(p.exp)||0);
+ p.training ||= {};p.affection ??= 0;p.costumes ||= [];p.selectedCostume ??= null;p.limitBreak ??= 0;
+ return p;
+}
+function selectCompanion(id){
+ if(state.screen!=='town'||id!==null&&!state.chapter.owned[id])return false;
+ state.chapter.companion=id;saveState();render();return true;
+}
+function companionTurn(enemy){
+ const id=state.chapter?.companion;
+ if(!id||!state.chapter.owned[id]||state.chapter.pending||state.hp<=0||enemy.hp<=0)return;
+ const stats=companionStats(id),before=enemy.hp;
+ const damage=Math.max(1,Math.round(stats.atk*.3-enemy.def*.15))+(stats.effects.fireDamage||0);
+ enemy.hp-=damage;applyRootProtection(enemy,before);
+ addLog(`${CHARACTER_DATA[id]?.name||id}の支援追撃！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
+ if(enemy.hp<=0){enemy.hp=0;onEnemyKilled();return true;}
+ return false;
+}
+function awardCompanionExperience(enemy){
+ const id=state.chapter?.companion;if(!id||!state.chapter.owned[id])return;
+ const p=characterProgress(id);p.exp+=enemy.isBoss?50:enemy.isElite?20:10;
+ while(p.level<100&&p.exp>=p.level*30){p.exp-=p.level*30;p.level++;addLog(`${CHARACTER_DATA[id]?.name||id}がLv.${p.level}に成長！`,'gold');}
+ if(p.level===100)p.exp=0;
 }
 function setCharacterEquipment(id,slot,itemId){
  const slots=characterEquipment(id);
@@ -70,4 +100,8 @@ function openCharacterEquipment(id='player',slot=null,page=0){
  const pageCount=Math.max(1,Math.ceil(candidates.length/8));page=Math.min(Math.max(0,page),pageCount-1);
  const selection=slot?`<h3>${EQUIPMENT_SLOTS.find(s=>s.k===slot)?.label}の候補（倉庫）</h3>${candidates.slice(page*8,page*8+8).map(i=>`<article class="forge-recipe">${compareEquipmentHtml(slots[slot],i)}<button class="btn btn-gold btn-xs" onclick="setCharacterEquipment('${id}','${slot}','${i.id}');openCharacterEquipment('${id}','${slot}',${page})">${uiEscape(i.name)}を装備</button></article>`).join('')||'<p>候補なし。他のキャラの装備は先に解除してください。</p>'}<div class="forge-actions"><button class="btn btn-sub btn-xs" ${page===0?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page-1})">前へ</button>${page+1}/${pageCount}<button class="btn btn-sub btn-xs" ${page+1===pageCount?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page+1})">次へ</button></div>`:'';
  showChapterModal('👥 キャラ／装備',`<div class="forge-actions">${tabs}</div><p>総能力 ATK ${stats.atk} / DEF ${stats.def} / HP ${stats.maxHp} / 会心 ${stats.crit}%</p>${id!=='player'?'<p>通常探索の主人公とは別装備。エルナの物語戦では基礎能力・炎追撃・会心・スキル威力/CT・ガード回復・回避を反映します。その他の特殊効果は物語戦では適用しません。</p>':''}${rows}${selection}`,`<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
+ if(id!=='player'){
+  const p=characterProgress(id);
+  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><b>Lv.${p.level} / EXP ${p.exp}${p.level<100?' / '+p.level*30:' MAX'}</b><p>通常戦闘では敵の行動前に支援追撃（攻撃力30%・炎追撃）。主人公が敵を倒した場合は追撃なし。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
+ }
 }

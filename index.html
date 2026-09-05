@@ -1165,8 +1165,10 @@
     const MAX_DUNGEON_FLOOR = 100;
     const BOSS_FLOORS = [10,20,30,40,50,60,70,80,90,100];
     const SAFE_RETURN_FLOORS = [5,15,25,35,45,55,65,75,85,95];
-    const GAME_VERSION = '0.10.0';
+    const GAME_VERSION = '0.10.1';
     const UPDATE_NOTES = [
+      '同行キャラの通常戦闘支援・経験値成長を追加。第1章後も同一キャラの所持・7枠装備・育成を保持',
+      'キャラ別の育成保存を追加。同行選択と解除に対応',
       '同行キャラ専用7枠装備と保存・比較画面を追加。同一装備の重複使用を防止',
       '100Fエルナ戦に装備の基礎能力・会心・炎追撃・スキル・回避・ガード回復を反映',
       '地上に行き先メニューを追加。設定・初期化・更新履歴を通常導線から分離',
@@ -3270,6 +3272,7 @@
       if (!state.currentEnemy || state.hp <= 0) return;
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
+      if(companionTurn(enemy))return;
       equipmentPoisonTick(enemy);
       if(enemy.hp<=0){onEnemyKilled();return;}
       const gearEffects=equipmentEffects();
@@ -3440,6 +3443,7 @@
     function onEnemyKilled() {
       if(!state.currentEnemy)return;
       const enemy = state.currentEnemy;
+      awardCompanionExperience(enemy);
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.lastDefeatedEnemy={atk:enemy.atk,trait:enemy.trait};
       if(enemy.trait==='death_pulse'){state.pendingEnemyPulse=3;addLog('🫀 肉塊の治癒脈動が次の敵へ伝わった（3T・毎ターン最大HP6%回復）','danger');}
