@@ -1,0 +1,38 @@
+/* Compact landscape layout; game rules and assets stay unchanged. */
+.combat-number-space,.battle-readout:has(.enemy-parts) .combat-number-space{height:64px}
+.combat-float{animation-name:responsive-combat-float;line-height:1.15}
+@keyframes responsive-combat-float{0%{opacity:0;transform:translate(-50%,0)}15%,75%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px)}}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1100px){
+ html,body{height:100%;min-height:0;overflow:hidden}
+ #game-container.landscape-stage{height:calc(var(--game-viewport-height) - var(--safe-top) - var(--safe-bottom));min-height:0;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+ #game-container #viewport{grid-column:1;grid-row:2;min-height:0;overflow:auto}
+ #game-container #sub-panel{display:none}
+ #game-container #sub-tabs{grid-column:1;grid-row:3;min-height:44px}
+ #game-container #sub-tabs button{min-height:44px;font-size:14px}
+ .party-lobby{top:max(3px,var(--safe-top));left:50%;transform:translateX(-50%);width:40%;max-width:420px;gap:5px;margin:0;pointer-events:none}
+ .party-lobby button{height:44px;min-height:44px;padding:2px 6px;font-size:12px;gap:1px;pointer-events:auto;overflow:hidden}
+ .party-lobby progress[aria-label=EXP]{display:none}.party-lobby progress{height:3px;margin:0}.party-lobby strong{font-size:12px}
+ .lobby-menu{bottom:max(3px,var(--safe-bottom));height:44px;gap:5px}.lobby-menu button{font-size:14px;min-width:65px;min-height:44px;padding:4px 9px}
+ .lobby-hotspot{height:44px!important;width:auto!important;min-width:100px;padding:0}
+ .lobby-hotspot span{padding:3px 7px;min-height:44px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}.lobby-hotspot b{font-size:14px}.lobby-hotspot small{font-size:12px}
+ #modal-layer button,#modal-layer select,#modal-layer input:not([type=checkbox]),#modal-layer summary{min-height:44px;min-width:44px}
+ #modal-layer .btn{font-size:14px}#modal-layer label:has(input[type=checkbox]){display:inline-flex;align-items:center;min-height:44px;padding:0 5px}
+ #modal-layer .character-tabs{position:sticky;top:0;z-index:3;background:#141726}
+ #modal-layer .equipment-slots{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ #modal-layer .forge-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #modal-layer .forge-recipe{min-width:0;font-size:13px}
+ #modal-layer .item-row{min-width:0;flex-wrap:wrap;gap:5px}#modal-layer .item-row>div{min-width:0;overflow-wrap:anywhere}
+ .forge-filter-panel{border:1px solid #52657a;border-radius:6px;padding:3px 8px;margin:6px 0}.forge-filter-panel summary{cursor:pointer;font-size:14px}
+ .exploration-route small{font-size:12px}.exploration-heading{gap:4px 9px}
+ .battle-readout{grid-template-columns:repeat(3,minmax(0,1fr))}.battle-feed{max-height:90px;overflow:auto}
+ body:has(.battle-readout) #status-bar .stats-bar{display:none}
+ .battle-readout .battle-unit{padding:3px;font-size:12px;min-height:0}
+ .battle-readout .hp-track{height:6px;margin:3px 0}
+ .battle-readout .combat-number-space,.battle-readout:has(.enemy-parts) .combat-number-space{height:44px}
+ .combat-float{font-size:14px}
+ .battle-readout .combat-actions{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+ .battle-readout .combat-actions .btn{font-size:14px;min-height:44px}
+ .enemy-parts{flex-wrap:nowrap;overflow-x:auto}.enemy-parts button{min-height:44px;flex:1;min-width:80px}
+ #status-bar{padding:3px 8px}#status-bar .status-row-1{flex-wrap:nowrap}
+}
+@media(min-height:541px){.forge-filter-panel>summary{min-height:32px;cursor:pointer}}

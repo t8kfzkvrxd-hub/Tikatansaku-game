@@ -42,7 +42,20 @@ function syncLobbyScreen(){
   root.innerHTML=`<div class="lobby-art"><div class="lobby-scene"><img class="lobby-background" src="assets/ac935e06-88d5-4889-9435-5e3a3e410ef6.png" alt="地下拠点の施設マップ"><div class="lobby-fire" aria-hidden="true"></div><div class="lobby-fog" aria-hidden="true"></div><div class="lobby-light" aria-hidden="true"></div>${LOBBY_FACILITIES.map(f=>`<button class="lobby-hotspot" data-facility="${f.id}" style="left:${f.x}%;top:${f.y}%;width:${f.w}%;height:${f.h}%" onclick="openLobbyFacility('${f.id}')"><span><b>${f.name}</b><small>${f.desc}</small></span></button>`).join('')}</div></div><nav class="lobby-menu" aria-label="ロビーメニュー"><button onclick="openLobbyEquipment()">装備</button><button onclick="openLobbyFacility('warehouse')">所持品</button><button onclick="openHomeSettings()">設定</button><button onclick="showHomeScreen()">ホーム</button></nav>`;
   const art=root.querySelector('.lobby-art'),scene=root.querySelector('.lobby-scene'),image=root.querySelector('img');
   const fit=()=>{if(!image.naturalWidth||!art.clientWidth)return;const scale=Math.max(art.clientWidth/image.naturalWidth,art.clientHeight/image.naturalHeight),w=image.naturalWidth*scale,h=image.naturalHeight*scale;Object.assign(scene.style,{width:w+'px',height:h+'px',left:(art.clientWidth-w)/2+'px',top:(art.clientHeight-h)/2+'px'});};
-  image.addEventListener('load',fit);LobbyScreen.observer=new ResizeObserver(fit);LobbyScreen.observer.observe(art);fit();
+  const fitLabels=()=>{
+   fit();
+   const compact=matchMedia('(orientation:landscape) and (max-height:540px) and (max-width:1100px)').matches;
+   const sw=scene.offsetWidth,sh=scene.offsetHeight,ox=(art.clientWidth-sw)/2,oy=(art.clientHeight-sh)/2;
+   root.querySelectorAll('.lobby-hotspot').forEach((button,i)=>{
+    const f=LOBBY_FACILITIES[i];
+    if(!compact){button.style.left=f.x+'%';button.style.top=f.y+'%';return;}
+    const half=button.offsetWidth/2+8;
+    const x=Math.max(half,Math.min(art.clientWidth-half,ox+sw*f.x/100));
+    const y=Math.max(76,Math.min(art.clientHeight-76,oy+sh*f.y/100));
+    button.style.left=(x-ox)+'px';button.style.top=(y-oy)+'px';
+   });
+  };
+  image.addEventListener('load',fitLabels);LobbyScreen.observer=new ResizeObserver(fitLabels);LobbyScreen.observer.observe(art);fitLabels();
  }
  root.hidden=!active;
  const content=document.getElementById('lobby-facility-content');

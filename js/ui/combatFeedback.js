@@ -22,7 +22,9 @@ function combatEmit(actor,target,value,label='',kind='damage'){
   el.textContent=`${combatName(actor)}${target!=='enemy'&&actor!==target?' → '+combatName(target):''}\n${label?label+' ':''}${kind==='heal'||kind==='shield'||kind==='buff'?'+':target==='enemy'?'':'−'}${e.value}${kind==='heal'?' HP':kind==='buff'?'%':''}`;
   const lane=actor==='player'?-.2:actor==='enemy'?0:.2;
   el.style.left=Math.max(80,Math.min(innerWidth-80,rect.left+rect.width*(.5+lane)))+'px';
-  el.style.top=Math.max(8,rect.bottom+5+(combatFeedback.floats.length%3)*17)+'px';document.body.appendChild(el);
+  const space=document.querySelector('.combat-number-space')?.getBoundingClientRect();
+  const compact=space?.height&&space.height<60;
+  el.style.top=Math.max(8,(space?.height?space.top+8:rect.bottom+5)+(compact?0:(combatFeedback.floats.length%3)*8))+'px';document.body.appendChild(el);
   combatFeedback.floats.push(el);while(combatFeedback.floats.length>8)combatFeedback.floats.shift().remove();
   setTimeout(()=>{el.remove();combatFeedback.floats=combatFeedback.floats.filter(n=>n!==el);if(state.screen==='battle'&&state.currentEnemy)renderCombatReadout();},1300);
  });

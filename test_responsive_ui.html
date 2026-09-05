@@ -1,0 +1,35 @@
+<!doctype html><meta charset="utf-8"><title>Responsive geometry regression</title>
+<iframe src="index.html#game" style="width:740px;height:360px;border:0"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const f=document.querySelector('iframe'),out=[],wait=()=>new Promise(r=>setTimeout(r,180));
+ let w=f.contentWindow,d=w.document,s=w.__gameDebug.state;
+ const check=(ok,n)=>{if(!ok)throw Error(n);};
+ const separate=selector=>{const boxes=[...d.querySelectorAll(selector)].filter(e=>e.getClientRects().length).map(e=>e.getBoundingClientRect());boxes.forEach((a,i)=>boxes.slice(i+1).forEach(b=>check(a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1,'overlap '+selector)));};
+ try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';
+ for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+ for(let cycle=0;cycle<3;cycle++){
+ await new Promise(resolve=>{f.onload=resolve;w.location.reload();});w=f.contentWindow;d=w.document;s=w.__gameDebug.state;
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.mode='skip';s.chapter.owned.elna=true;s.chapter.companion='elna';
+ f.style.width=height+'px';f.style.height=width+'px';await wait();f.style.width=width+'px';f.style.height=height+'px';await wait();
+ s.screen='town';w.showHomeScreen();w.enterGameFromHome();w.closeGenericModal();w.render();await wait();
+ separate('.party-lobby button,.lobby-hotspot span,.lobby-menu');
+ check(d.documentElement.scrollWidth<=width&&d.documentElement.scrollHeight<=height,'page overflow');
+ for(const id of ['town-blacksmith','warehouse','town-tavern','town-shop','town-lab','archive','codex','town-expedition']){
+ w.openLobbyFacility(id);await wait();const card=d.querySelector('.update-notes-card'),actions=d.querySelector('.update-notes-actions');
+ check(card&&actions,'modal '+id);const r=card.getBoundingClientRect(),a=actions.getBoundingClientRect();check(r.top>=0&&r.bottom<=height+1&&r.right<=width+1&&a.bottom<=height+1,'modal bounds '+id);w.closeGenericModal();
+ }
+ w.openCharacterEquipment('elna');await wait();check(d.querySelectorAll('.equipment-slot').length===7,'seven slots');w.closeGenericModal();
+ for(const open of [()=>w.openHomeSettings(),()=>w.showUpdateNotes(false),()=>w.openCrafting('create'),()=>w.openCharacterStatus('elna')]){open();await wait();const a=d.querySelector('.update-notes-actions').getBoundingClientRect();check(a.top>=0&&a.bottom<=height,'detail footer');w.closeGenericModal();}
+ s.floor=2;w.generateDoorsForFloor();await wait();separate('.exploration-route,.exploration-hud');
+ s.floor=10;w.startBossBattle(w.getCurrentArea().boss);w.render();await wait();
+ separate('.battle-unit,.enemy-parts,.combat-actions,.combat-number-space,#sub-tabs');
+ for(const b of d.querySelectorAll('.combat-actions button,.enemy-parts button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height,'battle controls bounds');}
+ }
+ out.push('PASS '+width+'x'+height+' : 3 rotation/home cycles, facility modals, equipment, lobby overlaps');
+ }
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};
+</script>
