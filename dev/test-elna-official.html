@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>Elna static tests</title><pre id="results">Running</pre><iframe id="preview" src="elna-official.html" style="border:0"></iframe>
+<script>
+(async()=>{
+ const output=document.getElementById('results'),frame=document.getElementById('preview'),lines=[];
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ function check(ok,label){if(!ok)throw Error(label);lines.push('PASS '+label)}
+ try{
+  for(let i=0;i<150&&!frame.contentWindow.elnaOfficialReady;i++)await wait(100);
+  const win=frame.contentWindow,doc=frame.contentDocument;
+  check(win.elnaOfficialReady,'load');
+  const imgs=[...doc.querySelectorAll('#character img')];
+  check(imgs.length===23&&imgs.every(i=>i.complete&&i.naturalWidth>0),'23 PNGs decoded');
+  check(imgs.every(i=>i.src.includes('/official/')),'official sources only');
+  check(new Set(imgs.map(i=>i.src)).size===23,'unique PNGs');
+  check(doc.getAnimations().length===0,'static only');
+  for(const [w,h] of [[1920,1080],[1366,768],[844,390],[932,430],[740,360],[390,844],[844,390]]){
+   frame.style.width=w+'px';frame.style.height=h+'px';await wait(180);
+   const root=doc.documentElement,stage=doc.getElementById('stage').getBoundingClientRect(),character=doc.getElementById('character').getBoundingClientRect();
+   check(root.scrollWidth<=w+1,'no overflow '+w+'x'+h);
+   check(character.left>=stage.left-1&&character.right<=stage.right+1&&character.top>=stage.top-1&&character.bottom<=stage.bottom+1,'full figure fits '+w+'x'+h);
+   const b=doc.getElementById('checker').getBoundingClientRect();
+   check(b.height>=44&&b.right<=w&&b.top>=0&&b.bottom<=h,'button reachable '+w+'x'+h);
+  }
+  doc.getElementById('checker').click();check(doc.getElementById('stage').classList.contains('checker'),'checker toggle');
+  doc.getElementById('zoom').click();await wait(100);check(doc.getElementById('zoom').checked,'zoom toggle');
+  output.textContent=lines.join('\n')+'\nALL TESTS PASSED';
+ }catch(e){output.textContent=lines.join('\n')+'\nFAIL: '+e.message}
+})();
+</script>

@@ -1,0 +1,765 @@
+{
+  "version": 1,
+  "status": "official-static-v1",
+  "canvas": {
+    "width": 800,
+    "height": 1200
+  },
+  "sideConvention": "character-relative",
+  "sources": [
+    {
+      "file": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sha256": "4894d4214eec2ecd05b63abb089db0737a7621dc48591423b05bf43f5c9e6054",
+      "used": true
+    },
+    {
+      "file": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "sha256": "1420d6345c4060b2a87b490f07feb4fc0a98df4942a151a63ea390e6ccf92dfa",
+      "used": true
+    },
+    {
+      "file": "source/327cdbfe-255d-4b18-83ee-059ba56af447.png",
+      "sha256": "28566d72a8e373ba5ebf52ad663472416c28079ff5d85ae37bc634694cde01f7",
+      "used": true
+    },
+    {
+      "file": "source/5030bea6-17b6-4b61-bae8-6f8bf5f64191.png",
+      "sha256": "4e5b945a861284dbf387f1865bb0287316872a11765cd0d7ce5fe7bc3ec48d95",
+      "used": false
+    },
+    {
+      "file": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "sha256": "8a2a20dd54b492d35b30600dea51b8a7f8f0907099768f12bcb378a7c29dab89",
+      "used": true
+    },
+    {
+      "file": "source/6df5f43a-1675-43fa-bf4f-74daa6c46d37.png",
+      "sha256": "10fd173d2bf49742929a1377b7a44084a6e85d16745f4219c30131f6ecc8d52e",
+      "used": false
+    },
+    {
+      "file": "source/7c0505a3-b00b-4d4f-945c-b85f8809c9c2.png",
+      "sha256": "c710a0887df77e8746fd596e481307a7cbbb4076e2ccd768a77ae835fdd17844",
+      "used": false
+    },
+    {
+      "file": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sha256": "c82846ef0d8aa990df8e8d5e5c8c3a310ef1b8f6dc489f82ccb06b6cdd927c6c",
+      "used": true
+    },
+    {
+      "file": "source/af54d04c-f0b5-4061-88c8-0af9aa0024d4.png",
+      "sha256": "dbf0107addcbcde3bfffe96adec3fc9d0ee875221616092ece9c818c7d1e14d4",
+      "used": false
+    },
+    {
+      "file": "source/bd9695e3-89e9-4b5b-ad83-0d80d2918b9f (2).png",
+      "sha256": "9180c5b5c68733c28ebff66d40e1452b65231cfe3432fb7541427591994d3d39",
+      "used": false
+    },
+    {
+      "file": "source/bdb578db-f75a-44b1-b7c1-002bc30500b4.png",
+      "sha256": "973d0f3d0b3db5bf4469d5585d8f2606b8e0dc37878276d58f5e2d47cd5e82fa",
+      "used": true
+    },
+    {
+      "file": "source/cbb15781-45b4-481f-ac92-7a36284e45b2.png",
+      "sha256": "d0601d19fa0d57188d5efd63d6b568c5f19b9405dc13c5154706c341cc748cbb",
+      "used": false
+    },
+    {
+      "file": "source/d4d6f4b9-1af3-4ed8-9396-aa99e2642d1a.png",
+      "sha256": "f7390bb18b8301a1d2f4233d86090304bb5037571251f9633c5073b2098ba0cb",
+      "used": false
+    },
+    {
+      "file": "source/dfa57b11-2f51-4f7c-8d6b-09413bde4377.png",
+      "sha256": "67bb75b42b7a98233ac97641ea118bca64cdb1cf8f207dc2d06d07cc0c05db48",
+      "used": true
+    },
+    {
+      "file": "source/e2cf96f5-5013-4c65-bb05-57dabadaecce.png",
+      "sha256": "1d143139b2b6e4f216e970f7760b8fe8a4945e1952e017f7997abac130ec578c",
+      "used": false
+    },
+    {
+      "file": "source/ec8966f6-a34d-457a-a3c3-faf964922b12.png",
+      "sha256": "a7bb187d915356864676fdda1c1626c76ee51a850bd3ea9ce75a08b0e74d0ceb",
+      "used": false
+    },
+    {
+      "file": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "sha256": "669713cda8e46990f9889089bf3709596d875803c3931ed4c3f78a0bd0de314b",
+      "used": true
+    },
+    {
+      "file": "source/elna-base.png",
+      "sha256": "50b7cdec8c87445b05370aa88bff44391e8ea0cf492357e5e0542f0de4f650c2",
+      "used": false
+    },
+    {
+      "file": "source/f6ef9a54-2da8-4a40-96f3-315b38ba7a2a.png",
+      "sha256": "f9e0aadae66ffae7c2929705503e3daa2763edd8a2a2462b0fd0d60ec97fdaf6",
+      "used": false
+    }
+  ],
+  "parts": [
+    {
+      "file": "hair/back-hair.png",
+      "category": "hair",
+      "sourceFile": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "sourceRect": {
+        "x": 492,
+        "y": 253,
+        "width": 641,
+        "height": 740
+      },
+      "sourcePolygon": [
+        [
+          760,
+          253
+        ],
+        [
+          890,
+          270
+        ],
+        [
+          940,
+          480
+        ],
+        [
+          985,
+          590
+        ],
+        [
+          1118,
+          746
+        ],
+        [
+          1133,
+          993
+        ],
+        [
+          492,
+          993
+        ],
+        [
+          492,
+          748
+        ],
+        [
+          557,
+          628
+        ],
+        [
+          614,
+          511
+        ],
+        [
+          650,
+          350
+        ]
+      ],
+      "width": 673,
+      "height": 772,
+      "x": 170.76755070202807,
+      "y": 45.08108108108108,
+      "displayWidth": 472.46489859594385,
+      "displayHeight": 719.8378378378378,
+      "zIndex": 0,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "ed3d51509087cd3f350b8f7c0c83e09272ae0e08ea9a836a8ff484ba3622c6ab",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "outfit/coat-right.png",
+      "category": "outfit",
+      "sourceFile": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "sourceRect": {
+        "x": 35,
+        "y": 58,
+        "width": 275,
+        "height": 903
+      },
+      "sourcePolygon": null,
+      "width": 307,
+      "height": 935,
+      "x": 169.4690909090909,
+      "y": 499.9512735326689,
+      "displayWidth": 202.06181818181818,
+      "displayHeight": 704.0974529346622,
+      "zIndex": 10,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "47d904b24cecb0b07a8f51574de3e9cfc7597f32a15ad17b07aaff52dbf56535",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "outfit/coat-left.png",
+      "category": "outfit",
+      "sourceFile": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "sourceRect": {
+        "x": 1224,
+        "y": 58,
+        "width": 284,
+        "height": 903
+      },
+      "sourcePolygon": null,
+      "width": 316,
+      "height": 935,
+      "x": 429.80281690140845,
+      "y": 499.9512735326689,
+      "displayWidth": 201.3943661971831,
+      "displayHeight": 704.0974529346622,
+      "zIndex": 10,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "384a14893019c1fca210c0b6a3cea95800490955d2ba348841c95da2d6bb3ff8",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "legs/thigh-right.png",
+      "category": "legs",
+      "sourceFile": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sourceRect": {
+        "x": 996,
+        "y": 24,
+        "width": 209,
+        "height": 399
+      },
+      "sourcePolygon": null,
+      "width": 241,
+      "height": 431,
+      "x": 299.26794258373207,
+      "y": 550.7744360902255,
+      "displayWidth": 116.46411483253588,
+      "displayHeight": 275.45112781954884,
+      "zIndex": 20,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "5d0f8b03618c48d410220645436c60ee3c1f76aee1004f9c375ca15fef0ae364",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "legs/thigh-left.png",
+      "category": "legs",
+      "sourceFile": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sourceRect": {
+        "x": 1273,
+        "y": 23,
+        "width": 220,
+        "height": 405
+      },
+      "sourcePolygon": null,
+      "width": 252,
+      "height": 437,
+      "x": 399.6545454545454,
+      "y": 550.925925925926,
+      "displayWidth": 115.69090909090909,
+      "displayHeight": 275.14814814814815,
+      "zIndex": 20,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "f13c82a0dc03b291eecf058bf5826098d208948d431808466dfa9e27c26b40ab",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "legs/boot-right.png",
+      "category": "legs",
+      "sourceFile": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sourceRect": {
+        "x": 476,
+        "y": 509,
+        "width": 174,
+        "height": 498
+      },
+      "sourcePolygon": null,
+      "width": 206,
+      "height": 530,
+      "x": 288.2413793103448,
+      "y": 766.7550200803213,
+      "displayWidth": 138.51724137931035,
+      "displayHeight": 372.4899598393574,
+      "zIndex": 21,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "eea3093ffe7259d1b25079da36e7f6c307f735c928a8f713e3c29598e6e6f900",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "legs/boot-left.png",
+      "category": "legs",
+      "sourceFile": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sourceRect": {
+        "x": 888,
+        "y": 509,
+        "width": 174,
+        "height": 498
+      },
+      "sourcePolygon": null,
+      "width": 206,
+      "height": 530,
+      "x": 388.2413793103448,
+      "y": 766.7550200803213,
+      "displayWidth": 138.51724137931035,
+      "displayHeight": 372.4899598393574,
+      "zIndex": 21,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "5ebeb7c1648efb43fb23956f1064203ab18a791716290d191634b75be55501a4",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "outfit/skirt.png",
+      "category": "outfit",
+      "sourceFile": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "sourceRect": {
+        "x": 58,
+        "y": 18,
+        "width": 506,
+        "height": 486
+      },
+      "sourcePolygon": null,
+      "width": 538,
+      "height": 518,
+      "x": 237.32411067193675,
+      "y": 501.61728395061726,
+      "displayWidth": 325.3517786561265,
+      "displayHeight": 303.7654320987654,
+      "zIndex": 30,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "1ecf1e0206dab2b1b6374a776fe0bf8cb139853bf460cc9b4834b6142444c90c",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "body/arm-right.png",
+      "category": "body",
+      "sourceFile": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "sourceRect": {
+        "x": 8,
+        "y": 62,
+        "width": 323,
+        "height": 800
+      },
+      "sourcePolygon": null,
+      "width": 355,
+      "height": 832,
+      "x": 186.92569659442725,
+      "y": 271.72,
+      "displayWidth": 179.1486068111455,
+      "displayHeight": 430.56,
+      "zIndex": 35,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "de1cce07fb157dfc5aac465a56b6d8fc05edc55fce7fe7edecd005ed64602d96",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "body/arm-left.png",
+      "category": "body",
+      "sourceFile": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "sourceRect": {
+        "x": 657,
+        "y": 69,
+        "width": 313,
+        "height": 863
+      },
+      "sourcePolygon": null,
+      "width": 345,
+      "height": 895,
+      "x": 440.9744408945687,
+      "y": 272.1205098493627,
+      "displayWidth": 173.05111821086263,
+      "displayHeight": 440.7589803012746,
+      "zIndex": 35,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "ad8c540afe2e843c39d2423a0d8e4ad3a096572a6885b2c6b6ad30bd9644e59f",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "body/hand-right.png",
+      "category": "body",
+      "sourceFile": "source/bdb578db-f75a-44b1-b7c1-002bc30500b4.png",
+      "sourceRect": {
+        "x": 35,
+        "y": 378,
+        "width": 91,
+        "height": 133
+      },
+      "sourcePolygon": null,
+      "width": 123,
+      "height": 165,
+      "x": 213.5054945054945,
+      "y": 638.4962406015038,
+      "displayWidth": 72.98901098901099,
+      "displayHeight": 98.00751879699249,
+      "zIndex": 36,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "efbec4dc386ecc60b1f0532cc1d0879152dad5344da66a243ddaa536e9a13b5b",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "body/hand-left.png",
+      "category": "body",
+      "sourceFile": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "sourceRect": {
+        "x": 1318,
+        "y": 478,
+        "width": 198,
+        "height": 369
+      },
+      "sourcePolygon": null,
+      "width": 230,
+      "height": 401,
+      "x": 525.1515151515151,
+      "y": 643.6639566395664,
+      "displayWidth": 69.6969696969697,
+      "displayHeight": 108.67208672086721,
+      "zIndex": 36,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "f35571a1d9188ab32010cdd3862041c37785e3b8f2e204c0d91f26d224b643b2",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "body/torso.png",
+      "category": "body",
+      "sourceFile": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "sourceRect": {
+        "x": 601,
+        "y": 49,
+        "width": 331,
+        "height": 559
+      },
+      "sourcePolygon": null,
+      "width": 363,
+      "height": 591,
+      "x": 264.96374622356495,
+      "y": 231.03756708407872,
+      "displayWidth": 273.0725075528701,
+      "displayHeight": 404.92486583184257,
+      "zIndex": 40,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "918f7d0b4bef22d5cf7fab93d1fcc261e06ba3fe6524fd14bd102825176ff918",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/face-base.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 20,
+        "y": 15,
+        "width": 185,
+        "height": 250
+      },
+      "sourcePolygon": null,
+      "width": 217,
+      "height": 282,
+      "x": 291.0,
+      "y": 29.0,
+      "displayWidth": 217.0,
+      "displayHeight": 282.0,
+      "zIndex": 38,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "2a2bf82bc9c1a4b3318c17ec59ec53554e81545d2aeabfb479b4f5b15b4092b7",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/eye-right.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 202,
+        "y": 19,
+        "width": 110,
+        "height": 69
+      },
+      "sourcePolygon": null,
+      "width": 142,
+      "height": 101,
+      "x": 327.0,
+      "y": 150.8840579710145,
+      "displayWidth": 71.0,
+      "displayHeight": 51.231884057971016,
+      "zIndex": 46,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "7868e04d647551fa41dafe4fcbd8800bb83d1dfcd4750ceaa3b038f920b917a1",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/eye-left.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 320,
+        "y": 19,
+        "width": 103,
+        "height": 69
+      },
+      "sourcePolygon": null,
+      "width": 135,
+      "height": 101,
+      "x": 403.92233009708735,
+      "y": 150.8840579710145,
+      "displayWidth": 68.15533980582525,
+      "displayHeight": 51.231884057971016,
+      "zIndex": 46,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "c920a81ad6e968ea1b47e12430787854efcb8a03badaece657a116fc6ba75b4b",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/eyebrow-right.png",
+      "category": "face",
+      "sourceFile": "source/327cdbfe-255d-4b18-83ee-059ba56af447.png",
+      "sourceRect": {
+        "x": 25,
+        "y": 436,
+        "width": 108,
+        "height": 49
+      },
+      "sourcePolygon": null,
+      "width": 140,
+      "height": 81,
+      "x": 330.74074074074076,
+      "y": 137.81632653061226,
+      "displayWidth": 63.51851851851852,
+      "displayHeight": 36.36734693877551,
+      "zIndex": 47,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "5831a0802acf7b99d8c74ed3f923b24404ad6d8e48b64b5520bc2ac857e8941e",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/eyebrow-left.png",
+      "category": "face",
+      "sourceFile": "source/327cdbfe-255d-4b18-83ee-059ba56af447.png",
+      "sourceRect": {
+        "x": 174,
+        "y": 436,
+        "width": 110,
+        "height": 49
+      },
+      "sourcePolygon": null,
+      "width": 142,
+      "height": 81,
+      "x": 406.8727272727273,
+      "y": 137.81632653061226,
+      "displayWidth": 63.25454545454546,
+      "displayHeight": 36.36734693877551,
+      "zIndex": 47,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "492a952c76ad4779742d9bd7e212abbceca3bc112d26b5ce54c8a6694989a175",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "face/mouth.png",
+      "category": "face",
+      "sourceFile": "source/327cdbfe-255d-4b18-83ee-059ba56af447.png",
+      "sourceRect": {
+        "x": 910,
+        "y": 501,
+        "width": 92,
+        "height": 56
+      },
+      "sourcePolygon": null,
+      "width": 124,
+      "height": 88,
+      "x": 379.60869565217394,
+      "y": 207.57142857142858,
+      "displayWidth": 41.78260869565217,
+      "displayHeight": 29.857142857142858,
+      "zIndex": 47,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "556e282559efb07e6432fc54c8ad10951b636b07ac4bc37fda7214659c90fe5b",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "hair/bangs.png",
+      "category": "hair",
+      "sourceFile": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "sourceRect": {
+        "x": 0,
+        "y": 12,
+        "width": 440,
+        "height": 447
+      },
+      "sourcePolygon": [
+        [
+          0,
+          12
+        ],
+        [
+          440,
+          12
+        ],
+        [
+          440,
+          390
+        ],
+        [
+          400,
+          420
+        ],
+        [
+          310,
+          447
+        ],
+        [
+          274,
+          419
+        ],
+        [
+          168,
+          415
+        ],
+        [
+          133,
+          459
+        ],
+        [
+          0,
+          459
+        ]
+      ],
+      "width": 472,
+      "height": 479,
+      "x": 262.3272727272727,
+      "y": 4.299776286353467,
+      "displayWidth": 285.3454545454546,
+      "displayHeight": 290.40044742729305,
+      "zIndex": 50,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "edb5d08b56a6709ebb92ec154e633204a1899524f85e2a1458139b2f422de32e",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "hair/side-right.png",
+      "category": "hair",
+      "sourceFile": "source/dfa57b11-2f51-4f7c-8d6b-09413bde4377.png",
+      "sourceRect": {
+        "x": 649,
+        "y": 12,
+        "width": 116,
+        "height": 296
+      },
+      "sourcePolygon": null,
+      "width": 148,
+      "height": 328,
+      "x": 286.17241379310343,
+      "y": 102.62162162162161,
+      "displayWidth": 81.65517241379311,
+      "displayHeight": 294.7567567567568,
+      "zIndex": 51,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "59f05cb42a44b315a0b2ad1253c3eb3173a63dff0069d4e234299d6319adb44d",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "hair/side-left.png",
+      "category": "hair",
+      "sourceFile": "source/dfa57b11-2f51-4f7c-8d6b-09413bde4377.png",
+      "sourceRect": {
+        "x": 772,
+        "y": 13,
+        "width": 97,
+        "height": 292
+      },
+      "sourcePolygon": null,
+      "width": 129,
+      "height": 324,
+      "x": 435.5979381443299,
+      "y": 102.42465753424658,
+      "displayWidth": 75.80412371134021,
+      "displayHeight": 295.1506849315069,
+      "zIndex": 51,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "dade8b7cdb116e8e629f8e70d843d9f26ff27e472bdfb788d75717fe6df168a9",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    },
+    {
+      "file": "accessories/ribbon.png",
+      "category": "accessories",
+      "sourceFile": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "sourceRect": {
+        "x": 1247,
+        "y": 645,
+        "width": 262,
+        "height": 367
+      },
+      "sourcePolygon": null,
+      "width": 294,
+      "height": 399,
+      "x": 454.80916030534354,
+      "y": 85.81198910081744,
+      "displayWidth": 95.38167938931298,
+      "displayHeight": 129.37602179836512,
+      "zIndex": 49,
+      "transformOrigin": {
+        "x": 0.5,
+        "y": 0.08
+      },
+      "sha256": "b9232cafc786341ad0af5122821a1f6d26b01010b3cd1b1ae846a3b77a1e2213",
+      "pixelPolicy": "source RGBA unchanged inside selection; transparent padding/outside polygon"
+    }
+  ]
+}
