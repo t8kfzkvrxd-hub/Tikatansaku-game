@@ -55,6 +55,7 @@ function showHomeScreen(){
  fitHomeArtwork(home);
  if(localStorage.getItem('lastSeenVersion')!==GAME_VERSION)home.querySelector('.home-version').insertAdjacentHTML('beforebegin','<p class="home-update-hint">新しいお知らせがあります</p>');
  document.getElementById(save.valid?'home-continue':'home-new').focus({preventScroll:true});
+ if(typeof syncLobbyScreen==='function')syncLobbyScreen();
 }
 function enterGameFromHome(){
  if(!HomeScreen.loaded){loadState();HomeScreen.loaded=true;}

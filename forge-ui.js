@@ -78,6 +78,7 @@ function openMaterialRecipes(key){
  target.insertAdjacentHTML('beforebegin','<p>この素材で作れる装備：派生は「武器ツリー」、最終形態は「覚醒」でも確認できます。</p>');
 }
 function visitTownSection(id){
+ if(document.body.classList.contains('at-lobby')){openLobbyFacility(id);return;}
  closeGenericModal();
  if(id==='warehouse'){setTab('bag');document.getElementById('sub-panel').scrollIntoView({behavior:'smooth',block:'start'});return;}
  const target=document.getElementById(id);if(target){for(let p=target;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;target.scrollIntoView({behavior:'smooth',block:'start'});}

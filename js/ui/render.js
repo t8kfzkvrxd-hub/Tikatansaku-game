@@ -171,7 +171,7 @@
             </div>
             <div class="town-facilities">
               <!-- Blacksmith -->
-              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+              <div id="town-blacksmith" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🔨 鍛冶屋 Lv.${state.camp.blacksmith}</div>
                   <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('blacksmith') ? 'disabled' : ''} onclick="upgradeCampFacility('blacksmith')">${getFacilityButtonText('blacksmith')}</button>
@@ -479,6 +479,7 @@
 
       renderSubPanel();
       if(state.chapter){const banner=state.screen==='town'?chapterTownHtml():tutorialBanner();if(banner)vp.insertAdjacentHTML('afterbegin',banner);}
+      if(typeof syncLobbyScreen==='function')syncLobbyScreen();
     }
 
     function renderSubPanel() {
@@ -671,5 +672,5 @@
           <div style="display:flex; flex-direction:column; gap:2px;">${logHtml || '<div style="font-size:11px; color:#94a3b8;">記録なし</div>'}</div>
         `;
       }
+      if(typeof refreshLobbyFacility==='function')refreshLobbyFacility();
     }
-

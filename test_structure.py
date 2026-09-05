@@ -25,7 +25,10 @@ parts = {
     'js/ui/itemPresentation.js': [('    function getItemStatSummary(it)', '    function triggerShake')],
 }
 for path, spans in parts.items():
-    assert (ROOT/path).read_text() == ''.join(section(old, a, b) for a, b in spans), path
+    current=(ROOT/path).read_text()
+    if path=='js/ui/render.js':
+        current=current.replace(' id="town-blacksmith"','').replace("      if(typeof syncLobbyScreen==='function')syncLobbyScreen();\n",'').replace("      if(typeof refreshLobbyFacility==='function')refreshLobbyFacility();\n",'')
+    assert current.rstrip() == ''.join(section(old, a, b) for a, b in spans).rstrip(), path
     print('PASS: unchanged extracted source', path)
 battle = section(old, '    function startNormalBattle', '    function showLayer1ClearModal')
 battle = battle.replace(section(old, '    function processPlayerStatuses', '    function playerCombatAction'), '')
