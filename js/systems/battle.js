@@ -21,6 +21,7 @@
         ,obscured: area.id===9&&Math.random()<.3
       };
 
+      recordBattleParticipants(state.currentEnemy);
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
       applyEnemyPulse(state.currentEnemy);
@@ -59,6 +60,7 @@
       state.playerAttackBuff = 1.0;
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
 
+      recordBattleParticipants(state.currentEnemy);
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
       decideEnemyIntent();

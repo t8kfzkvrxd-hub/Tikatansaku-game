@@ -1,8 +1,9 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.25.0';
+    const GAME_VERSION = '0.25.1';
     const UPDATE_NOTES = [
+      '戦闘開始時の参加者へ共通EXPを一度だけ付与。途中で気絶した同行者も対象。既存Lv・EXPと共通必要EXP表は維持',
       '47ビルドの実動作監査と条件・数値説明を追加。戦闘間の状態残留、毒特攻判定、属性変換、同行者の撃破・報酬補正を修正。ビルド詳細と戦闘表示を追加',
       '探索ルートカードの種類・危険度・報酬表示と選択演出を改善。1〜200Fの環境演出を補強し、境界階・ボス・探索表示を検証',
       '探索を200Fまで拡張。101〜200Fの10エリア・敵・ボス・素材・製作レシピを追加。新規ストーリーは追加せず、既存チェックポイントとHUDを維持',

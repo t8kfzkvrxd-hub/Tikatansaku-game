@@ -26,6 +26,10 @@ function migrateCharacterLevels(saved){
  }
 }
 function battleExperience(enemy,floor=state.floor){return Math.round((12+Math.max(1,floor)*.12)*(enemy.isBoss?4:enemy.isElite?1.6:1));}
+function recordBattleParticipants(enemy){
+ enemy.expParticipants=activeParty().filter(m=>m.unit.hp>0).map(m=>m.id);
+ enemy.expFloor=state.floor;
+}
 function grantCharacterExperience(id,amount,source='story'){
  if(id!=='player'&&!state.chapter.owned[id])return 0;
  const p=characterProgress(id),cap=characterLevelCap();
@@ -38,11 +42,13 @@ function grantCharacterExperience(id,amount,source='story'){
  return p.level-before;
 }
 function awardBattleExperience(enemy){
+ if(!enemy||enemy.expAwarded)return;
+ enemy.expAwarded=true;
  const previousMaxHp=getPlayerStats().maxHp;
- const amount=battleExperience(enemy),source=enemy.progressionSource==='abyss'?'abyss':'story';
- grantCharacterExperience('player',amount,source);
- const id=state.chapter?.companion;if(id&&state.chapter.owned[id])grantCharacterExperience(id,amount,source);
- addLog(`討伐EXP +${amount}（主人公${id?'・'+(CHARACTER_DATA[id]?.name||id):''} / 上限到達者を除く）`,'info');
+ const amount=battleExperience(enemy,enemy.expFloor??state.floor),source=enemy.progressionSource==='abyss'?'abyss':'story';
+ const participants=[...new Set(enemy.expParticipants||['player',...(state.chapter?.companion&&state.chapter.owned[state.chapter.companion]?[state.chapter.companion]:[])])];
+ for(const id of participants)grantCharacterExperience(id,amount,source);
+ addLog(`討伐EXP 各+${amount}（${participants.map(id=>id==='player'?'主人公':CHARACTER_DATA[id]?.name||id).join('・')} / 上限到達者を除く）`,'info');
  state.maxHp+=Math.max(0,getPlayerStats().maxHp-previousMaxHp);
  saveState();
 }
