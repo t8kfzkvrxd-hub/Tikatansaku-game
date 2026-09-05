@@ -29,6 +29,16 @@ body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto
 .home-lantern{background:radial-gradient(ellipse,#ffc77a45,transparent 65%);width:10%;height:17%;animation:home-lamp 4.7s ease-in-out infinite}
 .home-lantern-near{left:51%;top:83%}.home-lantern-far{left:88%;top:81%;animation-delay:-2s}
 .home-presence{left:7%;top:18%;width:36%;height:65%;background:radial-gradient(ellipse,#d4deed09,transparent 66%);animation:home-presence 12s ease-in-out infinite}
+.home-character-atmosphere{position:absolute;pointer-events:none;inset:0;--breath:9s;--phase:-2s}
+.home-character-hero{--breath:13s;--phase:-6s}
+.home-character-rim{position:absolute;left:19%;top:16%;width:23%;height:70%;background:radial-gradient(ellipse at 65% 32%,#ffe0c71c,transparent 65%);animation:character-breath var(--breath) ease-in-out var(--phase) infinite}
+.home-character-hero .home-character-rim{left:0;top:25%;width:29%;height:74%;background:radial-gradient(ellipse at 66% 45%,#b7d9f41a,transparent 63%)}
+.home-character-wind{position:absolute;left:7%;top:21%;width:31%;height:32%;background:radial-gradient(ellipse at 50% 50%,#d8e9ff12,transparent 64%);animation:character-wind 16s ease-in-out -4s infinite}
+.home-character-hero .home-character-wind{left:0;top:53%;width:30%;height:30%;animation-duration:21s;animation-delay:-11s}
+.home-ambient{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 40% 60%,#a4c7ef0d,transparent 75%);animation:home-glow 19s ease-in-out -7s infinite}
+.home-update-hint{font-size:11px;color:#d1bf99;margin:0 0 12px}
+@keyframes character-breath{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-1.5px);opacity:.8}}
+@keyframes character-wind{0%,100%{transform:translate(0,2px);opacity:.1}50%{transform:translate(-5px,-2px);opacity:.55}}
 .home-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .home-particles i{position:absolute;left:var(--x);top:var(--y);width:2px;height:2px;background:#c7e3ff;border-radius:50%;box-shadow:0 0 5px #93c9ff;animation:home-particle var(--duration) ease-in-out var(--delay) infinite}
 @keyframes home-fog{0%,100%{transform:translateY(3%);opacity:.2}50%{transform:translateY(-4%);opacity:.6}}

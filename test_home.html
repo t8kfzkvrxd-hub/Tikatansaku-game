@@ -10,10 +10,18 @@ window.onload=async()=>{
  try{
   w.localStorage.removeItem(key);w.localStorage.removeItem('ABYSS_TUTORIAL_SEEN');await reload();
   check(w.localStorage.getItem(key)===null,'ホーム起動だけでセーブを生成しない');
+  check(w.document.getElementById('modal-layer').style.display==='none'&&!w.document.getElementById('home-screen').hidden,'初回からホームを通知で覆わない');
+  w.showUpdateNotes(true);
   click('確認してゲームを始める');check(w.document.getElementById('modal-layer').style.display==='none','通知確認後はホームに留まる');
   check(w.document.getElementById('home-continue').disabled&&w.document.getElementById('home-new').classList.contains('home-primary'),'セーブなしは新規が主ボタン');
   const image=w.document.querySelector('.home-background');await image.decode();check(image.naturalWidth>1000,'元背景PNGを読み込み');
   check(w.document.querySelectorAll('.home-particles i').length===10&&!w.document.querySelector('#home-screen canvas,#home-screen video'),'粒子10個・動画/Canvasなし');
+  check(!w.document.body.classList.contains('home-reduced'),'通常起動で演出軽減を誤設定しない');
+  const reduced=w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const effects=['.home-mist','.home-particles i','.home-blue','.home-lantern','.home-character-elna .home-character-rim','.home-character-hero .home-character-rim','.home-ambient'];
+  for(const selector of effects){const e=w.document.querySelector(selector),css=w.getComputedStyle(e);check(reduced?css.animationName==='none':css.animationIterationCount==='infinite',selector+' ループ／モーション軽減');}
+  check(w.getComputedStyle(image).transform==='none','背景画像自体は揺らさない');
+  if(!reduced){const e=w.document.querySelector('.home-character-elna .home-character-rim'),h=w.document.querySelector('.home-character-hero .home-character-rim');check(w.getComputedStyle(e).animationDuration!==w.getComputedStyle(h).animationDuration,'人物周辺の周期をずらす');const a=e.getAnimations()[0];a.pause();a.currentTime=6500;check(w.getComputedStyle(e).transform!=='none','人物周辺の微小変化が実行される');a.play();}
   if(w.matchMedia('(prefers-reduced-motion: reduce)').matches)check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','端末のreduced-motion設定を反映');
   for(const [width,height]of [[1280,720],[375,667],[390,844],[320,480],[667,320]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();
