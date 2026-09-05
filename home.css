@@ -56,7 +56,7 @@ body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto
 .home-character-elna .home-character-wind::after{content:"";position:absolute;left:65%;top:12%;width:40%;height:95%;background:radial-gradient(ellipse,#e8dcce26,transparent 65%);animation:home-hair-wind 9.1s ease-in-out -5s infinite}
 .home-character-elna .home-character-rim::after{content:"";position:absolute;left:14%;top:4%;width:31%;height:23%;background:radial-gradient(ellipse,#cee4ff28,transparent 65%);animation:home-cloth-wind 8.6s ease-in-out -3s infinite}
 .home-breath-patch{animation:home-local-breath 5.2s ease-in-out infinite,home-local-balance 12.6s ease-in-out -4s infinite}
-@keyframes home-local-balance{0%,100%{translate:0 0}50%{translate:.65px 0}}
+@keyframes home-local-balance{0%,100%{translate:0 0}50%{translate:2px 0}}
 .home-character-cloth{position:absolute;left:29%;top:53%;width:18%;height:41%;background:radial-gradient(ellipse at 44% 60%,#c7ddff25,transparent 62%);animation:home-cloth-wind 9.3s ease-in-out -5s infinite}
 .home-character-hero .home-character-cloth{left:1%;top:57%;width:25%;height:40%;animation-duration:11.7s;animation-delay:-3s;background:radial-gradient(ellipse,#a6c8eb1c,transparent 65%)}
 .home-character-dust{position:absolute;left:22%;top:38%;width:2px;height:2px;border-radius:50%;background:#d5eaff;box-shadow:38px -29px 1px #bedaff,70px 35px 1px #daeaff;animation:home-near-dust 8s linear -3s infinite}
@@ -64,7 +64,7 @@ body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto
 .home-distant-light{position:absolute;left:40%;top:3%;width:15%;height:23%;background:radial-gradient(ellipse at 24% 60%,#ff786019,transparent 32%),radial-gradient(ellipse at 75% 20%,#b6deff30,transparent 37%);animation:home-glow 7.3s ease-in-out -3s infinite}
 .home-mist{animation-name:home-fog-rise;animation-duration:18s;animation-timing-function:linear;background:radial-gradient(ellipse at 43% 84%,#b9d5ef2c,transparent 44%),radial-gradient(ellipse at 66% 78%,#abcce023,transparent 38%)}
 .home-mist-second{animation-duration:23s;animation-delay:-11s}
-@keyframes home-local-breath{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(.5px,-.6px) scale(1.003)}}
+@keyframes home-local-breath{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(.5px,-2px) scale(1.008)}}
 @keyframes home-hair-wind{0%,100%{transform:translate(0,1px);opacity:.15}50%{transform:translate(2px,-2px);opacity:.85}}
 @keyframes home-cloth-wind{0%,100%{transform:translate(0,0) rotate(0);opacity:.15}50%{transform:translate(1px,-1px) rotate(.15deg);opacity:.7}}
 @keyframes home-near-dust{0%{transform:translate(-10px,14px);opacity:0}25%,70%{opacity:.45}100%{transform:translate(22px,-28px);opacity:0}}
@@ -83,3 +83,36 @@ body.home-reduced .home-breath-patch,body.home-reduced .home-character-dust,body
  .home-particles i:nth-child(n+7){display:none}
 }
 @media(max-height:500px) and (orientation:landscape){.home-menu{padding:20px 0;width:34%;margin-left:62%}.home-menu h1{font-size:34px}.home-eyebrow,.home-subtitle{display:none}.home-rule{margin:15px}.home-button{padding:9px 12px}.home-sub-actions{margin:10px 0 4px}}
+html.at-home,body.at-home{width:100%;height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
+body.at-home #home-screen{width:100%;height:var(--game-viewport-height,100vh);min-height:0;overflow:hidden;box-sizing:border-box}
+#home-screen .home-menu{height:100%;min-height:0;box-sizing:border-box;padding-top:clamp(8px,4vh,50px);padding-bottom:clamp(8px,4vh,50px)}
+#home-screen .home-menu>*{flex-shrink:0}
+@media(max-height:600px){
+ #home-screen .home-menu{margin-left:62%;width:34%;padding:8px 0;justify-content:center}
+ #home-screen .home-eyebrow,#home-screen .home-subtitle{display:none}
+ #home-screen .home-menu h1{font-size:clamp(25px,7vh,38px);line-height:1}
+ #home-screen .home-menu h1 span+span{margin-top:5px}
+ #home-screen .home-rule{margin:8px 5%}
+ #home-screen .home-main-actions{gap:7px}
+ #home-screen .home-button{min-height:44px;padding:8px 10px}
+ #home-screen .home-button span{font-size:15px;letter-spacing:.08em}
+ #home-screen .home-button small{font-size:8px;letter-spacing:.05em}
+ #home-screen .home-sub-actions{margin:5px 0 2px;gap:10px}
+ #home-screen .home-sub-actions button{min-height:44px;padding:6px 8px}
+ #home-screen .home-update-hint{margin:0 0 3px;font-size:10px}
+ #home-screen .home-warning{font-size:10px;line-height:1.3;margin:4px 0}
+ #home-screen .home-version{font-size:10px;line-height:1.2}
+}
+@media(orientation:portrait){#home-screen .home-menu{margin:0 auto;width:86%;justify-content:flex-end;padding:12px 0}}
+.home-local-patch{position:absolute;inset:0;background-size:100% 100%;background-repeat:no-repeat;pointer-events:none;mask-image:var(--region);-webkit-mask-image:var(--region)}
+.home-hair-patch{--region:radial-gradient(ellipse 8% 10% at 20% 34%,#000 30%,transparent 100%);transform-origin:28% 24%;animation:home-hair-pixels 7.1s ease-in-out -2.3s infinite}
+.home-ribbon-patch{--region:radial-gradient(ellipse 2.5% 5% at 24% 23%,#000 25%,transparent 100%);transform-origin:25% 21%;animation:home-ribbon-pixels 6.3s ease-in-out -4s infinite}
+.home-coat-patch{--region:radial-gradient(ellipse 5% 10% at 40% 69%,#000 30%,transparent 100%);transform-origin:34% 51%;animation:home-coat-pixels 8.7s ease-in-out -1s infinite}
+.home-head-patch{--region:radial-gradient(ellipse 6% 10% at 31% 27%,#000 45%,transparent 100%);animation:home-head-pixels 12.6s ease-in-out -3.4s infinite}
+@keyframes home-hair-pixels{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-2px,-1px) rotate(.2deg)}}
+@keyframes home-ribbon-pixels{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(1deg)}}
+@keyframes home-coat-pixels{0%,100%{transform:translate(0,0)}50%{transform:translate(3px,-2px)}}
+@keyframes home-head-pixels{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,-.5px)}}
+body.home-reduced .home-local-patch{display:none}
+@media(prefers-reduced-motion:reduce){.home-local-patch{display:none}}
+@supports not ((mask-image:linear-gradient(#000,transparent)) or (-webkit-mask-image:linear-gradient(#000,transparent))){.home-local-patch{display:none}}

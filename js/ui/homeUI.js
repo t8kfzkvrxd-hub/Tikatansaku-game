@@ -6,6 +6,10 @@ function fitHomeArtwork(home){
  while(art.firstChild)scene.append(art.firstChild);art.append(scene);
  const breath=document.createElement('div');breath.className='home-breath-patch';
  breath.style.backgroundImage=`url("${image.getAttribute('src')}")`;scene.append(breath);
+ for(const region of ['hair','ribbon','coat','head']){
+  const patch=document.createElement('div');patch.className=`home-local-patch home-${region}-patch`;
+  patch.style.backgroundImage=breath.style.backgroundImage;scene.append(patch);
+ }
  const distant=document.createElement('div');distant.className='home-distant-light';scene.append(distant);
  const fit=()=>{
   if(!image.naturalWidth||!art.clientWidth||!art.clientHeight)return;
@@ -29,7 +33,7 @@ function bootHomeScreen(){
 function showHomeScreen(){
  if(HomeScreen.loaded&&(state.screen!=='town'||state.chapter?.pending)){addLog('地上へ帰還してからホームに戻れます。','info');return;}
  closeGenericModal();HomeScreen.active=true;
- document.body.classList.add('at-home');document.getElementById('game-container').inert=true;
+ document.body.classList.add('at-home');document.documentElement.classList.add('at-home');document.getElementById('game-container').inert=true;
  const save=homeSaveInfo();let home=document.getElementById('home-screen');
  if(!home){home=document.createElement('section');home.id='home-screen';document.body.append(home);}
  home.hidden=false;
@@ -42,12 +46,13 @@ function showHomeScreen(){
  }
  const ambient=document.createElement('div');ambient.className='home-ambient';art.append(ambient);
  fitHomeArtwork(home);
+ for(const effect of home.querySelectorAll(':scope > .home-mist,:scope > .home-particles'))art.append(effect);
  if(localStorage.getItem('lastSeenVersion')!==GAME_VERSION)home.querySelector('.home-version').insertAdjacentHTML('beforebegin','<p class="home-update-hint">新しいお知らせがあります</p>');
  document.getElementById(save.valid?'home-continue':'home-new').focus({preventScroll:true});
 }
 function enterGameFromHome(){
  if(!HomeScreen.loaded){loadState();HomeScreen.loaded=true;}
- HomeScreen.active=false;document.body.classList.remove('at-home');document.getElementById('game-container').inert=false;
+ HomeScreen.active=false;document.body.classList.remove('at-home');document.documentElement.classList.remove('at-home');document.getElementById('game-container').inert=false;
  const home=document.getElementById('home-screen');if(home)home.hidden=true;
  closeGenericModal();render();
  if(localStorage.getItem('lastSeenVersion')!==GAME_VERSION)showUpdateNotes(true);else checkTutorial();

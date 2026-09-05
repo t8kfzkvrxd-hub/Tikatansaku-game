@@ -12,16 +12,24 @@ window.onload=async()=>{
    const scene=d.querySelector('.home-scene').getBoundingClientRect(),base=d.querySelector('.home-background').getBoundingClientRect();
    check(Math.abs(scene.width-base.width)<1&&Math.abs(scene.height-base.height)<1,'art and effects aligned '+width+'x'+height);
    check(d.getElementById('home-screen').scrollWidth<=width+1,'no horizontal overflow '+width+'x'+height);
+   for(const node of [d.documentElement,d.body,d.getElementById('home-screen')])check(node.scrollHeight<=height+1&&node.scrollWidth<=width+1,'no page scroll '+node.tagName+' '+width+'x'+height);
+   for(const b of d.querySelectorAll('.home-button,.home-sub-actions button')){
+    const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&r.left>=0&&r.right<=width,'button visible without scroll '+b.textContent.trim()+' '+width+'x'+height);
+   }
+   for(const extra of ['', 'セーブを読み取れません。データは削除していません。']){
+    const warning=d.createElement('p');warning.className='home-warning';warning.textContent=extra;d.querySelector('.home-main-actions').after(warning);
+    const r=d.querySelector('.home-version').getBoundingClientRect();check(r.bottom<=height,'version and warning fit '+width+'x'+height);warning.remove();
+   }
   }
-  const selectors=['.home-breath-patch','.home-character-elna .home-character-wind','.home-character-cloth','.home-mist','.home-blue'];
+  const selectors=['.home-breath-patch','.home-hair-patch','.home-ribbon-patch','.home-coat-patch','.home-head-patch','.home-mist','.home-blue'];
   const reduced=w.matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced)check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'reduced also stops pseudo-elements');
   const samples=[];
   for(let i=0;i<=4;i++){
    samples.push(selectors.map(s=>{const c=w.getComputedStyle(d.querySelector(s));return c.transform+' '+c.opacity}));
-   if(i<4)await wait(2500);
+   if(i<4)await wait(1250);
   }
-  for(let i=0;i<selectors.length;i++)check(reduced?new Set(samples.map(s=>s[i])).size===1:new Set(samples.map(s=>s[i])).size>1,'10 second motion / reduced '+selectors[i]);
+  for(let i=0;i<selectors.length;i++)check(reduced?new Set(samples.map(s=>s[i])).size===1:new Set(samples.map(s=>s[i])).size>1,'5 second motion / reduced '+selectors[i]);
   check(w.getComputedStyle(d.querySelector('.home-background')).transform==='none','base image and feet remain stationary');
   check(!d.querySelector('#home-screen canvas,#home-screen video'),'no canvas or video');
   check(d.querySelectorAll('.home-particles i').length===10,'bounded particles');
