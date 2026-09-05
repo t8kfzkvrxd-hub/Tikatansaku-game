@@ -11,6 +11,7 @@ window.onload=async()=>{
   for(let round=0;round<3;round++)for(const [width,height] of [[360,740],[740,360],[740,320],[740,360],[390,844],[844,390],[844,350],[844,390],[430,932],[932,430]]){
    frame.style.width=width+'px';frame.style.height=height+'px';w.dispatchEvent(new Event('orientationchange'));await wait(300);
    if(width<height)continue;
+   if(w.matchMedia('(hover:none) and (pointer:coarse)').matches)check(w.getComputedStyle(d.querySelector('.home-menu h1')).fontSize==='28px','mobile title independent of viewport height');
    w.document.documentElement.style.setProperty('--game-viewport-height','900px');
    if(round===1){w.showHomeScreen();await wait(300)}
    const root=d.getElementById('home-screen'),art=d.querySelector('.home-background').getBoundingClientRect();
