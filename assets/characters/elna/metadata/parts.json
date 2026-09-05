@@ -77,6 +77,90 @@
       "alphaMin": 0,
       "alphaMax": 254,
       "sha256": "50b7cdec8c87445b05370aa88bff44391e8ea0cf492357e5e0542f0de4f650c2"
+    },
+    {
+      "file": "source/5030bea6-17b6-4b61-bae8-6f8bf5f64191.png",
+      "foundAt": "5030bea6-17b6-4b61-bae8-6f8bf5f64191.png",
+      "category": "補完パーツ",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 96979,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "4e5b945a861284dbf387f1865bb0287316872a11765cd0d7ce5fe7bc3ec48d95",
+      "isolatedBackground": false
+    },
+    {
+      "file": "source/af54d04c-f0b5-4061-88c8-0af9aa0024d4.png",
+      "foundAt": "af54d04c-f0b5-4061-88c8-0af9aa0024d4.png",
+      "category": "上半身／腕／衣装・手ポーズ",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 3367,
+      "alphaMin": 0,
+      "alphaMax": 253,
+      "sha256": "dbf0107addcbcde3bfffe96adec3fc9d0ee875221616092ece9c818c7d1e14d4",
+      "isolatedBackground": false
+    },
+    {
+      "file": "source/bd9695e3-89e9-4b5b-ad83-0d80d2918b9f (2).png",
+      "foundAt": "bd9695e3-89e9-4b5b-ad83-0d80d2918b9f (2).png",
+      "category": "髪・顔／表情",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 438575,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "9180c5b5c68733c28ebff66d40e1452b65231cfe3432fb7541427591994d3d39",
+      "isolatedBackground": true
+    },
+    {
+      "file": "source/d4d6f4b9-1af3-4ed8-9396-aa99e2642d1a.png",
+      "foundAt": "d4d6f4b9-1af3-4ed8-9396-aa99e2642d1a.png",
+      "category": "補助エフェクト・追加表情・手ポーズ",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 34096,
+      "alphaMin": 0,
+      "alphaMax": 253,
+      "sha256": "f7390bb18b8301a1d2f4233d86090304bb5037571251f9633c5073b2098ba0cb",
+      "isolatedBackground": false
+    },
+    {
+      "file": "source/ec8966f6-a34d-457a-a3c3-faf964922b12.png",
+      "foundAt": "ec8966f6-a34d-457a-a3c3-faf964922b12.png",
+      "category": "顔／開眼・半目・閉眼・口差分",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 628143,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "a7bb187d915356864676fdda1c1626c76ee51a850bd3ea9ce75a08b0e74d0ceb",
+      "isolatedBackground": true
+    },
+    {
+      "file": "source/f6ef9a54-2da8-4a40-96f3-315b38ba7a2a.png",
+      "foundAt": "f6ef9a54-2da8-4a40-96f3-315b38ba7a2a.png",
+      "category": "追加表情・下半身・衣装・補完",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 0,
+      "alphaMin": 1,
+      "alphaMax": 253,
+      "sha256": "f9e0aadae66ffae7c2929705503e3daa2763edd8a2a2462b0fd0d60ec97fdaf6",
+      "isolatedBackground": false
     }
   ],
   "reference": {
@@ -97,7 +181,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "5831a0802acf7b99d8c74ed3f923b24404ad6d8e48b64b5520bc2ac857e8941e"
+      "sha256": "5831a0802acf7b99d8c74ed3f923b24404ad6d8e48b64b5520bc2ac857e8941e",
+      "category": "face",
+      "sourceRect": {
+        "x": 25,
+        "y": 436,
+        "width": 108,
+        "height": 49
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/eyebrow-right.png",
@@ -111,7 +207,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "492a952c76ad4779742d9bd7e212abbceca3bc112d26b5ce54c8a6694989a175"
+      "sha256": "492a952c76ad4779742d9bd7e212abbceca3bc112d26b5ce54c8a6694989a175",
+      "category": "face",
+      "sourceRect": {
+        "x": 174,
+        "y": 436,
+        "width": 110,
+        "height": 49
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/eye-left-open.png",
@@ -125,7 +233,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "627eda957ed1fb99a09a256efdc0c5fcd9e66f1791df964dbe0a1f4ff0f53e68"
+      "sha256": "627eda957ed1fb99a09a256efdc0c5fcd9e66f1791df964dbe0a1f4ff0f53e68",
+      "category": "face",
+      "sourceRect": {
+        "x": 22,
+        "y": 539,
+        "width": 115,
+        "height": 80
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/eye-right-open.png",
@@ -139,7 +259,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "d772e864c022980818695762b7847522d95566f97448b9d36322e2153e82ebd4"
+      "sha256": "d772e864c022980818695762b7847522d95566f97448b9d36322e2153e82ebd4",
+      "category": "face",
+      "sourceRect": {
+        "x": 174,
+        "y": 539,
+        "width": 116,
+        "height": 80
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/mouth-closed.png",
@@ -153,7 +285,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "556e282559efb07e6432fc54c8ad10951b636b07ac4bc37fda7214659c90fe5b"
+      "sha256": "556e282559efb07e6432fc54c8ad10951b636b07ac4bc37fda7214659c90fe5b",
+      "category": "face",
+      "sourceRect": {
+        "x": 910,
+        "y": 501,
+        "width": 92,
+        "height": 56
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/mouth-small.png",
@@ -167,7 +311,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "ac4c64d3d2918cce263afc1336fd8ca291dab862babf673d550937ad47c677ba"
+      "sha256": "ac4c64d3d2918cce263afc1336fd8ca291dab862babf673d550937ad47c677ba",
+      "category": "face",
+      "sourceRect": {
+        "x": 1054,
+        "y": 499,
+        "width": 55,
+        "height": 57
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/mouth-medium.png",
@@ -181,7 +337,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "307b2f5799301abff3d3ddb45e7e26a8865b19099413930543e72284a39f0f29"
+      "sha256": "307b2f5799301abff3d3ddb45e7e26a8865b19099413930543e72284a39f0f29",
+      "category": "face",
+      "sourceRect": {
+        "x": 1174,
+        "y": 494,
+        "width": 68,
+        "height": 66
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/mouth-smile.png",
@@ -195,7 +363,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "acac30d049fcabf4461643c3f87b0976f0f31c5f79738f92c0599daf9011bf03"
+      "sha256": "acac30d049fcabf4461643c3f87b0976f0f31c5f79738f92c0599daf9011bf03",
+      "category": "face",
+      "sourceRect": {
+        "x": 1290,
+        "y": 494,
+        "width": 96,
+        "height": 66
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "face/mouth-surprised.png",
@@ -209,7 +389,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "464a3607e670b087f06f52a9b25199f96dcd5b3f8e035006cf49dd5ae2f8a469"
+      "sha256": "464a3607e670b087f06f52a9b25199f96dcd5b3f8e035006cf49dd5ae2f8a469",
+      "category": "face",
+      "sourceRect": {
+        "x": 1437,
+        "y": 491,
+        "width": 54,
+        "height": 68
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "hair/ribbon-left.png",
@@ -223,7 +415,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "be64b4ecab86080755fdf0c2f62460613117845a136f8cea543b66f972473c3b"
+      "sha256": "be64b4ecab86080755fdf0c2f62460613117845a136f8cea543b66f972473c3b",
+      "category": "hair",
+      "sourceRect": {
+        "x": 1316,
+        "y": 16,
+        "width": 91,
+        "height": 307
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "body/hand-left.png",
@@ -237,7 +441,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "efbec4dc386ecc60b1f0532cc1d0879152dad5344da66a243ddaa536e9a13b5b"
+      "sha256": "efbec4dc386ecc60b1f0532cc1d0879152dad5344da66a243ddaa536e9a13b5b",
+      "category": "body",
+      "sourceRect": {
+        "x": 35,
+        "y": 378,
+        "width": 91,
+        "height": 133
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "legs/boot-left.png",
@@ -251,7 +467,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "ae693b10922155bda1b75b71a8a4eafb0fd6a04f96dc6e987bc490bab798324d"
+      "sha256": "ae693b10922155bda1b75b71a8a4eafb0fd6a04f96dc6e987bc490bab798324d",
+      "category": "legs",
+      "sourceRect": {
+        "x": 439,
+        "y": 736,
+        "width": 124,
+        "height": 274
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "legs/boot-right.png",
@@ -265,7 +493,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "1e074eda4cb402f122bd503c49c8a9de4fd5f54873d947e3c086215d19b7ae98"
+      "sha256": "1e074eda4cb402f122bd503c49c8a9de4fd5f54873d947e3c086215d19b7ae98",
+      "category": "legs",
+      "sourceRect": {
+        "x": 593,
+        "y": 735,
+        "width": 128,
+        "height": 275
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "legs/thigh-pouch.png",
@@ -279,7 +519,19 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "d65e649e8a77525432998dc771a3e987411e679c1b06b45bb45ca5cfd87eaff2"
+      "sha256": "d65e649e8a77525432998dc771a3e987411e679c1b06b45bb45ca5cfd87eaff2",
+      "category": "legs",
+      "sourceRect": {
+        "x": 1035,
+        "y": 486,
+        "width": 102,
+        "height": 149
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     },
     {
       "file": "legs/underskirt.png",
@@ -293,7 +545,71 @@
       "padding": 16,
       "recommendedZIndex": null,
       "recommendedTransformOrigin": null,
-      "sha256": "b486235bb57ef54bfe8247aedd304a894b66c321ce691bd7e322ddcfb20fc62c"
+      "sha256": "b486235bb57ef54bfe8247aedd304a894b66c321ce691bd7e322ddcfb20fc62c",
+      "category": "legs",
+      "sourceRect": {
+        "x": 737,
+        "y": 252,
+        "width": 299,
+        "height": 102
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
+    },
+    {
+      "file": "face/mouth-sad.png",
+      "sourceFile": "source/ec8966f6-a34d-457a-a3c3-faf964922b12.png",
+      "sourceX": 1357,
+      "sourceY": 890,
+      "sourceWidth": 134,
+      "sourceHeight": 53,
+      "width": 166,
+      "height": 85,
+      "padding": 16,
+      "sha256": "497c0667ec0f01fcce9362f6156daa8d353363d5f48ea5119539448910658ccc",
+      "recommendedZIndex": null,
+      "recommendedTransformOrigin": null,
+      "category": "face",
+      "sourceRect": {
+        "x": 1357,
+        "y": 890,
+        "width": 134,
+        "height": 53
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
+    },
+    {
+      "file": "hair/side-hair-right.png",
+      "sourceFile": "source/bd9695e3-89e9-4b5b-ad83-0d80d2918b9f (2).png",
+      "sourceX": 351,
+      "sourceY": 87,
+      "sourceWidth": 102,
+      "sourceHeight": 443,
+      "width": 134,
+      "height": 475,
+      "padding": 16,
+      "sha256": "616ce841ca3e9a1fe4018bc346151c95e4a530629fb72a4a71ef2e5f855d5eeb",
+      "recommendedZIndex": null,
+      "recommendedTransformOrigin": null,
+      "category": "hair",
+      "sourceRect": {
+        "x": 351,
+        "y": 87,
+        "width": 102,
+        "height": 443
+      },
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null
     }
   ],
   "animationReady": false,
@@ -301,5 +617,60 @@
     "原本RGBとアルファを無変更で矩形抽出。16px透明余白。",
     "左右はラベル準拠。髪の左右と深度は未確定。",
     "z-indexとtransform-originは組み合わせ未検証のためnull。"
+  ],
+  "rejectedAdditionalCandidates": [
+    {
+      "file": "face/eye-left-half.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 249
+    },
+    {
+      "file": "face/eye-right-half.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 252
+    },
+    {
+      "file": "face/eye-left-closed.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 212
+    },
+    {
+      "file": "face/eye-right-closed.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 188
+    },
+    {
+      "file": "hair/bangs.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 241
+    },
+    {
+      "file": "hair/side-hair-left.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 237
+    },
+    {
+      "file": "hair/braid.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 253
+    },
+    {
+      "file": "hair/ribbon-main.png",
+      "reason": "輪郭／隣接素材が矩形端にかかる",
+      "edgeAlphaMax": 253
+    }
+  ],
+  "staticRestorationStatus": "blocked: isolated face/torso/joints and matched assembly still missing",
+  "phaseStatus": {
+    "sourceAudit": "complete",
+    "safeExtraction": "partial",
+    "metadata": "complete",
+    "staticRestoration": "blocked",
+    "animation": "not_started"
+  },
+  "blockers": [
+    "新しい上半身・補完・追加表情・補助素材シートに不透明なパネル背景が残る。白い衣装と色が重なるため一括色抜き不可。",
+    "髪なし・目口なしの独立face-baseがない。目口なし頭部にも髪と首が焼き込まれている。",
+    "必要な胴体・関節・髪の独立PNGと基準全身への整合が未確認。静止復元を通過していないためアニメーションは開始しない。"
   ]
 }
