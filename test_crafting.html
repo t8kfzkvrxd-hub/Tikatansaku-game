@@ -14,6 +14,7 @@ window.onload=()=>setTimeout(()=>{
   let normalHigh=0,eliteHigh=0;
   for(let i=0;i<100;i++) {const r=(i+.5)/100;normalHigh+=!w.dropMonsterMaterials(mob,()=>r)[0].endsWith('_common');eliteHigh+=!w.dropMonsterMaterials(elite,()=>r)[0].endsWith('_common');s.inventory=[];}
   check(eliteHigh>normalHigh,'EliteのRare以上素材率が高い');
+  s.bossFirstKills[100]=true;s.bossFirstKills[300]=true;
   for(const area of w.__gameDebug.AREAS){s.floor=area.max;w.startBossBattle(area.boss);const keys=w.dropMonsterMaterials(s.currentEnemy,()=>.5);check(keys[0]===area.boss.materialSource+'_legendary','B'+area.max+'固有素材確定');}
   mob.materialSource=w.__gameDebug.AREAS[0].enemies[0].materialSource;
   s.inventory=[];w.dropMonsterMaterials(mob,()=>.9);w.dropMonsterMaterials(mob,()=>.9);

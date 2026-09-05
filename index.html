@@ -1423,6 +1423,7 @@
     function startDungeonRun() {
       if(state.screen!=='town')return;
       state.companionBattle={};
+      state.buildRuntime={hits:0,hurt:0,kills:0,shield:0,charge:0};
       state.returnResolved=false;
       initAudio();
       playSound('click');
@@ -2083,6 +2084,11 @@
     }
 
     function generateItem(floor, forcedRarity = null, source = 'normal') {
+      if(!forcedRarity&&source==='normal'&&Math.random()<.01)return {...UNIQUE_ITEMS.ancient_key,id:crypto.randomUUID()};
+      return createMaterialReward(source==='monster'?'enemy':source,floor,forcedRarity);
+    }
+
+    function generateLegacyEquipment(floor, forcedRarity = null, source = 'normal') {
       const stats = getPlayerStats();
       let rarity = forcedRarity || rollItemRarity({ floor, source, greed: state.greedLevel, luck: stats.rareRate });
 
@@ -2305,9 +2311,11 @@
     }
 
     function giveItemToBag(item) {
+      if(['weapon','armor','accessory'].includes(item.type))item=createMaterialReward(state.currentEnemy?.isBoss?'boss':'chest',state.floor,item.rarity);
+      if(item.type==='material')discoverMaterial(item.key);
       normalizeEquipment(item);
       const wasUnknown = !state.codex.items[item.name];
-      if (item.rarity === 'Mythic' || item.rarity === 'Abyssal') item.locked = true;
+      if (item.type!=='material'&&(item.rarity === 'Mythic' || item.rarity === 'Abyssal')) item.locked = true;
       recordCodex('item', item);
       state.inventory.push(item);
       if (item.key === 'ancient_key') state.mystery.keyOwned = true;
@@ -2462,7 +2470,7 @@
           <div style="display:flex; flex-direction:column; gap:10px; text-align:left; margin-bottom:18px;">
             <div style="background:rgba(255,255,255,0.05); border-left:3.5px solid #38bdf8; padding:9px 12px; border-radius:6px;">
               <div style="font-size:13px; font-weight:bold; color:#38bdf8;">1. 地下で戦利品を集める</div>
-              <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;">魔物を討伐し、宝箱を開けて強力な装備やゴールドを獲得せよ。</div>
+              <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;">魔物や宝箱から素材を集め、帰還して鍛冶場で装備を製作しよう。</div>
             </div>
             <div style="background:rgba(255,255,255,0.05); border-left:3.5px solid #fbbf24; padding:9px 12px; border-radius:6px;">
               <div style="font-size:13px; font-weight:bold; color:#fbbf24;">2. 5階ごとに安全帰還できる</div>
@@ -2549,7 +2557,7 @@
         playSound('player_hurt');
         spawnFloatingFx(`👁️ 呪縛！ -${hpCost} MaxHP`, 'danger');
         giveItemToBag(item);
-        addLog(`呪いの宝箱を開封！ 代償として最大HP -${hpCost} (強力な武具を獲得)`, 'danger');
+        addLog(`呪いの宝箱を開封！ 最大HP -${hpCost}の代償で素材【${item.name}】を獲得`, 'danger');
         state.floor++;
         setTimeout(() => generateDoorsForFloor(), 500);
         return;
@@ -2645,8 +2653,8 @@
             text: 'HP30を捧げて攻撃力+8の祝福を得る',
             action: () => {
               if (state.hp <= 30) { addLog('体力が足りず血を捧げられない！', 'danger'); return false; }
+              if(!state.equipped.weapon){addLog('加護を受ける武器を装備してください。','danger');return false;}
               state.hp -= 30;
-              state.equipped.weapon = state.equipped.weapon || { name: '血の契約刃', icon: '🗡️', type: 'weapon', rarity: 'Rare', baseAtk: 6 };
               state.equipped.weapon.baseAtk = (state.equipped.weapon.baseAtk || 0) + 8;
               playSound('crit');
               addLog('血の対価として攻撃力+8の永続加護を得た！', 'gold');
@@ -2785,11 +2793,11 @@
               action: () => {
                 state.hp = Math.max(1, state.hp - 15);
                 state.camp.rescuedAdventurer = true;
-                const rewardRing = { ...UNIQUE_ITEMS.blood_ring, id: 'r_' + Date.now() };
+                const rewardRing = createMaterialReward('event',state.floor,'Rare');
                 giveItemToBag(rewardRing);
                 playSound('heal');
                 saveState();
-                addLog('冒険者レオンを救助した！ お礼に【血晶の指輪】を受け取った！', 'gold');
+                addLog(`冒険者レオンを救助した！ お礼に素材【${rewardRing.name}】を受け取った！`, 'gold');
                 endEvent();
               }
             },
@@ -3475,6 +3483,9 @@
   <script src="js/data/craftingCatalog.js"></script>
   <script src="crafting.js"></script>
   <script src="equipment.js"></script>
+  <script src="js/data/materialProgression.js"></script>
+  <script src="js/data/weaponBuilds.js"></script>
+  <script src="js/systems/weaponBuildSystem.js"></script>
   <script src="depth-rules.js"></script>
   <script src="chapter-story.js"></script>
   <script src="chapter-system.js"></script>

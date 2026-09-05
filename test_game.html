@@ -126,7 +126,7 @@ window.addEventListener('load', () => setTimeout(() => {
     check(w.rollItemRarity({floor:30,source:'normal',greed:0,luck:0,rng:()=>1}) === 'Abyssal', 'Abyssal 1500回Hard Pity');
     const upper = {key:'test_mythic',name:'試験用神話装備',icon:'💠',type:'weapon',rarity:'Mythic',baseAtk:1,desc:'test',dropSource:'test'};
     w.giveItemToBag(upper);
-    check(upper.locked && game.state.rarityProgress.upperDropHistory.some(h => h.itemName === upper.name), '超希少装備を自動ロックし初発見情報を記録');
+    check(!game.state.inventory.includes(upper)&&game.state.inventory.at(-1).type==='material'&&!game.state.inventory.at(-1).locked, '装備報酬を製作用素材へ変換し自動ロックしない');
     w.closeGenericModal();
 
     game.state.screen = 'town'; game.state.floor = 0; game.state.camp.tavern = 1; w.render();

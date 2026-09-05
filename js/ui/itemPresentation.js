@@ -5,7 +5,8 @@
       if (it.baseDef) s.push(`防+${it.baseDef}`);
       if (it.hp) s.push(`HP+${it.hp}`);
       if (it.crit) s.push(`会心+${it.crit}%`);
-      if (it.vamp) s.push(`吸血+${it.vamp}`);
+      if (it.vamp) s.push(`吸血率+${it.vamp}%`);
+      if (it.primaryBuildTag) s.push(`ビルド:${BUILD_CATALOG[it.primaryBuildTag]||it.primaryBuildTag}`);
       if (it.goldRate) s.push(`金+${it.goldRate}%`);
       if (it.rareRate) s.push(`幸運+${it.rareRate}%`);
       if (it.heal) s.push(`回復+${it.heal}`);
@@ -13,4 +14,3 @@
       if (it.bossUnique) s.push('秘宝 / Boss Unique');
       return s.join(' | ') || it.desc;
     }
-

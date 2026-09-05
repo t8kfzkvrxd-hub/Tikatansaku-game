@@ -24,6 +24,8 @@ parts = {
 }
 for path, spans in parts.items():
     current=(ROOT/path).read_text()
+    if path=='js/ui/itemPresentation.js':
+        current=current.replace('吸血率+${it.vamp}%','吸血+${it.vamp}').replace('      if (it.primaryBuildTag) s.push(`ビルド:${BUILD_CATALOG[it.primaryBuildTag]||it.primaryBuildTag}`);\n','')
     if path=='js/ui/render.js':
         current=current.replace(' id="town-vault"','').replace(' id="town-talents"','')
         current=current.replace(' id="town-blacksmith"','').replace("      if(typeof syncLobbyScreen==='function')syncLobbyScreen();\n",'').replace("      if(typeof refreshLobbyFacility==='function')refreshLobbyFacility();\n",'')

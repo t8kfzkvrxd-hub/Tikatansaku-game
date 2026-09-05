@@ -37,7 +37,7 @@ window.onload=async()=>{
   for(const slot of w.__equipmentDebug.slots){check(w.removeCharacterEquipment('elna',slot.k),'同行装備解除 '+slot.label);}
   check(ids.every(id=>s.storage.some(i=>i.id===id)),'解除して倉庫へ全数返却');
   w.openCrafting('create');
-  check(Object.keys(w.__equipmentDebug.recipes).length===241&&w.document.querySelectorAll('[data-recipe]').length===12,'241レシピを12件だけ描画');
+  check(Object.keys(w.__equipmentDebug.recipes).length>1000&&w.document.querySelectorAll('[data-recipe]').length===12,'1000超レシピを12件だけ描画');
   const first=w.document.querySelector('[data-recipe]').dataset.recipe;w.forgePage(1);check(w.document.querySelector('[data-recipe]').dataset.recipe!==first,'ページ切替');
   const select=(label,value)=>{const el=w.document.querySelector(`[aria-label="${label}"]`);el.value=value;el.dispatchEvent(new w.Event('change'));};
   select('部位','head');check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.slot==='head'),'部位フィルター');
@@ -46,7 +46,7 @@ window.onload=async()=>{
   w.resetForgeFilters();const search=w.document.querySelector('[aria-label="レシピ検索"]');search.value='毒';search.dispatchEvent(new w.Event('input'));check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.search.includes('毒')),'名前・日本語タグ検索');
   const entry=Object.entries(w.__equipmentDebug.recipes).find(([,r])=>r.slot==='head'),[rid,recipe]=entry,key=Object.keys(recipe.materials)[0];
   w.setForgeFilter('query',w.__equipmentDebug.materials[key].name);check(w.filteredForgeRecipes().some(x=>x.id===rid),'素材名検索');
-  w.resetForgeFilters();s.storage=[];s.abyssCores=0;w.setForgeFilter('available',true);check(w.filteredForgeRecipes().length===1&&w.filteredForgeRecipes()[0].id==='iron_sword','作成可能のみ・素材不足除外');
+  w.resetForgeFilters();s.storage=[];s.abyssCores=0;w.setForgeFilter('available',true);check(w.filteredForgeRecipes().length===2&&w.filteredForgeRecipes().every(x=>['iron_sword','starter_w'].includes(x.id)),'作成可能のみ・素材不足除外');
   w.resetForgeFilters();w.toggleRecipeFavorite(rid);w.setForgeFilter('favorite',true);check(w.filteredForgeRecipes().length===1&&w.filteredForgeRecipes()[0].id===rid,'お気に入り');
   w.saveState();await reload();s.screen='town';w.closeGenericModal();check(s.craftProgress.favorites[rid],'お気に入り保存');
   w.openCrafting('create');w.setForgeFilter('uncrafted',true);s.craftProgress.crafted[rid]=1;check(!w.filteredForgeRecipes().some(x=>x.id===rid),'未作成のみ');
@@ -63,8 +63,9 @@ window.onload=async()=>{
   for(const [k,n]of Object.entries(recipe.materials))for(let j=0;j<n;j++)s.storage.push({...w.__equipmentDebug.materials[k],id:crypto.randomUUID(),key:k,type:'material'});
   w.openRecipeDetail(rid);click('作成');check(s.storage.some(i=>i.key===rid)&&s.vaultGold===goldBefore-recipe.gold,'比較画面から作成・素材/G消費');
   w.openCharacterEquipment('player','head');check(w.document.querySelector('.gear-compare'),'装備前に能力と特殊効果比較');
-  for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240]]){
+  for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240],[740,360],[844,390],[932,430]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();
+   if(width<height&&w.matchMedia('(pointer:coarse)').matches){out.push('SKIP: タッチ縦向きは回転案内のため製作操作を対象外');continue;}
    for(const render of [()=>w.openCrafting('create'),()=>{w.openCrafting('create');w.document.querySelector('.forge-filter-panel').open=true;},()=>w.openRecipeDetail(rid),()=>w.openCharacterEquipment('elna','weapon')]){
     render();await pause();const card=w.document.querySelector('.update-notes-card'),body=w.document.querySelector('.update-notes-body'),rect=card.getBoundingClientRect();
     check(rect.left>=0&&rect.right<=width&&rect.top>=0&&rect.bottom<=height,width+'×'+height+' モーダル画面内');

@@ -1,0 +1,35 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=()=>{
+ const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,d=w.document,out=[];
+ const check=(ok,n)=>{if(!ok)throw Error(n);out.push('PASS '+n)};
+ try{
+ w.closeGenericModal();s.chapter.pending=null;s.chapter.complete=false;s.bossFirstKills={};s.floor=1;
+ for(const source of ['normal','monster','cursed_chest','boss_repeat'])for(let i=0;i<50;i++){const item=w.generateItem(1,'Abyssal',source);check(item.type==='material'&&item.rarity==='Epic','material gate '+source);}
+ for(const [floor,rarity]of [[100,'Legendary'],[300,'Mythic'],[500,'Abyssal']]){s.bossFirstKills[floor]=true;check(w.createMaterialReward('boss',1,'Abyssal').rarity===rarity,'milestone '+floor);}
+ const before={...s.equipped.weapon,refineCount:7,id:'legacy-preserved'};delete before.primaryBuildTag;s.equipped.weapon=before;w.normalizeEquipment(before);check(before.refineCount===7&&before.id==='legacy-preserved'&&before.primaryBuildTag,'old equipment fields preserved');
+ const weapons=Object.entries(w.__equipmentDebug.catalog).filter(([,r])=>r.type==='weapon');
+ check(weapons.every(([,r])=>r.primaryBuildTag&&r.weaponType),'all weapon identities');
+ check(weapons.every(([id])=>w.__equipmentDebug.recipes[id]),'no drop only weapons');
+ s.screen='town';s.vaultGold=100000;s.camp.vaultSize=100;s.abyssCores=100;s.storage=[];
+ const id='evolve_iron_sword_blood_legendary',r=w.__equipmentDebug.recipes[id];
+ const parent={...w.__equipmentDebug.recipes.iron_sword,key:'iron_sword',id:'parent',refineCount:10,affix:'critical',locked:false};s.storage.push(parent);
+ for(const [key,n]of Object.entries(r.materials))if(key!=='abyss_core')for(let i=0;i<n;i++)s.storage.push({...w.__equipmentDebug.materials[key],key,type:'material',id:crypto.randomUUID()});
+ const confirm=w.confirm;w.confirm=()=>true;
+ check(w.craftEquipment(id,'parent'),'evolution craft');const item=s.storage.find(i=>i.key===id);
+ check(item.refineCount===10&&item.affix==='critical'&&item.rarity==='Legendary','evolution preserves refinement affix');
+ const after=s.storage.length;check(!w.craftEquipment(id,'parent')&&s.storage.length===after,'no double craft without parent');w.confirm=confirm;
+ const unit={hp:10},stats={maxHp:100,vamp:200},enemy={isBoss:true},slots={weapon:{primaryBuildTag:'lifesteal'}};
+ const heal=w.healFromWeaponDamage(unit,stats,enemy,10000,slots);check(heal<=8,'lifesteal max HP cap');
+ const small={hp:10};check(w.healFromWeaponDamage(small,stats,enemy,10,slots)<=1,'boss lifesteal reduction');
+ check(w.healFromWeaponDamage({hp:10},stats,{isBoss:true,turnCount:30},10000,slots)===0,'boss endurance cannot sustain lifesteal forever');
+ check(w.healFromWeaponDamage({hp:10},stats,{},0,slots)===0,'zero damage cannot heal');
+ const combo={weapon:{primaryBuildTag:'bleed'},accessory:{vamp:4}},lifeStats={maxHp:1000,vamp:4};
+ check(w.healFromWeaponDamage({hp:100},lifeStats,{buildStatuses:{bleed:1}},100,combo)>w.healFromWeaponDamage({hp:100},lifeStats,{},100,combo),'weapon bleed plus accessory lifesteal');
+ const shieldUnit={hp:100},shieldSlots={weapon:{primaryBuildTag:'shield'}};
+ check(w.buildIncomingDamage(10,{hp:100},shieldSlots,shieldUnit,100)===5&&w.buildIncomingDamage(10,{hp:100},shieldSlots,shieldUnit,100)===10,'shield cannot regenerate forever on every hit');
+ w.saveState();const original=JSON.stringify(s.storage);w.loadState();check(JSON.stringify(s.storage)===original,'save/load preserves gear and materials');
+ const group=key=>weapons.reduce((a,[,r])=>(a[r[key]||'none']=(a[r[key]||'none']||0)+1,a),{});
+ out.push(JSON.stringify({total:weapons.length,base:weapons.filter(([,r])=>!r.evolutionRoot).length,rarity:group('rarity'),type:group('weaponType'),build:group('primaryBuildTag'),unassigned:weapons.filter(([,r])=>!r.primaryBuildTag).length}));
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};</script>

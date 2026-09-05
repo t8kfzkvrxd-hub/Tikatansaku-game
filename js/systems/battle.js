@@ -207,6 +207,7 @@
       if (!state.currentEnemy || state.hp <= 0 || state.screen!=='battle'||state.currentEnemy.acting||state.currentEnemy.rewardClaimed) return;
       if(action==='skill'&&(state.skillCooldown>0||state.statusEffects.paralysis>0))return;
       const actingEnemy=state.currentEnemy;actingEnemy.acting=true;actingEnemy.actionQueued=false;
+      const initialHp=actingEnemy.hp;
       syncActionButtons();
       try {
       initAudio();
@@ -330,14 +331,7 @@
         equipmentHit(enemy,action,isCrit);
         applyRootProtection(enemy,enemyHpBeforeAction);
         // Vampirism
-        if (stats.vamp > 0) {
-          const healed = Math.min(stats.maxHp - state.hp, stats.vamp);
-          if (healed > 0) {
-            state.hp += healed;
-            spawnFloatingFx(`+${healed} HP`, 'heal');
-            addLog(`吸血により HPが ${healed} 回復した。`, 'heal');
-          }
-        }
+        healFromWeaponDamage(state,stats,enemy,Math.max(0,enemyHpBeforeAction-Math.max(0,enemy.hp)),state.equipped,isCrit);
 
         if (enemy.hp <= 0) {
           enemy.hp = 0;
@@ -525,7 +519,7 @@
 
       updateHeader();
       render();
-      } finally {if(!actingEnemy.actionQueued){actingEnemy.acting=false;if(state.screen==='battle'&&state.currentEnemy===actingEnemy&&!actingEnemy.rewardClaimed)render();}syncActionButtons();}
+      } finally {if(['heavy','skill'].includes(action))healFromWeaponDamage(state,getPlayerStats(),actingEnemy,Math.max(0,initialHp-Math.max(0,actingEnemy.hp)),state.equipped);if(!actingEnemy.actionQueued){actingEnemy.acting=false;if(state.screen==='battle'&&state.currentEnemy===actingEnemy&&!actingEnemy.rewardClaimed)render();}syncActionButtons();}
     }
 
     function enemyTurn(isPlayerDefending = false) {
@@ -591,6 +585,7 @@
         dmg = Math.round(dmg * (1 + stats.demeritDamage / 100));
       }
 
+      dmg=buildIncomingDamage(dmg,enemy,state.equipped,state,stats.maxHp,isPlayerDefending);
       state.hp -= dmg;
       if(state.hp>0&&isPlayerDefending&&!isGrab&&!state.guardBroken) {
         if(gearEffects.guardHeal){const heal=Math.max(0,Math.min(stats.maxHp-state.hp,gearEffects.guardHeal));state.hp+=heal;addLog(`🛡️ ガード回復 +${heal}HP`,'heal');}
@@ -711,6 +706,7 @@
       syncActionButtons();
       const enemy = state.currentEnemy;
       awardCompanionExperience(enemy);
+      buildKill(state,state.equipped,getPlayerStats().maxHp);
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.lastDefeatedEnemy={atk:enemy.atk,trait:enemy.trait};
       if(enemy.trait==='death_pulse'){state.pendingEnemyPulse=3;addLog('🫀 肉塊の治癒脈動が次の敵へ伝わった（3T・毎ターン最大HP6%回復）','danger');}
@@ -774,10 +770,11 @@
           }
 
           state.abyssCores += extraCores;
+          sigItem=createMaterialReward('boss',state.floor,'Legendary');
           giveItemToBag(sigItem);
           playSound('legendary');
-          spawnFloatingFx(`👑 ボス初討伐！ 固有秘宝GET！`, 'crit');
-          addLog(`【初回撃破達成】守護ボスの固有秘宝【${sigItem.name}】と深淵の核×${extraCores}を獲得！`, 'gold');
+          spawnFloatingFx(`👑 ボス初討伐！ 固有素材GET！`, 'crit');
+          addLog(`【初回撃破達成】固有素材【${sigItem.name}】と深淵の核×${extraCores}を獲得！`, 'gold');
           state.runRecords.bossesDefeated=Object.keys(state.bossFirstKills).length;
         } else {
           // Repeat bosses use the centralized table (Epic floor, Legendary ~7%).

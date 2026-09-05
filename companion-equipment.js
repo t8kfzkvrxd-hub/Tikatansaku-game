@@ -49,6 +49,7 @@ function companionStats(id='elna'){
  if(items.some(i=>i.isBerserk)&&hp<=s.maxHp*.5)s.atk*=2;
  s.def+=items.filter(i=>i.affix==='low_hp_def'&&hp<=s.maxHp*.4).length*8;
  s.demeritDamage=Math.max(-40,items.reduce((n,i)=>n+(i.demeritDamageTaken||0)-(i.affix==='damage_reduction'?10:0),0));
+ s.effects=equipmentEffects(slots);
  return s;
 }
 function characterProgress(id){
@@ -86,9 +87,9 @@ function companionTurn(enemy){
  const crit=Math.random()*100<Math.min(85,stats.crit);
  const damage=Math.max(1,Math.round(stats.atk*(action==='heavy'?1.5:action==='skill'?1.8:1)*(unit.attackBuff||1)*(crit?1.5+(stats.effects.critDamage||0)/100:1)-enemy.def));
  unit.attackBuff=1;enemy.hp-=damage;equipmentHit(enemy,action,crit,slots);applyRootProtection(enemy,before);
- unit.hp=Math.min(stats.maxHp,unit.hp+Math.floor(damage*stats.vamp/100));
+ healFromWeaponDamage(unit,stats,enemy,Math.max(0,before-Math.max(0,enemy.hp)),slots,crit);
  addLog(`${CHARACTER_DATA[id]?.name||id}の${action==='skill'?'スキル':action==='heavy'?'強攻撃':'通常攻撃'}！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
- if(enemy.hp<=0&&enemy.gearPoison)unit.hp=Math.min(stats.maxHp,unit.hp+(stats.effects.poisonHeal||0));
+ if(enemy.hp<=0){buildKill(unit,slots,stats.maxHp);if(enemy.gearPoison)unit.hp=Math.min(stats.maxHp,unit.hp+(stats.effects.poisonHeal||0));}
  if(enemy.hp<=0){enemy.hp=0;onEnemyKilled();return true;}
  return false;
 }
@@ -105,6 +106,7 @@ function companionReceiveAttack(enemy,attack){
  const defense=stats.def;
  let damage=Math.max(1,Math.round((attack-defense)*(guard?(just?.2:.45):1)));
  damage=Math.max(1,Math.round(damage*(1+stats.demeritDamage/100)));
+ damage=buildIncomingDamage(damage,enemy,slots,unit,stats.maxHp,guard);
  unit.hp=Math.max(0,unit.hp-damage);
  if(unit.hp>0&&guard){unit.hp=Math.min(stats.maxHp,unit.hp+(e.guardHeal||0));if(just)unit.attackBuff=1+Math.min(150,e.justAttack||0)/100;}
  if(['curse_poison','spore_poison'].includes(enemy.trait))unit.poison=2;

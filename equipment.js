@@ -5,6 +5,7 @@ const EQUIPMENT_SLOTS = [
  {k:'accessory2',label:'アクセ2',icon:'💍'}
 ];
 const EQUIPMENT_EFFECTS = {
+ lifestealRate:['与ダメージ吸血率','%'],rareMaterial:['追加レア素材率','%'],chestQuality:['宝箱素材品質補助','%'],
  poisonChance:['毒付与率','%'], poisonBonus:['毒敵ダメージ','%'],poisonCrit:['毒敵への会心率','%'],poisonHeal:['毒敵撃破時回復','HP'],
  fireDamage:['攻撃時の炎追撃',''],critDamage:['会心ダメージ','%'],
  skillPower:['スキル威力','%'],skillHaste:['スキルCT短縮','T'],
@@ -29,6 +30,7 @@ function effectDescription(effects={}) {return Object.entries(effects).map(([key
 function equipmentSlot(item) {return item?.slot || ({weapon:'weapon',armor:'armor',accessory:'accessory'}[item?.type]);}
 function normalizeEquipment(item) {
  if(!item||!['weapon','armor','accessory'].includes(item.type))return item;
+ if(typeof weaponIdentity==='function')weaponIdentity(item);
  item.slot ||= equipmentSlot(item);
  item.tags ||= [item.setTag||item.archetype||(item.type==='armor'?'guard':'general')];
  item.id ||= crypto.randomUUID();
@@ -49,6 +51,7 @@ function migrateEquipment() {
 function equippedAccessories() {return [state.equipped.accessory,state.equipped.accessory2].filter(Boolean);}
 function equipmentEffects(slots=state.equipped) {
  const effects={};Object.values(slots).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
+ if(typeof buildTags==='function')for(const tag of buildTags(slots)){const passive={skillHaste:{skillHaste:1},dodge:{dodge:8},farming:{materialChance:8},rareMaterial:{rareMaterial:8},chest:{chestQuality:10},justGuard:{justAttack:30},guard:{guardHeal:2}}[tag];for(const [key,n]of Object.entries(passive||{}))effects[key]=(effects[key]||0)+n;}
  if(slots===state.equipped&&state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
  return effects;
 }
@@ -60,6 +63,10 @@ function equipmentSynergies() {
  if(e.dodge&&e.dodgeAttack)lines.push('💨 回避 → 次撃強化');
  if(e.guardHeal&&e.justAttack)lines.push('🛡️ ガード回復＋JUST GUARD強化');
  if(e.breakPower&&e.skillPower)lines.push('🔨 防御破壊 → スキル追撃');
+ if(typeof buildTags==='function'){
+  const tags=buildTags(state.equipped);
+  for(const [a,b,text]of [['lifesteal','bleed','吸血＋出血：出血敵への吸血増加'],['lifesteal','lowHp','吸血＋背水：HP50%以下で吸血率上昇'],['poison','longFight','毒＋長期戦：経過ターンで毒特効'],['freeze','crit','凍結＋会心：凍結敵への会心率上昇'],['shield','highHp','シールド＋高HP：HP最大で攻撃強化'],['curse','statusHunter','呪い＋状態異常特攻：呪い蓄積で攻撃強化']])if(tags.has(a)&&tags.has(b))lines.push(text);
+ }
  return lines;
 }
 function unequipItem(slot) {
@@ -76,14 +83,17 @@ function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.h
  if(hp<=stats.maxHp*.35)stats.atk*=1+Math.min(150,e.lowHpPower||0)/100;
  if(action==='skill')stats.atk*=1+Math.min(100,e.skillPower||0)/100;
  stats.atk=Math.round(stats.atk);
+ buildAttack(stats,enemy,action,slots,hp);
 }
 function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
+ buildHit(enemy,action,isCrit,slots);
  const e=equipmentEffects(slots);
  if(e.fireDamage){enemy.hp-=e.fireDamage;addLog(`🔥 炎追撃 ${e.fireDamage}ダメージ`,'gold');}
  if(Math.random()*100<Math.min(85,(e.poisonChance||0)+(isCrit?(e.critPoison||0):0))) {enemy.gearPoison=3;addLog('☠️ 敵に毒を付与（3T）','gold');}
  if(action==='heavy'&&e.breakPower){enemy.def=Math.max(0,enemy.def-e.breakPower);addLog(`🔨 防御破壊 -${e.breakPower}`,'gold');}
 }
 function equipmentPoisonTick(enemy) {
+ buildStatusTick(enemy);
  if(enemy.gearPoison>0){const damage=Math.max(3,Math.round(enemy.maxHp*.015));enemy.gearPoison--;enemy.hp-=damage;addLog(`☠️ 毒 ${damage}ダメージ`,'gold');}
 }
 

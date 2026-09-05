@@ -1,0 +1,15 @@
+{
+  "version":"0.12.3",
+  "fixedCatalogWeapons":102,
+  "craftable":91,
+  "dropOnly":10,
+  "formalExcludingDropOnly":92,
+  "rarity":{"Common":11,"Rare":10,"Epic":42,"Legendary":16,"Mythic":22,"Abyssal":1},
+  "archetype":{"dagger":15,"greatsword":3,"sword":67,"thunder":4,"cursed_staff":3,"unset":10},
+  "nonCraftable":["vamp_dagger","shadow_dagger","execution_greatsword","gold_blade","thunder_mace","death_scythe","giant_ram","blood_scythe","mythic_thunder_blade","mythic_blood_scythe","abyssal_devourer"],
+  "unreachableFixed":["shadow_dagger"],
+  "proceduralWeaponNameTemplates":5,
+  "proceduralInstances":"unbounded; not fixed IDs",
+  "testOnlyCatalogWeapons":0,
+  "excludedFromCatalog":["starter_w (initial equipment)","blood altar fallback (no fixed key)"]
+}

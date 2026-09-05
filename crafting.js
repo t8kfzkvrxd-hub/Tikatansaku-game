@@ -10,11 +10,15 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  if(enemy.isBoss)discoverMaterial('abyss_core');
  const roll=rng();
  const tier=enemy.isBoss?3:enemy.isElite?(roll<.015?4:roll<.08?3:roll<.55?2:1):(roll<.002?4:roll<.01?3:roll<.05?2:roll<.20?1:0);
- const keys=[source.keys[tier]];
+ const keys=[source.keys[Math.min(materialTierLimit(),tier)]];
  const companion=companionCombatUnit();
  const companionBonus=companion?.hp>0?(companionStats(companion.id).effects.materialChance||0):0;
- if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[enemy.isBoss?3:enemy.isElite?1:0]);
- if(enemy.isBoss&&rng()<.05)keys.push(source.keys[4]);
+ if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[Math.min(materialTierLimit(),enemy.isBoss?3:enemy.isElite?1:0)]);
+ if(enemy.isBoss&&rng()<.05)keys.push(source.keys[Math.min(materialTierLimit(),4)]);
+ const rareBonus=(equipmentEffects().rareMaterial||0)+(companion?.hp>0?companionStats(companion.id).effects.rareMaterial||0:0)+(enemy.buildBroken&&buildTags(state.equipped).has('farming')?5:0);
+ if(rng()*100<Math.min(25,rareBonus))keys.push(source.keys[Math.min(materialTierLimit(),2)]);
+ if(materialTierLimit()>=5&&rng()<.03)keys.push(source.keys[5]);
+ if(clearedMaterialMilestone(1000)&&rng()<.05)keys.push('post_abyss');
  keys.forEach(key=>{
   discoverMaterial(key);
   const material={...MATERIALS[key],key,type:'material',id:crypto.randomUUID(),locked:false};
@@ -34,6 +38,8 @@ function craftingParents(recipe) {
 function craftingIssue(id, parentId) {
  const r=CRAFT_RECIPES[id];
  if(state.screen!=='town'||!recipeVisible(id))return '未解放';
+ if(materialProgressionIssue(r.rarity))return materialProgressionIssue(r.rarity);
+ if(r.unlockFloor&&!clearedMaterialMilestone(r.unlockFloor))return `${r.unlockFloor}Fクリア後に解禁`;
  if(r.parent&&!craftingParents(r).some(it=>it.id===parentId))return '未ロックの親武器+10が必要';
  if(state.vaultGold<r.gold)return 'G不足';
  if(Object.entries(r.materials).some(([key,n])=>materialCount(key)<n))return '素材不足（ロック品は対象外）';
@@ -45,9 +51,11 @@ function craftingIssue(id, parentId) {
 function craftEquipment(id,parentId) {
  const issue=craftingIssue(id,parentId); if(issue){addLog(issue,'danger');return false;}
  const r=CRAFT_RECIPES[id];
+ let inherited=null;
  if(r.parent) {
   const parent=craftingParents(r).find(it=>it.id===parentId);
-  if(!window.confirm(`【${parent.name}】を消費して【${r.name}】へ${r.awakening?'覚醒':'派生'}します。強化値・追加特性は引き継ぎません。よろしいですか？`))return false;
+  if(!window.confirm(`【${parent.name}】を消費して【${r.name}】へ${r.awakening?'覚醒':'派生'}します。${r.inheritRefinement?'強化値・追加特性を引き継ぎます。':'強化値・追加特性は引き継ぎません。'}よろしいですか？`))return false;
+  if(r.inheritRefinement)inherited={refineCount:Math.max(0,Number(parent.refineCount)||0),affix:parent.affix,evolutionHistory:[...(parent.evolutionHistory||[]),parent.key]};
   const at=state.storage.indexOf(parent);if(at>=0)state.storage.splice(at,1);
   else for(const slot of Object.keys(state.equipped))if(state.equipped[slot]===parent)state.equipped[slot]=null;
  }
@@ -57,6 +65,9 @@ function craftEquipment(id,parentId) {
  }
  state.vaultGold-=r.gold;
  const item={key:id,id:crypto.randomUUID(),name:r.name,icon:r.icon,rarity:r.rarity,type:r.type,slot:r.slot,tags:[...(r.tags||[])],effects:{...(r.effects||{})},quarrySource:r.quarrySource,crit:r.crit||0,archetype:r.archetype,baseAtk:r.baseAtk||0,baseDef:r.baseDef||0,hp:r.hp||0,desc:r.desc,craftEffect:r.craftEffect,refineCount:0,locked:['Mythic','Abyssal'].includes(r.rarity)};
+ for(const [key,value]of Object.entries(r))if(!(key in item)&&!['materials','gold','parent','hiddenMaterial'].includes(key))item[key]=structuredClone(value);
+ if(inherited){Object.assign(item,inherited);item.baseAtk+=inherited.refineCount*3;}
+ normalizeEquipment(item);
  state.storage.push(item);state.craftProgress.crafted[id]=(state.craftProgress.crafted[id]||0)+1;
  recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し倉庫へ保管しました。`,'gold');render();openCrafting(forgeTab);return true;
 }
