@@ -7,39 +7,33 @@ function clearedMaterialMilestone(floor){return !floor||!!state.bossFirstKills?.
 function materialTierLimit(){let tier=2;for(let i=3;i<6;i++)if(clearedMaterialMilestone(MATERIAL_MILESTONES[i].clear))tier=i;return tier;}
 function materialProgressionIssue(rarity){const rule=MATERIAL_MILESTONES.find(r=>r.rarity===rarity);return rule&&!clearedMaterialMilestone(rule.clear)?`${rule.clear}Fクリア後に解禁`:'';}
 function partyChestQuality(){const companion=companionCombatUnit();return (equipmentEffects().chestQuality||0)+(companion?.hp>0?(companionStats(companion.id).effects.chestQuality||0):0);}
-const MATERIAL_RATE_BONUS=.02;
+const MATERIAL_DROP_RATES={
+ enemy:[.82,.18,.08,.04,.025,.015],
+ elite:[.86,.28,.14,.06,.035,.02],
+ boss:[.90,.40,.24,.10,.06,.03],
+ chest:[.84,.25,.12,.05,.03,.018],
+ rare_chest:[.88,.36,.20,.08,.05,.028]
+};
 function materialDropPlan({source='chest',limit=materialTierLimit(),floor=state.floor,quality=0,materialBonus=0,rareBonus=0,parts=[],repeat=false}={}){
- const before=Array(6).fill(0),guaranteed=[];
+ const guaranteed=[];
  if(source==='abyss'){
-  const after=Array(6).fill(0);
-  if(clearedMaterialMilestone(1000)){before[5]=.05;after[5]=Math.min(1,before[5]+MATERIAL_RATE_BONUS);}
-  return {before,after,guaranteed};
+  const after=Array(6).fill(0);if(clearedMaterialMilestone(1000))after[5]=.01;
+  return {before:[...after],after,guaranteed};
  }
- const add=(tier,p)=>{tier=Math.min(limit,tier);before[tier]=1-(1-before[tier])*(1-Math.max(0,Math.min(1,p)));};
- if(source==='boss'){
-  guaranteed.push(Math.min(limit,3));add(4,.05);
- }else if(source==='enemy'||source==='elite'){
-  const distribution=source==='elite'?[0,.45,.47,.065,.015,0]:[.8,.15,.04,.008,.002,0];
-  distribution.forEach((p,i)=>{before[Math.min(limit,i)]+=p;});
- }else{
-  const shift=quality/100+(floor>100?Math.min(.05,(floor-100)*.0005):0);
-  const intervals=source==='cursed_chest'?[[0,.2,limit],[.2,1,2]]:[[0,.05,limit],[.05,.25,2],[.25,.75,1],[.75,1,0]];
-  for(const [lo,hi,tier]of intervals){const a=lo===0?0:Math.min(1,lo+shift),b=hi===1?1:Math.min(1,hi+shift);before[Math.min(limit,tier)]+=Math.max(0,b-a);}
- }
- if(source==='normal')before.forEach((p,i)=>before[i]=p*.99);
+ const kind=['cursed_chest','sealed_vault','rare_chest'].includes(source)?'rare_chest':source==='boss_repeat'?'boss':MATERIAL_DROP_RATES[source]?source:'chest';
+ const before=[...MATERIAL_DROP_RATES[kind]],after=[...before];
+ const add=(tier,p)=>{if(tier>limit)return;after[tier]=1-(1-after[tier])*(1-Math.max(0,Math.min(1,p)));};
+ if(kind==='boss')guaranteed.push(Math.min(limit,3));
  if(['enemy','elite','boss'].includes(source)){
   add(source==='boss'?3:source==='elite'?1:0,Math.min(.5,materialBonus/100));
   add(2,Math.min(.25,rareBonus/100));
   for(const part of parts)if(part.tier<=limit)add(part.tier,part.rate);
-  if(limit>=5)add(5,.03);
-  if(source==='enemy'){add(0,.03*.8);add(1,.03*.2);}
-  if(source==='elite'){add(1,.08*.7);add(2,.08*.3);}
-  if(source==='boss'&&repeat){
-   const extra=materialDropPlan({source:'chest',limit,floor,quality});
-   extra.before.forEach((p,i)=>add(i,p*.1));
-  }
+ }else{
+  const boost=1+Math.min(.5,Math.max(0,quality/100)+(floor>100?Math.min(.05,(floor-100)*.0005):0));
+  for(let i=1;i<6;i++)after[i]*=boost;
  }
- return {before,after:before.map((p,i)=>i>limit?0:Math.min(1,p+MATERIAL_RATE_BONUS)),guaranteed};
+ for(let i=0;i<6;i++)after[i]=i>limit?0:Math.min(after[i],i?after[i-1]*.85:1);
+ return {before,after,guaranteed};
 }
 function rollMaterialPlan(plan,rng=Math.random){return plan.after.flatMap((p,i)=>p>0&&rng()<p?[i]:[]);}
 function materialInstance(key,source){return {...MATERIALS[key],key,type:'material',id:crypto.randomUUID(),locked:false,dropSource:source,desc:'鍛冶場で使用する製作素材'};}

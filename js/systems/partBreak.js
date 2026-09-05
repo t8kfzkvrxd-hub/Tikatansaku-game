@@ -39,11 +39,11 @@ function hitEnemyPart(enemy,action,slots){
 function partMaterialKey(enemy,part){return MONSTER_MATERIALS[enemy.materialSource]?.keys[PART_TYPES[part.id].tier];}
 function enemyPartsHtml(enemy){
  const parts=ensureEnemyParts(enemy);if(!parts.length)return '';
- return `<nav class="enemy-parts" aria-label="攻撃部位"><button aria-pressed="${enemy.partTarget==='body'}" onclick="selectEnemyPart('body')" ${enemy.acting?'disabled':''}>本体</button>${parts.map(p=>{const d=PART_TYPES[p.id],key=partMaterialKey(enemy,p),known=key&&materialKnown(key);return `<button aria-pressed="${enemy.partTarget===p.id}" onclick="selectEnemyPart('${p.id}')" ${enemy.acting?'disabled':''}><b>${d.name} ${p.broken?'BROKEN':Math.ceil(p.hp/p.maxHp*100)+'%'}</b><small>${p.broken?'破壊済み':p.hp+' / '+p.maxHp} / ${known?uiEscape(MATERIALS[key].name):'？？？'}</small></button>`;}).join('')}</nav><small class="part-help">部位攻撃でも本体ダメージ100%。部位素材の統合前の部位寄与8%→破壊後22%（統合後＋2pt）。翼・腕・角・コア：ATK低下／装甲：DEF低下。</small>`;
+ return `<nav class="enemy-parts" aria-label="攻撃部位"><button aria-pressed="${enemy.partTarget==='body'}" onclick="selectEnemyPart('body')" ${enemy.acting?'disabled':''}>本体</button>${parts.map(p=>{const d=PART_TYPES[p.id],key=partMaterialKey(enemy,p),known=key&&materialKnown(key);return `<button aria-pressed="${enemy.partTarget===p.id}" onclick="selectEnemyPart('${p.id}')" ${enemy.acting?'disabled':''}><b>${d.name} ${p.broken?'BROKEN':Math.ceil(p.hp/p.maxHp*100)+'%'}</b><small>${p.broken?'破壊済み':p.hp+' / '+p.maxHp} / ${known?uiEscape(MATERIALS[key].name):'？？？'}</small></button>`;}).join('')}</nav><small class="part-help">部位攻撃でも本体ダメージ100%。部位素材の統合前の部位寄与8%→破壊後22%（補正後はレア度順で上限調整）。翼・腕・角・コア：ATK低下／装甲：DEF低下。</small>`;
 }
 const materialSourceWithoutParts=materialSourceHtml;
 materialSourceHtml=function(key){
  const original=materialSourceWithoutParts(key);if(!materialKnown(key))return original;
- const hints=materialSources(key).filter(r=>state.codex.enemies[r.enemy.name]).flatMap(r=>(ENEMY_PART_DEFINITIONS[r.enemy.materialSource]?.parts||[]).filter(id=>partMaterialKey(r.enemy,{id})===key).map(id=>`${uiEscape(r.enemy.name)}：${PART_TYPES[id].name}破壊で統合前の部位寄与8%→22%（全補正統合後に一度だけ＋2pt）`));
+ const hints=materialSources(key).filter(r=>state.codex.enemies[r.enemy.name]).flatMap(r=>(ENEMY_PART_DEFINITIONS[r.enemy.materialSource]?.parts||[]).filter(id=>partMaterialKey(r.enemy,{id})===key).map(id=>`${uiEscape(r.enemy.name)}：${PART_TYPES[id].name}破壊で統合前の部位寄与8%→22%（補正後はレア度順で上限調整）`));
  return original+hints.map(h=>`<div>🔨 ${h}</div>`).join('');
 };
