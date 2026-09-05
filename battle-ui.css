@@ -1,0 +1,47 @@
+html.at-battle,body.at-battle{overflow:hidden;min-height:0}
+body.at-battle #game-container{animation:none;transform:none}
+body.at-battle #status-bar,body.at-battle #sub-tabs,body.at-battle #sub-panel,body.at-battle #viewport>.scene-box{display:none!important}
+.battle-readout.battle2{position:fixed;inset:0;z-index:90;box-sizing:border-box;height:var(--game-viewport-height);width:100%;margin:0;padding:max(12px,var(--safe-top)) max(12px,var(--safe-right)) max(8px,var(--safe-bottom)) max(12px,var(--safe-left));display:grid;grid-template-columns:minmax(180px,1fr) minmax(360px,2fr) minmax(180px,1fr);grid-template-rows:auto minmax(80px,1fr) auto auto 44px;gap:8px 16px;background-color:#0b1420;background-size:cover;background-position:center;overflow:hidden;isolation:isolate}
+.battle2 .battle-unit{background:#0c1425db;font-size:14px;align-self:end;max-height:100%;overflow:auto;min-height:0;padding:8px;border-color:#8395ac}
+.battle2 [data-combat-unit=player]{grid-column:1;grid-row:2/5}
+.battle2 [data-combat-unit=elna]{grid-column:3;grid-row:2/5}
+.battle2 [data-combat-unit=enemy]{grid-column:2;grid-row:1;align-self:start;overflow:auto}
+.battle2 .battle-unit.boss{border:2px solid #da9d62}.battle2 .boss .hp-track{height:12px}.battle2 .elite{border-color:#c487ed}
+.battle2 .character-portrait{display:block;position:relative;width:100%;height:clamp(100px,26vh,270px);margin:0;pointer-events:none;overflow:hidden}
+.battle2 .character-portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;opacity:0;transform:none}
+.battle2 .character-portrait img.visible{opacity:1}
+.battle2 .battle-unit .build-mini{top:auto;bottom:3px;right:3px;position:relative;float:right;min-height:44px}
+.battle2 .battle-unit:has(.build-mini)>strong{padding-right:0}
+.battle2 .build-chips{height:auto;flex-direction:column;max-width:calc(100% - 48px);gap:1px}
+.battle2 .build-chips .build-state{display:block!important;font-size:12px;white-space:normal}
+.battle2 .battle-status{max-height:42px;overflow:auto;font-size:12px}
+.battle2 .enemy-parts{grid-column:2;grid-row:3;flex-wrap:nowrap;overflow-x:auto;margin:0;gap:5px}
+.battle2 .enemy-parts button{min-width:44px;min-height:44px;font-size:12px;padding:3px;flex:1}
+.battle2 .enemy-parts progress{display:block;width:100%;height:5px;accent-color:#e9bc6a}
+.battle2 .part-help,.battle2 .battle-feed{display:none}
+.battle-readout.battle2 .combat-actions{grid-column:2;grid-row:4;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;margin:0!important}
+.battle2 .combat-actions button{min-width:44px;min-height:44px;padding:4px;font-size:14px;white-space:normal}
+.battle2 .combat-actions button:nth-child(n+5){display:none}
+.battle2 .combat-number-space{grid-column:2;grid-row:2;height:100%!important;pointer-events:none;align-self:stretch}
+.battle-enemy-art{grid-column:2;grid-row:2;align-self:center;justify-self:center;text-align:center;pointer-events:none;max-height:100%;overflow:hidden}
+.battle-enemy-art>span{font-size:clamp(54px,10vh,140px);display:block}.battle-enemy-art>img{max-height:26vh;max-width:100%;object-fit:contain}.battle-enemy-art small{display:block;background:#0a1320bb;font-size:12px}
+.battle-toolbar{grid-column:2;grid-row:5;display:flex;gap:6px;justify-content:center}.battle-toolbar button{min-height:44px;min-width:44px;padding:4px 10px;color:#eee;background:#121f32e8;border:1px solid #8190a5;border-radius:6px;font-size:14px}
+.battle-location{grid-column:1;grid-row:5;font-size:14px;color:#fff;align-self:center;text-shadow:0 1px 2px #000}
+.battle-intent{font-size:12px}.battle-target,.battle-guard{display:block;font-size:12px;color:#f8db9c}
+.battle-announcement{display:block;font-size:14px;color:#ffe0a1;background:#111827da}
+.battle2 .battle-attack{box-shadow:inset 0 0 14px #b2dcff88}.battle2 .battle-hurt{box-shadow:inset 0 0 14px #ff777799;border-color:#ffa6a6}
+.battle2 .character-portrait{background:transparent}
+@media(min-height:541px){.battle-readout.battle2{grid-template-columns:minmax(180px,280px) minmax(360px,1fr) minmax(180px,280px)}.battle2 [data-combat-unit=enemy],.battle2 .enemy-parts,.battle-readout.battle2 .combat-actions{width:100%;max-width:760px;justify-self:center;box-sizing:border-box}}
+body.at-battle .combat-float{z-index:95;max-width:160px;font-size:16px}body:not(.at-battle) .combat-float{display:none}
+body.at-battle .combat-float.critical{color:#ffe080;font-weight:900;text-shadow:0 1px 3px #000,0 0 6px #b77816}
+.battle-enemy-art.impact{animation:battle-impact .3s ease-out}@keyframes battle-impact{from{filter:brightness(1.9)}to{filter:brightness(1)}}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1100px){
+ .battle-readout.battle2{grid-template-columns:minmax(130px,1fr) minmax(330px,2.4fr) minmax(130px,1fr);grid-template-rows:106px minmax(40px,1fr) 49px 44px 44px;gap:5px 8px;padding:max(5px,var(--safe-top)) max(6px,var(--safe-right)) max(5px,var(--safe-bottom)) max(6px,var(--safe-left))}
+ .battle2 .battle-unit{padding:4px;font-size:12px}.battle2 .character-portrait{height:64px}
+ .battle2 [data-combat-unit=enemy]{line-height:1.15}.battle2 [data-combat-unit=enemy] .battle-status{margin:2px 0}.battle2 .battle-intent{line-height:1.15}
+ .battle2 .build-chips{max-height:36px;overflow:auto}
+ .battle2 .build-chips .build-state{font-size:12px}.battle2 .battle-status{max-height:30px}
+ .battle2 .enemy-parts small{font-size:11px}.battle2 .battle-enemy-art>span{font-size:46px}
+ .battle2 .battle-unit.boss .hp-track{height:9px}.battle2 .battle-intent{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.battle-enemy-art.impact{animation:none}}

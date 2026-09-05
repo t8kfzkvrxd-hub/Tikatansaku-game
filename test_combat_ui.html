@@ -27,7 +27,7 @@ window.onload=async()=>{
  s.chapter.companion='elna';w.render();
  for(const [width,height]of [[1920,1080],[1366,768],[740,360],[844,390],[932,430]]){
  f.style.width=width+'px';f.style.height=height+'px';await wait(90);w.render();
- const cards=[...d.querySelectorAll('.battle-unit')].map(e=>e.getBoundingClientRect());check(cards.length===3&&cards.every((r,i)=>r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height&&(i===0||r.left>=cards[i-1].right)),width+'x'+height+' HP / statuses visible, no overlap');
+ const cards=[...d.querySelectorAll('.battle-unit')].map(e=>e.getBoundingClientRect());check(cards.length===3&&cards.every((r,i)=>r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height&&cards.slice(0,i).every(p=>r.left>=p.right||r.right<=p.left||r.top>=p.bottom||r.bottom<=p.top)),width+'x'+height+' HP / statuses visible, no overlap');
  check([...d.querySelectorAll('.combat-actions button')].slice(0,4).every(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=height}),width+'x'+height+' four actions visible');
  w.openCharacterEquipment('elna','weapon');const body=d.querySelector('.update-notes-body'),card=d.querySelector('.update-notes-card').getBoundingClientRect();check(body.scrollWidth<=body.clientWidth+1&&card.bottom<=height,width+'x'+height+' equipment modal fits');w.closeGenericModal();
  }

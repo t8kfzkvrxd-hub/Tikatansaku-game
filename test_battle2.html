@@ -1,0 +1,22 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms)),check=(v,n)=>{if(!v)throw Error(n);};try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.mode='skip';s.chapter.owned.elna=true;s.chapter.companion='elna';s.hp=1000;
+ const overlap=(a,b)=>a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1;
+ for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+ f.style.width=height+'px';f.style.height=width+'px';await wait(50);f.style.width=width+'px';f.style.height=height+'px';await wait(80);
+ for(const kind of ['normal','elite','boss']){
+ s.floor=kind==='boss'?10:2;if(kind==='boss')w.startBossBattle(w.getCurrentArea().boss);else w.startNormalBattle(kind==='elite');w.render();await wait(70);
+ const root=d.querySelector('.battle2');check(root&&w.getComputedStyle(root).backgroundImage.includes('explore-01-mine'),'background');
+ const elements=[...root.querySelectorAll('.battle-unit,.enemy-parts,.combat-actions,.battle-toolbar')];
+ const boxes=elements.map(e=>e.getBoundingClientRect());boxes.forEach((r,i)=>{check(r.left>=0&&r.right<=width+1&&r.top>=0&&r.bottom<=height+1,'bounds '+width+kind);for(let j=0;j<i;j++)check(!overlap(r,boxes[j]),'overlap '+width+kind);});
+ check(root.querySelectorAll('.character-portrait').length===2,'portraits');
+ for(const el of root.querySelectorAll('.enemy-parts button,.combat-actions button:nth-child(-n+4),.battle-toolbar button')){const r=el.getBoundingClientRect();check(r.height>=44&&r.width>=44,'tap size');}
+ check(root.querySelector('[data-combat-unit=enemy]').scrollHeight<=root.querySelector('[data-combat-unit=enemy]').clientHeight+1,'enemy intent not clipped');
+ const unit=w.companionCombatUnit();unit.hp=0;w.renderCombatReadout();check(d.querySelector('[data-combat-unit=elna]').dataset.visualState==='fainted','fainted');unit.hp=w.companionStats('elna').maxHp*.2;w.renderCombatReadout();check(d.querySelector('[data-combat-unit=elna]').dataset.visualState==='critical','critical');unit.hp=100;w.markCharacterVisualHit('elna',10);w.renderCombatReadout();check(d.querySelector('[data-combat-unit=elna]').dataset.visualState==='hit','hit');await wait(770);check(d.querySelector('[data-combat-unit=elna]').dataset.visualState!=='hit','hit expires');
+ w.openBattleMenu();check(d.querySelector('.update-notes-actions button').getBoundingClientRect().bottom<=height,'menu close');w.closeGenericModal();
+ s.screen='town';w.render();check(!d.body.classList.contains('at-battle'),'exit cleanup');
+ }
+ out.push('PASS '+width+'x'+height+' normal/elite/boss, geometry, portraits, menu, exit');
+ }
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');};</script>

@@ -25,6 +25,11 @@ function combatEmit(actor,target,value,label='',kind='damage'){
   const space=document.querySelector('.combat-number-space')?.getBoundingClientRect();
   const compact=space?.height&&space.height<60;
   el.style.top=Math.max(8,(space?.height?space.top+8:rect.bottom+5)+(compact?0:(combatFeedback.floats.length%3)*8))+'px';document.body.appendChild(el);
+  if(document.body.classList.contains('at-battle')){
+   el.classList.toggle('critical',label.includes('CRITICAL'));
+   if(target==='enemy'&&space)el.style.left=(space.left+space.width*(actor==='player'?.25:actor==='elna'?.75:.5))+'px';
+   if(target!=='enemy')el.style.top='16px';
+  }
   combatFeedback.floats.push(el);while(combatFeedback.floats.length>8)combatFeedback.floats.shift().remove();
   setTimeout(()=>{el.remove();combatFeedback.floats=combatFeedback.floats.filter(n=>n!==el);if(state.screen==='battle'&&state.currentEnemy)renderCombatReadout();},1300);
  });
