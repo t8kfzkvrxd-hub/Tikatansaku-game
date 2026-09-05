@@ -20,7 +20,7 @@ window.onload=async()=>{
   s.screen='battle';s.floor=1;s.hp=100;s.chapter.pending=null;s.currentEnemy={name:'検証敵',hp:10000,maxHp:10000,atk:1,def:0,actionType:'normal',nextMult:1};w.Math.random=()=>.99;
   const enemy=s.currentEnemy,hp=enemy.hp;w.enemyTurn(false);check(enemy.hp<hp,'死亡後も通常戦闘の処理から支援攻撃');
   s.screen='town';w.selectCompanion(null);const hp2=enemy.hp;w.enemyTurn(false);check(enemy.hp===hp2,'同行を外すと追撃しない');
-  w.selectCompanion('elna');const progress=w.characterProgress('elna');progress.exp=progress.level*30-10;const lv=progress.level;w.awardCompanionExperience({});check(progress.level===lv+1&&w.companionStats().atk>36,'死亡後も成長し実能力に反映');
+  w.selectCompanion('elna');const progress=w.characterProgress('elna');progress.exp=w.characterExpRequired(progress.level)-10;const lv=progress.level;w.awardBattleExperience({});check(progress.level===lv+1&&w.companionStats().atk>36,'死亡後も成長し実能力に反映');
   check(w.removeCharacterEquipment('elna','head'),'死亡後も装備解除');check(w.setCharacterEquipment('elna','head','continuity-head'),'死亡後も装備変更');
   const final=JSON.stringify(s.chapter.characters);w.saveState();await reload();check(JSON.stringify(s.chapter.characters)===final,'死亡後の育成更新も保存');
   out.push('ALL TESTS PASSED');

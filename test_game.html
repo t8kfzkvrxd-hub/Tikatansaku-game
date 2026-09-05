@@ -42,23 +42,14 @@ window.addEventListener('load', () => setTimeout(() => {
     w.escapeBattleWithSmoke();
     check(!game.state.inventory.some(i => i.type === 'escape_item') && game.state.floor === beforeFloor + 1, '煙玉を消費して報酬なしで次階へ進む');
 
-    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000;
-    game.state.camp.lab = 3;
-    w.startBossBattle(game.AREAS[0].boss);
-    check(game.state.currentEnemy.maxHp === Math.round(game.AREAS[0].boss.hp * .85), '研究所Lv3でボス最大HP-15%');
-
-    game.state.floor = 1; game.state.talents.merchantFriendLv = 0; w.startMerchantEvent();
-    const normalSlots = game.state.currentEvent.choices.length;
-    game.state.talents.merchantFriendLv = 1; w.startMerchantEvent();
-    check(game.state.currentEvent.choices.length === normalSlots + 1 && game.state.currentEvent.choices.some(c => c.text.includes('友好枠')), '商人の友で割引と商品枠を追加');
-
-    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000;
-    const oldDef = game.state.talents.defLv;
-    const defCost = w.getTalentUpgradeCost('defLv');
-    const goldBeforeDef = game.state.vaultGold;
-    w.upgradeTalent('defLv');
-    check(game.state.talents.defLv === oldDef + 1 && game.state.vaultGold === goldBeforeDef - defCost, '防御永久強化の価格・購入・効果を共通化');
-
+    game.state.floor = 10; game.state.camp.lab = 1;
+    w.startBossBattle(game.AREAS[0].boss); const fullBossHp=game.state.currentEnemy.maxHp;
+    game.state.camp.lab = 3; w.startBossBattle(game.AREAS[0].boss);
+    check(game.state.currentEnemy.maxHp === Math.round(fullBossHp*.85), '研究所Lv3でボス最大HP-15%');
+    game.state.floor=1;w.startMerchantEvent();
+    check(game.state.currentEvent.choices.length===3&&!game.state.currentEvent.choices.some(c=>c.text.includes('友好枠')),'旧商人加護なしで通常購入可能');
+    check(typeof w.upgradeTalent==='undefined','永久強化購入を廃止');
+    game.state.screen='town';game.state.floor=0;game.state.vaultGold=10000;
     const oldVaultSize = game.state.camp.vaultSize;
     const vaultCost = w.getVaultUpgradeCost(game.state.camp.vaultLevel);
     const goldBeforeVault = game.state.vaultGold;
@@ -85,9 +76,6 @@ window.addEventListener('load', () => setTimeout(() => {
     check(weapon.affix === 'boss_slayer', '鍛冶屋Lv3で装備特性を付与できる');
 
     game.state.inventory = [{name:'C',icon:'○',rarity:'Common'},{name:'L',icon:'★',rarity:'Legendary'}];
-    game.state.talents.keepItemLv = 1; w.openDeathProtectModal();
-    check(d.getElementById('modal-layer').textContent.includes('1 / 1個'), '死亡時保護品をレア度優先で初期選択し手動変更できる');
-    w.closeGenericModal();
     w.emergencyEscape();
     check(d.getElementById('modal-layer').textContent.includes('持ち帰れるのは半分'), '緊急帰還時に持ち帰る半分を選択できる');
     w.closeGenericModal();
@@ -106,7 +94,7 @@ window.addEventListener('load', () => setTimeout(() => {
     game.state.greedLevel = 0; game.state.floor = 1; w.startNormalBattle(false); const normalAtk = game.state.currentEnemy.atk;
     game.state.greedLevel = 3; w.startNormalBattle(false); const greedAtk = game.state.currentEnemy.atk;
     w.Math.random = originalRandom;
-    check(greedAtk > normalAtk && greedAtk >= 11, 'GREED Lv3で敵基礎攻撃力へ+45%補正');
+    check(greedAtk === Math.round(normalAtk*1.45), 'GREED Lv3で敵基礎攻撃力へ+45%補正');
 
     w.setTimeout = () => 0;
     game.state.equipped.armor = {...game.AREAS[0].boss, key:'mythic_sky_shield', name:'天城の絶対盾', type:'armor', rarity:'Mythic', archetype:'shield', baseDef:10, hp:0};

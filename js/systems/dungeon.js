@@ -60,13 +60,6 @@
           risk: 'low', riskText: '低危険'
         },
         {
-          type: 'blood_altar',
-          icon: '🩸',
-          sign: '血の跡と邪神像',
-          desc: '【血の祭壇】HP30を捧げ、強力な永続バフや攻撃力を獲得。',
-          risk: 'curse', riskText: '代償大'
-        },
-        {
           type: 'cursed_chest',
           icon: '👁️',
           sign: '呪われた黒櫃',
@@ -130,12 +123,10 @@
       }
       if ((state.modifiers.eventRateBonus || 0) > 0) {
         doorPool.push({ ...doorPool.find(d => d.type === 'mystery_wanderer') });
-        doorPool.push({ ...doorPool.find(d => d.type === 'blood_altar') });
       }
       if (state.greedLevel >= 3) {
         const healIndex = doorPool.findIndex(d => d.type === 'heal_spring');
         if (healIndex >= 0) doorPool.splice(healIndex, 1);
-        doorPool.push({ ...doorPool.find(d => d.type === 'blood_altar') });
         doorPool.push({ ...doorPool.find(d => d.type === 'cursed_chest') });
       }
 
@@ -182,16 +173,6 @@
       render();
     }
 
-    function rerollDoors() {
-      if (state.rerollUsed || (state.talents.fateRerollLv || 0) <= 0) return;
-      initAudio();
-      playSound('reroll');
-      state.rerollUsed = true;
-      spawnFloatingFx('🎲 運命の導き！再抽選', 'crit');
-      addLog('神殿の加護【運命の導き】により、部屋の分岐を再抽選した！', 'gold');
-      generateDoorsForFloor();
-    }
-
     function selectDoor(index) {
       if(state.screen!=='door_select'||!state.currentDoors[index]||state.currentDoors.selected||!lockTransition())return;
       state.currentDoors.selected=true;
@@ -223,8 +204,7 @@
         openChestEvent(false);
       } else if (door.type === 'cursed_chest') {
         openChestEvent(true);
-      } else if (door.type === 'blood_altar') {
-        startBloodAltarEvent();
+
       } else if (door.type === 'heal_spring') {
         startHealSpringEvent();
       } else if (door.type === 'merchant') {

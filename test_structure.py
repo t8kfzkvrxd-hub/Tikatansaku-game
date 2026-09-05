@@ -14,8 +14,7 @@ def section(text, start, end):
 
 old = original('index.html')
 parts = {
-    'js/core/state.js': [('    let state =', '    function saveState')],
-    'js/core/save.js': [('    function saveState', '    function showResetSaveConfirmation'), ('    function resetGameSave', '    function initStarterItems')],
+    # State/save now use the migration and roundtrip tests in test_character_levels.html.
     'js/data/lore.js': [('    const LORE_RECORDS', '    const SYNERGIES')],
     'js/data/equipment.js': [('    const SYNERGIES', '    const AREAS')],
     'js/data/areas.js': [('    const AREAS', '    const SAVE_KEY')],

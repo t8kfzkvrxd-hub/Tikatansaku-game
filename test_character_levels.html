@@ -1,0 +1,61 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),out=[],check=(ok,msg)=>{if(!ok)throw Error(msg);out.push('PASS '+msg)};let w=frame.contentWindow;
+ try{
+ w.resetGameSave(false);let s=w.__gameDebug.state;
+ w.closeGenericModal();s.chapter.pending=null;
+ check(w.characterProgress('player').level===1&&w.characterProgress('elna').level===1,'new game both Lv1');
+ check(JSON.stringify(w.unlockedWarpFloors())==='[1]','new game only B1');
+ w.render();check(!w.document.querySelector('[onclick="selectStartFloor(21)"]'),'new game UI has no B21');
+ const initialSave=JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'));delete initialSave.characterLevelVersion;initialSave.maxUnlockedFloor=30;initialSave.selectedStartFloor=21;
+ w.localStorage.setItem('ABYSS_ROGUE_SAVED_V2',JSON.stringify(initialSave));w.loadState();
+ check(s.selectedStartFloor===1&&JSON.stringify(w.unlockedWarpFloors())==='[1]','old phantom B21 unlock removed');
+ for(const f of [10,20,21,-1,1.5,1000]){w.selectStartFloor(f);check(s.selectedStartFloor===1,'UI rejects warp '+f);}
+ s.selectedStartFloor=21;w.startDungeonRun();check(s.screen==='town'&&s.floor===0,'execution rejects forged B21');s.selectedStartFloor=1;
+ for(const f of [10,20,30]){s.deepestFloorReached=f;check(!w.canWarpTo(f+1),'cannot skip unbeaten boss '+f);s.bossFirstKills[f]=true;check(w.canWarpTo(f+1),'boss checkpoint unlocked '+f);}
+ const old=JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'));
+ for(const [floor,expected]of [[0,1],[100,10],[300,25],[600,35],[900,45],[1000,48]])check(w.reachedCharacterLevel(floor)===expected,'migration curve '+floor);
+ delete old.characterLevelVersion;old.deepestFloorReached=100;old.maxUnlockedFloor=30;old.talents={hpLv:5,atkLv:5,defLv:5,luckLv:5,keepItemLv:2};old.vaultGold=100;
+ old.chapter.owned.elna=true;old.chapter.companion='elna';old.chapter.characters={elna:{level:70,exp:123}};
+ w.localStorage.setItem('ABYSS_ROGUE_SAVED_V2',JSON.stringify(old));w.loadState();s=w.__gameDebug.state;
+ check(w.characterProgress('player').level>=11,'legacy talent power converted to level');
+ const stats=w.getPlayerStats();check(stats.maxHp>=175&&stats.atk>=25&&stats.def>=12,'legacy HP ATK DEF not weakened');
+ check(w.characterProgress('elna').level===50&&w.characterGrowthStats('elna').atk===138,'legacy overcap stats preserved');
+ check(s.vaultGold>100,'legacy purchases refunded');
+ w.saveState();const save=JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'));check(!('talents' in save),'no talent persistence');
+ const gold=s.vaultGold,gear=JSON.stringify(s.equipped);w.loadState();check(s.vaultGold===gold&&JSON.stringify(s.equipped)===gear,'migration idempotent gear preserved');
+ s.chapter.characters.player={level:1,exp:0};s.chapter.characters.elna={level:1,exp:0};
+ const crit=w.getPlayerStats().crit,vamp=w.getPlayerStats().vamp;
+ w.awardBattleExperience({isElite:true});check(w.characterProgress('player').exp===w.characterProgress('elna').exp,'same battle EXP both characters');
+ w.grantCharacterExperience('player',1e8);check(w.characterProgress('player').level===50&&w.characterProgress('player').exp===0,'story cap 50');
+ check(w.getPlayerStats().crit===crit&&w.getPlayerStats().vamp===vamp,'level does not add build stats');
+ s.chapter.complete=true;check(w.characterLevelCap()===50,'100F chapter does not unlock Lv100');
+ w.openCharacterEquipment('player');check(w.document.querySelector('progress')&&w.document.querySelector('.update-notes-body').textContent.includes('MAX'),'player level UI');
+ w.openCharacterEquipment('elna');check(w.document.querySelector('progress'),'Elna EXP bar');w.closeGenericModal();
+ s.bossFirstKills[1000]=true;check(w.characterLevelCap()===100,'1000F unlock cap100');
+ w.grantCharacterExperience('player',1e8,'story');check(w.characterProgress('player').level===50,'no story farming above50');
+ w.grantCharacterExperience('player',1e8,'abyss');check(w.characterProgress('player').level===100,'abyss reaches100');
+ w.saveState();w.loadState();check(w.characterProgress('player').level===100&&w.characterLevelCap()===100,'Lv100 unlock persists');
+ delete s.bossFirstKills[1000];s.chapter.characters.player={level:1,exp:0};
+ for(let f=1;f<=1000;f++){const r=f%10;if(r===0||r<=7)w.grantCharacterExperience('player',w.battleExperience({isBoss:r===0,isElite:r===7},f));}
+ out.push('SIMULATED 1000F Lv '+w.characterProgress('player').level);check(w.characterProgress('player').level>=45&&w.characterProgress('player').level<=50,'story EXP curve target');
+ const areas=w.eval('AREAS');
+ for(const floor of [10,50,100,300,500,1000,1200]){
+  const area=areas.find(a=>floor>=a.min&&floor<=a.max)||areas.at(-1),normal=area.enemies.map(t=>w.scaledEnemyStats(t,area,floor)),elite=w.scaledEnemyStats(area.elite,area,floor,'elite'),boss=w.scaledEnemyStats(area.boss,area,floor,'boss',{labLevel:5});
+  for(const n of normal)for(const k of ['hp','atk','def'])check(elite[k]>n[k]&&boss[k]>elite[k],floor+' hierarchy '+k);
+  out.push('STATS '+floor+' normal '+JSON.stringify(normal.at(-1))+' elite '+JSON.stringify(elite)+' boss '+JSON.stringify(boss));
+ }
+ for(const area of areas)for(let floor=area.min;floor<=area.max;floor++)for(const greed of [0,3]){
+  const opts={greed,enemyAtkMult:1.4},e=w.scaledEnemyStats(area.elite,area,floor,'elite',opts);
+  for(const t of area.enemies){const n=w.scaledEnemyStats(t,area,floor,'normal',opts);check(e.hp>n.hp&&e.atk>n.atk&&e.def>n.def,'all live floors '+floor);}
+ }
+ s.floor=50;s.screen='battle';s.hp=1000;w.startNormalBattle(true);s.currentEnemy.turnCount=2;w.decideEnemyIntent();check(s.currentEnemy.actionType==='heavy'&&s.currentEnemy.nextMult===1.35,'elite special telegraphed');
+ w.saveState();const levels=JSON.stringify(s.chapter.characters);w.loadState();check(JSON.stringify(s.chapter.characters)===levels,'levels EXP save roundtrip');
+ const inventory=JSON.stringify(s.storage),equipped=JSON.stringify(s.equipped),warps=JSON.stringify(w.unlockedWarpFloors());
+ await new Promise(resolve=>{frame.onload=resolve;w.location.reload()});w=frame.contentWindow;s=w.__gameDebug.state;
+ check(JSON.stringify(s.chapter.characters)===levels&&JSON.stringify(s.storage)===inventory&&JSON.stringify(s.equipped)===equipped&&JSON.stringify(w.unlockedWarpFloors())===warps,'actual page reload preserves levels items and warps');
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

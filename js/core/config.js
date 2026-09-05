@@ -1,14 +1,17 @@
     const MAX_DUNGEON_FLOOR = 100;
     const BOSS_FLOORS = [10,20,30,40,50,60,70,80,90,100];
     const SAFE_RETURN_FLOORS = [5,15,25,35,45,55,65,75,85,95];
-    const GAME_VERSION = '0.13.0';
+    const GAME_VERSION = '0.14.0';
     const UPDATE_NOTES = [
+      '永久加護を廃止し、主人公とエルナの独立Lv/EXPへ移行。旧購入費は返還、能力はLv換算。ストーリーLv50・将来1000Fクリア後Lv100',
+      '敵の階層計算を共通化し、最終能力へエリート倍率を適用。ボスの専用行動を維持',
+      '新規ゲームの11F・21F先行解放を修正。開始地点は実到達・ボス撃破記録でUIと実行を共通判定',
       '探索の装備直入手を素材へ統一。旧固定装備29種を鍛冶場レシピへ移行（所持済み装備は維持）',
       '素材解禁を100F・300F・500F・1000Fクリアへ接続。300F以降は将来用で未解禁、階層追加なし',
       '全武器に武器種・主副ビルドを設定。上位派生の強化値・追加特性継承とビルド刻印派生を追加',
       '与ダメージ比例の吸血・ボス補正・回復上限、状態異常と条件付きビルド効果を共通化',
       '宝箱・イベント・戦闘・討伐報酬・帰還の多重入力ガードを追加。エルナの独立HP、被弾、戦闘不能と装備の条件付き戦闘効果を接続',
-      '旧拠点管理を廃止。倉庫増築は倉庫へ、永久加護・図鑑は研究所へ、冒険記録は記憶の書庫へ集約。各施設のLvアップと既存セーブを維持',
+      '旧拠点管理を廃止。倉庫増築は倉庫へ、図鑑は研究所へ、冒険記録は記憶の書庫へ集約。各施設のLvアップと既存セーブを維持',
       'データ管理にSafari通常ブラウザ起動の案内を追加。保存キー・セーブ形式・保存処理は変更せず、独立Webアプリとの同期は導入しません',
       'ロビー2.0：地下拠点マップの常設施設ラベルから既存施設へ接続。装備・所持品・設定・ホームへの常設メニューを追加',
       'スマホ横のホームメニューを高さ境界に依存しない専用サイズへ固定。タイトルのvh依存を除去',
@@ -71,18 +74,6 @@
 
     // Underground Lore & Mysteries (地下世界の真相)
     const SAVE_KEY = 'ABYSS_ROGUE_SAVED_V2';
-
-    // Centralized Temple Permanent Upgrades Configuration
-    const TALENT_CONFIG = {
-      hpLv: { name: '生命の加護', icon: '❤️', desc: '初期最大HP+15', baseCost: 70, costPerLv: 50, maxLv: 5 },
-      atkLv: { name: '剛力の加護', icon: '⚔️', desc: '初期攻撃力+3', baseCost: 80, costPerLv: 60, maxLv: 5 },
-      defLv: { name: '防御強化', icon: '🛡️', desc: '初期防御力+2', baseCost: 80, costPerLv: 60, maxLv: 5 },
-      luckLv: { name: '宿命の幸運', icon: '🍀', desc: '宝箱レア率+6%', baseCost: 90, costPerLv: 70, maxLv: 5 },
-      keepItemLv: { name: '遺品守護符', icon: '📜', desc: '死亡時アイテム保護 (Lv1=1個, Lv2=2個)', baseCost: 150, costPerLv: 150, maxLv: 2 },
-      fateRerollLv: { name: '運命の再選択', icon: '🎲', desc: '部屋の扉を探索中1回再抽選', baseCost: 120, costPerLv: 100, maxLv: 1 },
-      discernEyeLv: { name: '宝箱の鑑定眼', icon: '👁️', desc: '宝箱が2択から選択可能になる', baseCost: 180, costPerLv: 150, maxLv: 1 },
-      merchantFriendLv: { name: '商人の友', icon: '🤝', desc: '商人枠+1 & 20%割引', baseCost: 140, costPerLv: 120, maxLv: 1 }
-    };
 
     const FACILITY_CONFIG = {
       blacksmith: { name:'鍛冶屋', icon:'🔨', maxLevel:5, baseCost:120, growth:1.65, unlocks:['初期設備','装備鍛錬','特性付与','特性再抽選','高レア能力強化'] },

@@ -28,7 +28,7 @@ window.onload=async()=>{
    check(d.getElementById('modal-layer').textContent.includes('Lv.2'),'upgrade confirmation '+id);w.closeGenericModal();w.openLobbyFacility(id);
    check(d.querySelector('#lobby-facility-content').textContent.includes('Lv.2'),'upgrade display refresh '+id);w.closeGenericModal();
   }
-  w.openLobbyFacility('town-lab');check(d.querySelector('#lobby-facility-content [onclick^="upgradeTalent"]'),'permanent blessings reachable');
+  w.openLobbyFacility('town-lab');check(!d.querySelector('#lobby-facility-content [onclick^="upgradeTalent"]'),'permanent blessings removed');
   d.querySelector('#lobby-facility-content [onclick*="codex"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('図鑑'),'codex reachable');w.closeGenericModal();
   w.openLobbyFacility('archive');check(d.querySelector('[onclick="openMemoryArchive()"]'),'story replays reachable');d.querySelector('[onclick="openLobbyFacility(\'log\')"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('冒険の軌跡'),'logs reachable');w.closeGenericModal();
   w.saveState();const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'),camp=JSON.stringify(s.camp),unlocked=s.maxUnlockedFloor;

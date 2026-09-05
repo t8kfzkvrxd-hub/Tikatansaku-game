@@ -2,16 +2,14 @@
       const area = getCurrentArea();
       let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
       
-      const scale = isElite || state.floor>=61 ? 1 + (state.floor - area.min) * 0.015 : 1 + (state.floor * 0.08);
-      const eliteScale = 1.0;
-      const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
+      const scaled=scaledEnemyStats(enemyTemplate,area,state.floor,isElite?'elite':'normal',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel});
       state.currentEnemy = {
         name: enemyTemplate.name,
         icon: enemyTemplate.icon,
-        maxHp: Math.round(enemyTemplate.hp * scale * eliteScale),
-        hp: Math.round(enemyTemplate.hp * scale * eliteScale),
-        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0) * greedAtkMult * (isElite ? 0.8 : 1.0)),
-        def: Math.round(enemyTemplate.def * scale),
+        maxHp: scaled.hp,
+        hp: scaled.hp,
+        atk: scaled.atk,
+        def: scaled.def,
         isBoss: false,
         isElite: isElite,
         trait: enemyTemplate.trait,
@@ -37,15 +35,14 @@
 
     function startBossBattle(bossTemplate) {
       playSound('hit');
-      const labHpMult = state.camp.lab >= 3 ? 0.85 : 1;
-      const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
+      const scaled=scaledEnemyStats(bossTemplate,getCurrentArea(),state.floor,'boss',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel,labLevel:state.camp.lab});
       state.currentEnemy = {
         name: bossTemplate.name,
         icon: bossTemplate.icon,
-        maxHp: Math.round(bossTemplate.hp * labHpMult),
-        hp: Math.round(bossTemplate.hp * labHpMult),
-        atk: Math.round(bossTemplate.atk * greedAtkMult),
-        def: bossTemplate.def,
+        maxHp: scaled.hp,
+        hp: scaled.hp,
+        atk: scaled.atk,
+        def: scaled.def,
         isBoss: true,
         gimmick: bossTemplate.gimmick
         ,materialSource: bossTemplate.materialSource
@@ -166,6 +163,7 @@
 
       // Calculate Expected Damages for player HUD
       deepEnemyIntent(e);
+      if(e.isElite&&(e.turnCount||0)%3===2){e.actionType='heavy';e.nextMult=1.35;e.pendingAction='⚠️ 精鋭の強撃：防御で備えよう';}
       let rawEnemyAtk = e.atk * e.nextMult;
       if (state.playerExposed) rawEnemyAtk *= 1.35; // Player exposed penalty
       e.expectedDmg = Math.max(1, Math.round(rawEnemyAtk - stats.def));
@@ -705,7 +703,7 @@
       state.currentEnemy.rewardClaimed=true;
       syncActionButtons();
       const enemy = state.currentEnemy;
-      awardCompanionExperience(enemy);
+      awardBattleExperience(enemy);
       buildKill(state,state.equipped,getPlayerStats().maxHp);
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
       state.lastDefeatedEnemy={atk:enemy.atk,trait:enemy.trait};

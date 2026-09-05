@@ -1207,17 +1207,6 @@
     function isBossFloor(floor) { return BOSS_FLOORS.includes(Number(floor)); }
     function isSafeReturnFloor(floor) { return SAFE_RETURN_FLOORS.includes(Number(floor)); }
 
-    function getTalentUpgradeCost(key) {
-      const cfg = TALENT_CONFIG[key];
-      if (!cfg) return 100;
-      const curLv = state.talents[key] || 0;
-      if (cfg.maxLv && curLv >= cfg.maxLv) return null; // MAX reached
-      return cfg.baseCost + curLv * cfg.costPerLv;
-    }
-
-    // Backward-compatible alias for older inline handlers/saves.
-    const getTalentCost = getTalentUpgradeCost;
-
     function getRefineCost(item) {
       return 75 + ((item && item.refineCount) || 0) * 40;
     }
@@ -1233,7 +1222,7 @@
           <h2 class="update-notes-header" style="font-size:19px;color:#fca5a5;">⚠️ セーブデータを初期化</h2>
           <p class="update-notes-body" style="font-size:12px;line-height:1.7;color:#e2e8f0;">
             本当にセーブデータを初期化しますか？<br>
-            装備、倉庫、ゴールド、施設、図鑑、永久強化、進行状況などがすべて失われます。<br>
+            装備、倉庫、ゴールド、施設、図鑑、キャラクターLv・EXP、進行状況などがすべて失われます。<br>
             <b style="color:#f87171;">この操作は元に戻せません。</b>
           </p>
           <div class="update-notes-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -1301,12 +1290,13 @@
     }
 
     function getPlayerStats() {
-      let maxHp = 100 + (state.talents.hpLv * 15);
-      let atk = 10 + (state.talents.atkLv * 3);
-      let def = 2 + (state.talents.defLv * 2);
+      const growth = characterGrowthStats('player');
+      let maxHp = 100 + growth.hp;
+      let atk = 10 + growth.atk;
+      let def = 2 + growth.def;
       let crit = 5;
       let vamp = 0;
-      let rareRate = state.talents.luckLv * 6;
+      let rareRate = 0;
       let goldRate = 0;
       let perFloorDrain = 0;
       let demeritDamage = 0;
@@ -1421,21 +1411,20 @@
        START RUN & TOWN FLOW
        ========================================================================== */
     function startDungeonRun() {
-      if(state.screen!=='town')return;
+      if(state.screen!=='town'||!canWarpTo(state.selectedStartFloor||1))return;
       state.companionBattle={};
       state.buildRuntime={hits:0,hurt:0,kills:0,shield:0,charge:0};
       state.returnResolved=false;
       initAudio();
       playSound('click');
       const stats = getPlayerStats();
-      state.floor = Math.min(state.selectedStartFloor || 1, state.maxUnlockedFloor || 30);
+      state.floor = state.selectedStartFloor || 1;
       state.hp = stats.maxHp;
       state.maxHp = stats.maxHp;
       state.dungeonGold = 0;
       state.logs = [];
       state.runKills = 0;
       state.greedLevel = 0;
-      state.rerollUsed = false;
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
       state.skillCooldown = 0;
@@ -1523,12 +1512,6 @@
 
         finalizeSafeReturn();
       } else {
-        // Death occurred
-        if (state.talents.keepItemLv > 0 && state.inventory.length > 0) {
-          openDeathProtectModal();
-          return;
-        }
-
         finalizeDeath();
       }
     }
@@ -1601,7 +1584,7 @@
       let lostItems = customLostItems;
 
       if (!keptItems) {
-        const retainCount = state.talents.keepItemLv || 0;
+        const retainCount = 0;
         keptItems = state.inventory.slice(0, retainCount);
         lostItems = state.inventory.slice(retainCount);
       }
@@ -1765,99 +1748,6 @@
       document.getElementById('modal-layer').style.display = 'none';
       finalizeSafeReturn();
     }
-
-    function openDeathProtectModal() {
-      const m = document.getElementById('modal-layer');
-      m.style.display = 'flex';
-      m.className = 'legendary-modal';
-
-      const keepCount = state.talents.keepItemLv;
-      // Pre-select top items by rarity
-      const sortedIndexes = state.inventory.map((it, idx) => ({ it, idx })).sort((a, b) => {
-        const rRank = { Abyssal: 6, Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
-        return (rRank[b.it.rarity] || 0) - (rRank[a.it.rarity] || 0);
-      });
-
-      const selectedSet = new Set(sortedIndexes.slice(0, keepCount).map(o => o.idx));
-
-      renderDeathProtectContent(selectedSet, keepCount);
-    }
-
-    function renderDeathProtectContent(selectedSet, keepCount) {
-      const m = document.getElementById('modal-layer');
-      const itemsHtml = state.inventory.map((it, idx) => {
-        const isSelected = selectedSet.has(idx);
-        return `
-          <div class="item-row r-${it.rarity}" style="margin-bottom:4px; cursor:pointer; border:${isSelected ? '2px solid #4ade80' : '1px solid rgba(255,255,255,0.1)'};" onclick="toggleDeathProtectItem(${idx}, ${keepCount})">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:18px;">${isSelected ? '🛡️' : '⚪'}</span>
-              <span style="font-size:16px;">${it.icon}</span>
-              <div>
-                <div class="item-name">${it.name} <span style="font-size:10px;">[${it.rarity}]</span></div>
-                <div class="item-stats">${getItemStatSummary(it)}</div>
-              </div>
-            </div>
-            <span style="font-size:11px; font-weight:bold; color:${isSelected ? '#4ade80' : '#94a3b8'};">
-              ${isSelected ? '保護する' : '喪失'}
-            </span>
-          </div>
-        `;
-      }).join('');
-
-      m.innerHTML = `
-        <div class="card" style="max-width:440px; width:100%; border:2px solid #38bdf8; text-align:center; padding:18px; max-height:85vh; overflow-y:auto;">
-          <div style="font-size:32px; margin-bottom:4px;">🛡️✨</div>
-          <h2 style="font-size:18px; font-weight:900; color:#fff;">【遺品守護符】の発動</h2>
-          <p style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">
-            神殿の加護により、未保管の戦利品から最大 <b style="color:#38bdf8;">${keepCount}個</b> を選択して地上へ持ち帰ることができます。<br>
-            （現在選択中: <b style="color:#4ade80;">${selectedSet.size} / ${keepCount}個</b>）
-          </p>
-
-          <div style="max-height:220px; overflow-y:auto; margin-bottom:14px; text-align:left;">
-            ${itemsHtml}
-          </div>
-
-          <button class="btn btn-gold" onclick="confirmDeathProtection()">
-            選んだ遺品を抱えて地上へ戻る
-          </button>
-        </div>
-      `;
-
-      window._deathProtectSelected = selectedSet;
-      window._deathProtectKeepCount = keepCount;
-    }
-
-    window.toggleDeathProtectItem = function(idx, keepCount) {
-      initAudio();
-      playSound('click');
-      const set = window._deathProtectSelected;
-      if (set.has(idx)) {
-        set.delete(idx);
-      } else {
-        if (set.size < keepCount) {
-          set.add(idx);
-        } else {
-          addLog(`保護できるアイテムは最大${keepCount}個までです！`, 'info');
-        }
-      }
-      renderDeathProtectContent(set, keepCount);
-    };
-
-    window.confirmDeathProtection = function() {
-      initAudio();
-      playSound('click');
-      document.getElementById('modal-layer').style.display = 'none';
-
-      const set = window._deathProtectSelected || new Set();
-      const kept = [];
-      const lost = [];
-      state.inventory.forEach((it, idx) => {
-        if (set.has(idx)) kept.push(it);
-        else lost.push(it);
-      });
-
-      finalizeDeath(kept, lost);
-    };
 
     function emergencyEscape() {
       initAudio();
@@ -2563,37 +2453,6 @@
         return;
       }
 
-      // If player has Discern Eye talent (Lv >= 1), offer a choice between 2 items!
-      if (state.talents.discernEyeLv > 0) {
-        state.screen = 'event';
-        const itemA = generateItem(state.floor);
-        const itemB = generateItem(state.floor);
-
-        state.currentEvent = {
-          title: '🎁 宝箱の鑑定 (鑑定眼)',
-          icon: '👁️',
-          text: `神殿の加護【鑑定眼】が発動した！宝箱の中に2つの輝きが見える。どちらか1つを選択せよ。`,
-          choices: [
-            {
-              text: `${itemA.icon} ${itemA.name} [${itemA.rarity}] を選ぶ (${getItemStatSummary(itemA)})`,
-              action: () => {
-                giveItemToBag(itemA);
-                endEvent();
-              }
-            },
-            {
-              text: `${itemB.icon} ${itemB.name} [${itemB.rarity}] を選ぶ (${getItemStatSummary(itemB)})`,
-              action: () => {
-                giveItemToBag(itemB);
-                endEvent();
-              }
-            }
-          ]
-        };
-        render();
-        return;
-      }
-
       // Normal Chest with opening dilemma
       state.screen = 'event';
       state.currentEvent = {
@@ -2636,34 +2495,6 @@
               addLog(`宝箱を開放！ 金貨 +${goldBonus}G`, 'gold');
               endEvent();
             }
-          }
-        ]
-      };
-      render();
-    }
-
-    function startBloodAltarEvent() {
-      state.screen = 'event';
-      state.currentEvent = {
-        title: '🩸 血の祭壇',
-        icon: '🩸',
-        text: '暗闇に浮かぶ不気味な邪神の祭壇。新鮮な生血を求めている…',
-        choices: [
-          {
-            text: 'HP30を捧げて攻撃力+8の祝福を得る',
-            action: () => {
-              if (state.hp <= 30) { addLog('体力が足りず血を捧げられない！', 'danger'); return false; }
-              if(!state.equipped.weapon){addLog('加護を受ける武器を装備してください。','danger');return false;}
-              state.hp -= 30;
-              state.equipped.weapon.baseAtk = (state.equipped.weapon.baseAtk || 0) + 8;
-              playSound('crit');
-              addLog('血の対価として攻撃力+8の永続加護を得た！', 'gold');
-              endEvent();
-            }
-          },
-          {
-            text: '祭壇に唾を吐いて立ち去る',
-            action: () => { addLog('祭壇を無視して先を急いだ。', 'normal'); endEvent(); }
           }
         ]
       };
@@ -2732,11 +2563,8 @@
     function startMerchantEvent() {
       state.screen = 'event';
       const item1 = generateItem(state.floor, 'Rare');
-      const item2 = generateItem(state.floor, 'Epic');
-      const discount = state.talents.merchantFriendLv > 0 ? 0.8 : 1.0;
-      const potPrice = Math.round(30 * discount);
-      const epicPrice = Math.round(75 * discount);
-      const rarePrice = Math.round(50 * discount);
+      const potPrice = 30;
+      const rarePrice = 50;
 
       state.currentEvent = {
         title: '🛒 迷宮の放浪商人',
@@ -2761,13 +2589,6 @@
               state.dungeonGold -= rarePrice; giveItemToBag(item1); playSound('click'); endEvent();
             }
           },
-          ...(state.talents.merchantFriendLv > 0 ? [{
-            text: `🤝 友好枠: ${item2.name} [${item2.rarity}] - ${epicPrice}G (${getItemStatSummary(item2)})`,
-            action: () => {
-              if (state.dungeonGold < epicPrice) { addLog('ゴールドが足りない！', 'danger'); return false; }
-              state.dungeonGold -= epicPrice; giveItemToBag(item2); playSound('click'); endEvent();
-            }
-          }] : []),
           {
             text: '買い物をせず立ち去る',
             action: () => { endEvent(); }
@@ -2953,29 +2774,6 @@
       m.innerHTML=`<div class="card" style="max-width:430px;width:100%;border:2px solid #fbbf24;padding:22px;text-align:center;"><div style="font-size:36px;">🏗️</div><div style="font-size:11px;letter-spacing:2px;color:#fbbf24;">FACILITY UPGRADED</div><h2 style="color:#fff;margin:8px;">${cfg.icon} ${cfg.name} Lv.${level}</h2><p style="color:#cbd5e1;font-size:13px;">${unlock}</p><button class="btn btn-gold" style="margin-top:14px;" onclick="closeGenericModal()">確認</button></div>`;
     }
 
-    function upgradeTalent(key) {
-      initAudio();
-      const cost = getTalentCost(key);
-      const cfg = TALENT_CONFIG[key];
-      if (cost === null) {
-        addLog(`【${cfg ? cfg.name : key}】はすでに最大レベルです！`, 'info');
-        render();
-        return;
-      }
-      if (state.vaultGold < cost) {
-        addLog(`ゴールド不足！ 必要: ${cost}G (所持: ${state.vaultGold}G)`, 'danger');
-        render();
-        return;
-      }
-      state.vaultGold -= cost;
-      state.talents[key] = (state.talents[key] || 0) + 1;
-      playSound('heal');
-      addLog(`神殿の永久加護【${cfg ? cfg.name : key}】を Lv.${state.talents[key]} に強化しました！`, 'gold');
-      saveState();
-      updateHeader();
-      render();
-    }
-
     function refineEquippedItem(slot) {
       return refineEquipmentItem(state.equipped[slot], slot);
     }
@@ -3157,7 +2955,7 @@
     }
 
     function selectStartFloor(floor) {
-      if(floor>state.maxUnlockedFloor||floor>MAX_DUNGEON_FLOOR)return;state.selectedStartFloor=floor;saveState();render();
+      if(!canWarpTo(floor))return;state.selectedStartFloor=floor;saveState();render();
     }
 
     function getItemSellPrice(item) {
@@ -3388,7 +3186,7 @@
               ${data.lostItems.map(i => `<div style="color:#94a3b8; font-size:11px;">✕ ${i.icon} ${i.name} [${i.rarity}]</div>`).join('') || '<div style="color:#64748b;">なし</div>'}
             </div>
             ${data.keptItems.length > 0 ? `
-              <div style="color:#4ade80; font-weight:bold; margin-top:4px;">遺品守護符で持ち帰れたアイテム (${data.keptItems.length}個):</div>
+              <div style="color:#4ade80; font-weight:bold; margin-top:4px;">持ち帰れたアイテム (${data.keptItems.length}個):</div>
               <div style="color:#e2e8f0;">${data.keptItems.map(i => `${i.icon} ${i.name}`).join(', ')}</div>
             ` : ''}
           </div>
@@ -3490,6 +3288,8 @@
   <script src="chapter-story.js"></script>
   <script src="chapter-system.js"></script>
   <script src="companion-equipment.js"></script>
+  <script src="js/systems/characterLevel.js"></script>
+  <script src="js/systems/enemyScaling.js"></script>
   <script src="js/systems/inputSafety.js"></script>
   <script src="forge-ui.js"></script>
   <script src="js/ui/homeUI.js"></script>

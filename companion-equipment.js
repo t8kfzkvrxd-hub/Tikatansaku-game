@@ -32,7 +32,7 @@ function characterEquipment(id='player'){
 }
 function companionStats(id='elna'){
  const slots=characterEquipment(id)||{},s={atk:36,def:0,maxHp:210,crit:5,vamp:0,effects:{}};
- const growth=characterProgress(id);s.atk+=(growth.level-1)*2;s.def+=Math.floor((growth.level-1)/2);s.maxHp+=(growth.level-1)*5;
+ const growth=characterGrowthStats(id);s.atk+=growth.atk;s.def+=growth.def;s.maxHp+=growth.hp;
  for(const it of Object.values(slots).filter(Boolean)){
   s.atk+=Number(it.baseAtk)||0;s.def+=Number(it.baseDef)||0;s.maxHp+=Number(it.hp)||0;s.crit+=Number(it.crit)||0;s.vamp+=Number(it.vamp)||0;
   if(it.affix==='critical')s.crit+=8;if(it.affix==='lifesteal')s.vamp+=3;if(it.affix==='max_hp')s.maxHp+=25;
@@ -55,7 +55,7 @@ function companionStats(id='elna'){
 function characterProgress(id){
  state.chapter.characters ||= {};
  const p=state.chapter.characters[id] ||= {};
- p.level=Math.max(1,Math.min(100,Number(p.level)||1));p.exp=Math.max(0,Number(p.exp)||0);
+ p.level=Math.max(1,Math.min(100,Math.floor(Number(p.level)||1)));p.exp=Math.max(0,Math.floor(Number(p.exp)||0));
  p.training ||= {};p.affection ??= 0;p.costumes ||= [];p.selectedCostume ??= null;p.limitBreak ??= 0;
  return p;
 }
@@ -113,12 +113,7 @@ function companionReceiveAttack(enemy,attack){
  addLog(`${enemy.name} → ${name}：${damage}ダメージ${unit.hp<=0?'・戦闘不能':''}`,'danger');
  return true;
 }
-function awardCompanionExperience(enemy){
- const id=state.chapter?.companion;if(!id||!state.chapter.owned[id])return;
- const p=characterProgress(id);p.exp+=enemy.isBoss?50:enemy.isElite?20:10;
- while(p.level<100&&p.exp>=p.level*30){p.exp-=p.level*30;p.level++;addLog(`${CHARACTER_DATA[id]?.name||id}がLv.${p.level}に成長！`,'gold');}
- if(p.level===100)p.exp=0;
-}
+
 function setCharacterEquipment(id,slot,itemId){
  const slots=characterEquipment(id);
  if(state.screen!=='town'||!slots||!EQUIPMENT_SLOTS.some(s=>s.k===slot))return false;
@@ -151,9 +146,8 @@ function openCharacterEquipment(id='player',slot=null,page=0){
  const candidates=slot?state.storage.filter(i=>equipmentSlot(i)===(slot==='accessory2'?'accessory':slot)&&!equipmentOwner(i)):[];
  const pageCount=Math.max(1,Math.ceil(candidates.length/8));page=Math.min(Math.max(0,page),pageCount-1);
  const selection=slot?`<h3>${EQUIPMENT_SLOTS.find(s=>s.k===slot)?.label}の候補（倉庫）</h3>${candidates.slice(page*8,page*8+8).map(i=>`<article class="forge-recipe">${compareEquipmentHtml(slots[slot],i)}<button class="btn btn-gold btn-xs" onclick="setCharacterEquipment('${id}','${slot}','${i.id}');openCharacterEquipment('${id}','${slot}',${page})">${uiEscape(i.name)}を装備</button></article>`).join('')||'<p>候補なし。他のキャラの装備は先に解除してください。</p>'}<div class="forge-actions"><button class="btn btn-sub btn-xs" ${page===0?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page-1})">前へ</button>${page+1}/${pageCount}<button class="btn btn-sub btn-xs" ${page+1===pageCount?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page+1})">次へ</button></div>`:'';
- showChapterModal('👥 キャラ／装備',`<div class="forge-actions">${tabs}</div><p>総能力 ATK ${stats.atk} / DEF ${stats.def} / HP ${stats.maxHp} / 会心 ${stats.crit}%</p>${id!=='player'?'<p>通常探索の主人公とは別装備。エルナの物語戦では基礎能力・炎追撃・会心・スキル威力/CT・ガード回復・回避を反映します。その他の特殊効果は物語戦では適用しません。</p>':''}${rows}${selection}`,`<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
+ showChapterModal('👥 キャラ／装備',`<div class="forge-actions">${tabs}</div>${characterLevelHtml(id)}<p>総能力 ATK ${stats.atk} / DEF ${stats.def} / HP ${stats.maxHp} / 会心 ${stats.crit}%</p>${id!=='player'?'<p>通常探索の主人公とは別装備。エルナの物語戦では基礎能力・炎追撃・会心・スキル威力/CT・ガード回復・回避を反映します。その他の特殊効果は物語戦では適用しません。</p>':''}${rows}${selection}`,`<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
  if(id!=='player'){
-  const p=characterProgress(id);
-  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><b>Lv.${p.level} / EXP ${p.exp}${p.level<100?' / '+p.level*30:' MAX'}</b><p>敵行動前に1回、主人公と同じ種類の行動を取ります（スキルCT中は通常攻撃）。独立HP・DEFで敵の攻撃対象となり、HP0で探索中は戦闘不能。出撃時に全回復。主人公が倒した敵には攻撃しません。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
+  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><p>敵行動前に1回、主人公と同じ種類の行動を取ります（スキルCT中は通常攻撃）。独立HP・DEFで敵の攻撃対象となり、HP0で探索中は戦闘不能。出撃時に全回復。主人公が倒した敵には攻撃しません。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
  }
 }

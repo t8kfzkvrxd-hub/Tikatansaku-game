@@ -37,7 +37,7 @@ window.onload=async()=>{
    delete s.chapter.read[bossFloor];w.onEnemyKilled();check(s.bossFirstKills[bossFloor]&&s.chapter.unlocked[bossFloor]&&s.deepestFloorReached>=bossFloor,'撃破・物語・最高到達 '+bossFloor);
    check(s.maxUnlockedFloor>=Math.min(100,bossFloor+10),'次エリア解放 '+bossFloor);
    if(bossFloor===70){w.nextChapterPage();const page=s.chapter.pending.page;w.saveState();await reload();w=frame.contentWindow;s=w.__gameDebug.state;prepare();check(s.chapter.pending.floor===70&&s.chapter.pending.page===page,'ストーリー途中の実リロード復元');w.resumeChapter();}
-   if(bossFloor<100){w.finishChapterStory();if([10,50].includes(bossFloor)){check(s.screen==='town','節目帰還 '+bossFloor);s.floor=bossFloor+1;w.generateDoorsForFloor();}check(s.floor===bossFloor+1,'ボス後進行 '+bossFloor);}
+   if(bossFloor<100){w.finishChapterStory();if([10,50].includes(bossFloor)){check(s.screen==='town','節目帰還 '+bossFloor+' screen='+s.screen+' resolved='+s.returnResolved+' pending='+JSON.stringify(s.chapter.pending));w.startDungeonRun();}check(s.floor===bossFloor+1,'ボス後進行 '+bossFloor);}
   }
   check(s.chapter.pending.floor===100&&!s.chapter.complete,'100F通常ボス後、章クリアを先取りしない');
   w.finishChapterStory();check(s.chapter.pending.kind==='lastStand','宿敵乱入→エルナ操作戦');

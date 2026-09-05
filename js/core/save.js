@@ -7,7 +7,7 @@
           deepCrystals: state.deepCrystals,
           storage: state.storage,
           equipped: state.equipped,
-          talents: state.talents,
+          characterLevelVersion: 1,
           codex: state.codex,
           bounty: state.bounty,
           preparedItems: state.preparedItems || [],
@@ -45,7 +45,6 @@
           state.deepCrystals = Number(p.deepCrystals) || 0;
           state.storage = p.storage || [];
           state.equipped = p.equipped || { weapon: null, armor: null, accessory: null };
-          state.talents = Object.assign(state.talents, p.talents || {});
           state.codex = Object.assign(state.codex, p.codex || { items: {}, enemies: {}, lore: {} });
           if (p.bounty) state.bounty = Object.assign(state.bounty, p.bounty);
           state.preparedItems = p.preparedItems || [];
@@ -61,7 +60,7 @@
           state.starterPerk = p.starterPerk || null;
           state.rarityProgress = Object.assign(state.rarityProgress, p.rarityProgress || {});
           state.craftProgress = { materials: {}, recipes: {}, crafted: {}, ...(p.craftProgress || {}) };
-          state.maxUnlockedFloor = Math.max(30, Number(p.maxUnlockedFloor) || 30);
+          state.maxUnlockedFloor = Math.max(1, Number(p.maxUnlockedFloor) || 1);
           state.deepestFloorReached = Number(p.deepestFloorReached) || 0;
           state.runRecords = Object.assign(state.runRecords, p.runRecords || {});
           state.selectedStartFloor = [1,...BOSS_FLOORS.map(f=>f+1).filter(f=>f<=MAX_DUNGEON_FLOOR)].includes(Number(p.selectedStartFloor)) ? Number(p.selectedStartFloor) : 1;
@@ -81,6 +80,10 @@
       migrateEquipment();
       let savedChapter=null;try{savedChapter=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')?.chapter;}catch(e){}
       migrateChapter(savedChapter);
+      let savedProgress=null;try{savedProgress=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){}
+      migrateCharacterLevels(savedProgress);
+      state.maxUnlockedFloor=Math.min(MAX_DUNGEON_FLOOR,Math.max(1,state.deepestFloorReached,...Object.keys(state.bossFirstKills).filter(f=>state.bossFirstKills[f]).map(f=>Number(f)+10)));
+      if(!canWarpTo(state.selectedStartFloor))state.selectedStartFloor=1;
     }
 
     function resetGameSave(reloadPage = true) {
@@ -91,6 +94,7 @@
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
       initStarterItems();
       migrateChapter(null);
+      migrateCharacterLevels(null);
       saveState();
 
       if (reloadPage) {
@@ -101,4 +105,3 @@
         render();
       }
     }
-

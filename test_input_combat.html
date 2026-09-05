@@ -5,7 +5,7 @@ window.onload=async()=>{
  try{
  w.closeGenericModal();s.chapter.pending=null;s.chapter.companion=null;
  for(const cursed of [true,false]){
-  s.currentDoors=[];s.screen='door_select';s.floor=2;s.inventory=[];s.talents.discernEyeLv=0;
+  s.currentDoors=[];s.screen='door_select';s.floor=2;s.inventory=[];
   for(let i=0;i<20;i++)w.openChestEvent(cursed);
   if(!cursed){const choice=s.currentEvent.choices[0];for(let i=0;i<20;i++)choice.action();}
   check(s.inventory.length===1,'20 chest calls give one reward '+cursed);await wait(600);
@@ -33,7 +33,7 @@ window.onload=async()=>{
  unit.hp=1;w.companionReceiveAttack(enemy,40);check(unit.hp===0,'Elna incapacitated');const before=enemy.hp;w.companionTurn(enemy);check(enemy.hp===before,'incapacitated cannot attack');
  unit.hp=200;s.currentEnemy=enemy;s.screen='battle';s.lastPlayerAction='defend';w.Math.random=()=>.1;const heroHp=s.hp;w.enemyTurn(true);check(unit.hp<200&&s.hp===heroHp,'enemy turn targets Elna without hurting player');
  check(!w.equipmentEffects().fireDamage,'effects do not leak to player');w.Math.random=random;
- s.hp=10;w.startBloodAltarEvent();s.currentEvent.choices[0].action();check(!s.currentEvent.claimed,'failed choice permits another choice');s.currentEvent.choices[1].action();
+ s.dungeonGold=0;w.startMerchantEvent();s.currentEvent.choices[0].action();check(!s.currentEvent.claimed,'failed choice permits another choice');s.currentEvent.choices.at(-1).action();
  s.chapter.companion=null;s.floor=2;s.hp=100;w.startNormalBattle();s.currentEnemy.hp=0;
  w.onEnemyKilled();const kills=s.runKills,gold=s.dungeonGold;for(let i=0;i<20;i++)w.onEnemyKilled();check(s.runKills===kills&&s.dungeonGold===gold,'kill rewards once');await wait(500);
  s.screen='door_select';s.returnResolved=false;s.inventory=[];s.dungeonGold=100;const vault=s.vaultGold;

@@ -57,8 +57,8 @@
           nudge.className = 'goal-nudge';
         }
       } else {
-        const nextUpgradeCost = (state.talents.hpLv + 1) * 80;
-        nudge.textContent = `🪙 強化まで: あと${Math.max(0, nextUpgradeCost - state.vaultGold)}G`;
+        const growth=characterProgress('player');
+        nudge.textContent = `主人公 Lv.${growth.level}${growth.level>=characterLevelCap()?' MAX':` / 次Lvまで ${Math.max(0,characterExpRequired(growth.level)-growth.exp)}EXP`}`;
         nudge.className = 'goal-nudge';
       }
 
@@ -91,9 +91,9 @@
         three_phase_core: 'HPに応じた三段階変異・行動学習'
         ,history_king:'反復行動を記録し、後半に対策',mirror_warden:'装備能力と構えを一部模倣',forget_librarian:'バフを奪いスキルを封印',boundary_gate:'装甲相と開放相が交互に切り替わる'
       };
-      const shownHp = state.camp.lab >= 3 ? Math.round(boss.hp * 0.85) : boss.hp;
+      const shown = scaledEnemyStats(boss,area,nextBossFloor,'boss',{labLevel:state.camp.lab,greed:state.greedLevel,enemyAtkMult:state.modifiers.enemyAtkMult});
       return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
-        📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shownHp} / 攻撃 ${boss.atk} / ${gimmicks[boss.gimmick]}
+        📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shown.hp} / 攻撃 ${shown.atk} / ${gimmicks[boss.gimmick]}
         <div>次の安全帰還：${getNextSafeFloor(state.floor||state.selectedStartFloor||1)??'なし'}F</div>
         ${state.camp.lab>=5?`<div>🔬 深層危険解析：${area.rule||'敵の予告・状態異常を確認して行動を選ぶ。'} / ${gimmicks[boss.gimmick]}</div>`:''}
         ${state.camp.lab >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
@@ -156,7 +156,7 @@
                 ].map(p => `<button class="btn ${state.starterPerk === p[0] ? 'btn-gold' : 'btn-sub'} btn-xs" onclick="selectStarterPerk('${p[0]}')" title="${p[2]}">${p[1]}</button>`).join('')}
               </div>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center;font-size:10.5px;color:#94a3b8;"><span>開始地点:</span>${[1,...BOSS_FLOORS.map(f=>f+1)].filter(f=>f<=state.maxUnlockedFloor&&f<=MAX_DUNGEON_FLOOR).map(f=>`<button class="btn ${state.selectedStartFloor===f?'btn-gold':'btn-sub'} btn-xs" onclick="selectStartFloor(${f})">B${f}F</button>`).join('')}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center;font-size:10.5px;color:#94a3b8;"><span>開始地点:</span>${unlockedWarpFloors().map(f=>`<button class="btn ${state.selectedStartFloor===f?'btn-gold':'btn-sub'} btn-xs" onclick="selectStartFloor(${f})">B${f}F</button>`).join('')}</div>
 
             <button class="btn btn-gold" style="font-size:16px; padding:14px; width:100%;" ${state.starterPerk ? '' : 'disabled'} onclick="startDungeonRun()">
               ${state.starterPerk ? '🪜 地下迷宮へ潜る (探索開始)' : '支援を選ぶと探索開始できます'}
@@ -262,38 +262,6 @@
             </div>
           </div>
 
-          <!-- Permanent Upgrades (神殿) -->
-          <div id="town-talents" class="card">
-            <div class="card-title">⛩️ 神殿の永久加護 (死亡時も引き継がれる力)</div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              ${Object.keys(TALENT_CONFIG).map(k => {
-                const cfg = TALENT_CONFIG[k];
-                const cost = getTalentCost(k);
-                const curLv = state.talents[k] || 0;
-                const isMax = (cost === null);
-                let effectDesc = '';
-                if (k === 'hpLv') effectDesc = `初期HP +${curLv * 15}`;
-                else if (k === 'atkLv') effectDesc = `初期攻撃力 +${curLv * 3}`;
-                else if (k === 'defLv') effectDesc = `初期防御力 +${curLv * 2}`;
-                else if (k === 'luckLv') effectDesc = `宝箱レア率 +${curLv * 6}%`;
-                else if (k === 'keepItemLv') effectDesc = `死亡時遺品保護: ${curLv}個 (手動選択可)`;
-                else if (k === 'discernEyeLv') effectDesc = curLv > 0 ? '宝箱開封時に2品から選択可能' : 'Lv1で宝箱2択鑑定が解放';
-                else if (k === 'fateRerollLv') effectDesc = curLv > 0 ? '探索中1回部屋の再選択が可能' : 'Lv1で運命再選択が解放';
-
-                return `
-                  <div class="item-row">
-                    <div>
-                      <div style="font-size:12px; font-weight:bold;">${cfg.name} (Lv.${curLv}${cfg.maxLv ? '/' + cfg.maxLv : ''})</div>
-                      <div style="font-size:10.5px; color:#94a3b8;">${effectDesc}</div>
-                    </div>
-                    <button class="btn ${isMax ? 'btn-sub' : 'btn-gold'} btn-xs" ${isMax ? 'disabled' : ''} onclick="upgradeTalent('${k}')">
-                      ${isMax ? '最大強化' : `強化 (${cost}G)`}
-                    </button>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
         `;
       }
 

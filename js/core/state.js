@@ -22,24 +22,12 @@
       storage: [],
       equipped: { weapon: null, armor: null, accessory: null },
       
-      // Permanent Upgrades (神殿)
-      talents: {
-        hpLv: 0,           // 初期HP +15
-        atkLv: 0,          // 初期攻撃力 +3
-        defLv: 0,          // 初期防御力 +2
-        luckLv: 0,         // 宝箱レア率 +6%
-        keepItemLv: 0,     // 死亡時アイテム保護 (Lv1=1個, Lv2=2個)
-        fateRerollLv: 0,   // 部屋再抽選 (1回/探索)
-        discernEyeLv: 0,   // 宝箱鑑定眼 (2択から選択)
-        merchantFriendLv: 0 // 商人枠+1 & 20%割引
-      },
-
       // Pre-expedition preparation
       preparedItems: [],
       preparedBuffs: { chestRareBonus: 0, goldMult: 1.0 },
       expeditionPolicy: 'normal', // 'normal' | 'mining' | 'bounty' | 'excavate'
       bossFirstKills: {}, // { 10: true, 20: true, 30: true }
-      maxUnlockedFloor: 30,
+      maxUnlockedFloor: 1,
       selectedStartFloor: 1,
       deepestFloorReached: 0,
       runRecords: { mostKills:0, highestGreed:0, mostGold:0, bossesDefeated:0 },
@@ -68,7 +56,6 @@
       inventory: [],
       logs: [],
       greedLevel: 0, // 0: none, 1: x1.4, 2: x2.0, 3: x3.0
-      rerollUsed: false,
       playerExposed: false,
       playerAttackBuff: 1.0,
       skillCooldown: 0,
@@ -119,4 +106,3 @@
 
     // Immutable baseline used by the save reset flow and development tests.
     const INITIAL_STATE = JSON.parse(JSON.stringify(state));
-

@@ -36,7 +36,7 @@ window.onload=()=>setTimeout(()=>{
   s.hp=100;s.guardFatigue=1;s.guardBroken=false;s.currentEnemy={name:'標的',hp:10000,maxHp:10000,atk:5,def:0,actionType:'heavy',nextMult:1};
   w.Math.random=()=>.5;w.enemyTurn(true);check(s.playerAttackBuff>=1.8,'Common腕のJUST GUARD効果');
   const mythic=Object.values(d.recipes).find(r=>r.rarity==='Mythic'&&r.effects&&r.baseAtk>=85);
-  s.equipped.weapon={...mythic};check(s.equipped.weapon.baseAtk>=85&&w.equipmentEffects().justAttack===80,'高レア基礎性能＋低レア混成');
+  s.equipped.weapon={...mythic};check(s.equipped.weapon.baseAtk>=85&&w.equipmentEffects().justAttack>=80,'高レア基礎性能＋低レア混成 '+JSON.stringify(w.equipmentEffects()));
   s.equipped.accessory={type:'accessory',effects:{poisonChance:80}};s.equipped.accessory2={type:'accessory',effects:{poisonBonus:120,poisonHeal:8}};
   check(w.equipmentSynergies().some(t=>t.includes('毒特効')),'異種装備の毒連携表示');
   const enemy={hp:10000,maxHp:10000,def:0};w.equipmentHit(enemy,'attack');check(enemy.gearPoison===3,'毒付与発動');

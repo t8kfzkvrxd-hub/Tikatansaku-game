@@ -13,7 +13,7 @@ function lobbyFacilityHtml(id){
  const funds=`<p>地上保管G：${state.vaultGold} / 核：${state.abyssCores} / 結晶：${state.deepCrystals}</p>`;
  if(id==='warehouse')return funds+html('town-vault')+html('sub-panel');
  if(id==='codex'||id==='log')return html('sub-panel');
- if(id==='town-lab')return funds+html(id)+`<button class="btn btn-sub" onclick="openLobbyFacility('codex')">図鑑・素材図鑑</button>`+html('town-talents');
+ if(id==='town-lab')return funds+html(id)+`<button class="btn btn-sub" onclick="openLobbyFacility('codex')">図鑑・素材図鑑</button>`;
  return funds+html(id);
 }
 function openLobbyEquipment(characterId='player'){openCharacterEquipment(characterId);}
