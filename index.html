@@ -873,8 +873,9 @@
     }
   </style>
   <link rel="stylesheet" href="workshop.css">
+  <link rel="stylesheet" href="home.css">
 </head>
-<body>
+<body class="at-home">
   <!-- Low HP Danger Vignette -->
   <div id="danger-vignette"></div>
 
@@ -895,9 +896,10 @@
         </div>
         <div class="goal-nudge" id="ui-goal-nudge">🎯 5F安全帰還まで: あと5階</div>
         <div style="display:flex; gap:4px; align-items:center;">
+          <button class="btn btn-outline btn-xs" onclick="showHomeScreen()">⌂ ホーム</button>
           <details><summary class="btn btn-outline btn-xs">⚙️ 設定・履歴</summary>
           <button class="btn btn-outline btn-xs" onclick="showUpdateNotes(false)">📋 更新履歴</button>
-          <button class="btn btn-outline btn-xs" style="color:#fca5a5;border-color:#7f1d1d;" onclick="showResetSaveConfirmation()">⚠️ 初期化</button></details>
+          <details><summary class="btn btn-outline btn-xs">データ管理</summary><button class="btn btn-outline btn-xs" style="color:#fca5a5;border-color:#7f1d1d;" onclick="showResetSaveConfirmation()">⚠️ 初期化</button></details></details>
           <button id="help-btn" class="btn btn-outline btn-xs" onclick="showTutorialModal()">❓ 遊び方</button>
           <button id="sound-btn" class="btn btn-outline btn-xs" onclick="toggleSound()">🔊 音 ON</button>
         </div>
@@ -2429,7 +2431,7 @@
     function dismissUpdateNotes(markSeen) {
       if (markSeen) localStorage.setItem('lastSeenVersion', GAME_VERSION);
       closeGenericModal();
-      if (!localStorage.getItem('ABYSS_TUTORIAL_SEEN')) checkTutorial();
+      if (!HomeScreen.active && !localStorage.getItem('ABYSS_TUTORIAL_SEEN')) checkTutorial();
     }
 
     function showTutorialModal() {
@@ -3443,10 +3445,7 @@
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      render();
-      if (localStorage.getItem('lastSeenVersion') !== GAME_VERSION) showUpdateNotes(true);
-      else checkTutorial();
+      bootHomeScreen();
     });
 
     window.addEventListener('click', () => {
@@ -3462,5 +3461,6 @@
   <script src="chapter-system.js"></script>
   <script src="companion-equipment.js"></script>
   <script src="forge-ui.js"></script>
+  <script src="js/ui/homeUI.js"></script>
 </body>
 </html>

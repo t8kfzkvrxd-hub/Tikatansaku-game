@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html" style="border:0;width:1280px;height:720px"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow;
+ const key='ABYSS_ROGUE_SAVED_V2';const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS: '+label);document.getElementById('results').textContent=out.join('\n');};
+ const pause=()=>new Promise(r=>setTimeout(r,80));
+ const reload=()=>new Promise(r=>{frame.onload=()=>{w=frame.contentWindow;r();};w.location.reload();});
+ const click=text=>{const b=[...w.document.querySelectorAll('#modal-layer button')].find(b=>b.textContent.includes(text));check(b&&!b.disabled,'操作 '+text);b.click();};
+ if(location.search.includes('preview')){frame.style.width=(new URLSearchParams(location.search).get('width')||1280)+'px';frame.style.height='100vh';document.body.style.margin='0';document.getElementById('results').hidden=true;w.closeGenericModal();return;}
+ try{
+  w.localStorage.removeItem(key);w.localStorage.removeItem('ABYSS_TUTORIAL_SEEN');await reload();
+  check(w.localStorage.getItem(key)===null,'ホーム起動だけでセーブを生成しない');
+  click('確認してゲームを始める');check(w.document.getElementById('modal-layer').style.display==='none','通知確認後はホームに留まる');
+  check(w.document.getElementById('home-continue').disabled&&w.document.getElementById('home-new').classList.contains('home-primary'),'セーブなしは新規が主ボタン');
+  const image=w.document.querySelector('.home-background');await image.decode();check(image.naturalWidth>1000,'元背景PNGを読み込み');
+  check(w.document.querySelectorAll('.home-particles i').length===10&&!w.document.querySelector('#home-screen canvas,#home-screen video'),'粒子10個・動画/Canvasなし');
+  if(w.matchMedia('(prefers-reduced-motion: reduce)').matches)check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','端末のreduced-motion設定を反映');
+  for(const [width,height]of [[1280,720],[375,667],[390,844],[320,480],[667,320]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await pause();
+   const home=w.document.getElementById('home-screen');check(home.scrollWidth<=width+1,width+'×'+height+' 横はみ出しなし');
+   for(const b of w.document.querySelectorAll('.home-button,.home-sub-actions button')){b.scrollIntoView({block:'center'});await pause();const r=b.getBoundingClientRect();check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,width+'×'+height+' メニューへ到達');}
+   if(width<height){const r=image.getBoundingClientRect(),scale=Math.max(r.width/image.naturalWidth,r.height/image.naturalHeight);check(160*scale<width&&620*scale<width,'スマホで両人物の顔位置を保持');}
+  }
+  frame.style.width='1280px';frame.style.height='720px';await pause();
+  w.openHomeSettings();click('背景演出');check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','設定でモーション停止');
+  click('データ管理');check(w.localStorage.getItem(key)===null,'データ管理を開くだけでは変更しない');click('セーブデータ初期化');click('キャンセル');check(w.localStorage.getItem(key)===null,'初期化キャンセル');
+  w.newGameFromHome();check(!w.document.body.classList.contains('at-home')&&w.__gameDebug.state.screen==='town','新規ホーム→ロビー');
+  check(w.document.getElementById('modal-layer').textContent.includes('冒険のはじまり'),'新規チュートリアル接続');w.chooseTutorialMode('skip');w.registerFirstContract();
+  const s=w.__gameDebug.state;s.vaultGold=54321;w.saveState();const saved=w.localStorage.getItem(key);w.showHomeScreen();
+  check(!w.document.getElementById('home-continue').disabled&&w.document.getElementById('home-continue').classList.contains('home-primary'),'セーブありは続きが主ボタン');
+  w.newGameFromHome();check(w.localStorage.getItem(key)===saved,'既存セーブ上書き前に確認');click('キャンセル');check(w.localStorage.getItem(key)===saved,'新規キャンセルで保持');
+  await reload();w.closeGenericModal();check(w.localStorage.getItem(key)===saved,'再起動したホームでセーブ不変');w.continueFromHome();check(w.__gameDebug.state.vaultGold===54321,'続きで既存G復元');
+  w.showHomeScreen();w.localStorage.setItem('HOME_TEST_UNRELATED','keep');w.newGameFromHome();click('完全に初期化する');check(w.__gameDebug.state.vaultGold!==54321,'確認後のみ新規開始');check(w.localStorage.getItem('HOME_TEST_UNRELATED')==='keep','無関係な保存キーを保持');
+  w.closeGenericModal();w.showHomeScreen();w.localStorage.setItem(key,'invalid');await reload();w.closeGenericModal();check(w.localStorage.getItem(key)==='invalid'&&w.document.getElementById('home-continue').disabled,'壊れたデータも無断上書きしない');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>
