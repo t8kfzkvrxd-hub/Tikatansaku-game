@@ -1,0 +1,54 @@
+<!doctype html><meta charset="utf-8"><title>Crafting integration tests</title>
+<iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=()=>setTimeout(()=>{
+ const w=document.querySelector('iframe').contentWindow,out=[];
+ const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS: '+label);};
+ try {
+  let s=w.__gameDebug.state;w.closeGenericModal();w.setTimeout=()=>0;w.confirm=()=>true;
+  w.localStorage.setItem('ABYSS_ROGUE_SAVED_V2',JSON.stringify({vaultGold:456,camp:{blacksmith:2,vaultSize:20},storage:[],equipped:s.equipped}));
+  w.loadState();check(s.vaultGold===456&&s.craftProgress.materials&&s.craftProgress.crafted,'旧セーブ補完・既存G維持');
+  s.floor=1;s.hp=100;s.screen='battle';w.startNormalBattle();const source=s.currentEnemy.materialSource;
+  const before=s.inventory.length;w.onEnemyKilled();check(s.inventory.slice(before).some(i=>i.type==='material'),'通常敵撃破で素材が落ちる');
+  s.inventory=[];s.floor=1;w.startNormalBattle();const mob={...s.currentEnemy};w.startNormalBattle(true);const elite={...s.currentEnemy};
+  let normalHigh=0,eliteHigh=0;
+  for(let i=0;i<100;i++) {const r=(i+.5)/100;normalHigh+=!w.dropMonsterMaterials(mob,()=>r)[0].endsWith('_common');eliteHigh+=!w.dropMonsterMaterials(elite,()=>r)[0].endsWith('_common');s.inventory=[];}
+  check(eliteHigh>normalHigh,'EliteのRare以上素材率が高い');
+  for(const area of w.__gameDebug.AREAS){s.floor=area.max;w.startBossBattle(area.boss);const keys=w.dropMonsterMaterials(s.currentEnemy,()=>.5);check(keys[0]===area.boss.materialSource+'_legendary','B'+area.max+'固有素材確定');}
+  mob.materialSource=w.__gameDebug.AREAS[0].enemies[0].materialSource;
+  s.inventory=[];w.dropMonsterMaterials(mob,()=>.9);w.dropMonsterMaterials(mob,()=>.9);
+  s.storage=[];s.camp.vaultSize=200;s.dungeonGold=0;s.floor=1;w.returnToTown(true);w.closeGenericModal();
+  check(s.storage.length===2&&w.getStorageRows(s.storage,'material')[0].count===2,'帰還して素材が倉庫へスタック表示');
+  s.screen='town';s.vaultGold=100000;s.abyssCores=30;s.camp.blacksmith=2;
+  w.openCrafting('create');w.document.querySelector('button[onclick="craftEquipment(\'iron_sword\',document.getElementById(\'parent-iron_sword\')?.value)"]').click();
+  check(s.storage.some(i=>i.key==='iron_sword'),'鍛冶屋UIから基本武器作成');w.closeGenericModal();
+  const iron=s.storage.find(i=>i.key==='iron_sword');w.equipItem(s.storage.indexOf(iron),true);
+  for(let i=0;i<11;i++)w.refineEquippedItem('weapon');check(s.equipped.weapon.refineCount===10,'+10強化上限');
+  const startingGold=s.vaultGold;
+  check(!w.craftEquipment('forge_1_normal',iron.id)&&s.vaultGold===startingGold,'素材不足時に作成不可・消費なし');
+  s.floor=1;w.startNormalBattle();const first={...s.currentEnemy,materialSource:w.__gameDebug.AREAS[0].enemies[0].materialSource};
+  w.dropMonsterMaterials(first,()=>.9);s.storage.push(...s.inventory);s.inventory=[];s.screen='town';
+  check(w.craftEquipment('forge_1_normal',iron.id),'装備中+10武器を派生');w.closeGenericModal();
+  check(!s.equipped.weapon&&s.storage.some(i=>i.key==='forge_1_normal'&&i.refineCount===0)&&!s.storage.some(i=>i.id===iron.id),'親武器消費・新武器+0を倉庫へ保管');
+  delete s.craftProgress.recipes.forge_1_hidden;
+  check(!w.recipeVisible('forge_1_hidden'),'隠し派生は未発見時非表示');
+  w.dropMonsterMaterials(elite,()=>0);check(w.recipeVisible('forge_1_hidden'),'希少素材発見で隠し派生解放');
+  s.storage.push(...s.inventory);s.inventory=[];w.saveState();
+  const saved=JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'));
+  s.craftProgress={materials:{},recipes:{},crafted:{}};s.storage=[];w.loadState();
+  check(w.recipeVisible('forge_1_hidden')&&s.craftProgress.crafted.forge_1_normal===1&&s.storage.length===saved.storage.length,'素材・発見・派生進行を保存復元');
+  s.screen='town';w.openCrafting('tree');check(w.document.getElementById('modal-layer').textContent.includes('鉄の剣 +10 →'),'武器ツリーの親子表示');w.closeGenericModal();
+  s.activeTab='codex';w.renderSubPanel();check(w.document.body.textContent.includes('素材図鑑'),'素材図鑑UI');
+  const parent={id:'awaken-parent',key:'forge_1_upper',name:'狂牙剣(+10)',type:'weapon',rarity:'Epic',refineCount:10};s.storage.push(parent);
+  s.floor=10;w.startBossBattle(w.__gameDebug.AREAS[0].boss);w.dropMonsterMaterials(s.currentEnemy,()=>.5);w.dropMonsterMaterials(s.currentEnemy,()=>.5);s.storage.push(...s.inventory);s.inventory=[];s.screen='town';
+  const cores=s.abyssCores;check(w.craftEquipment('forge_1_awaken',parent.id)&&s.abyssCores===cores-3&&!s.storage.some(i=>i.id===parent.id),'覚醒で親武器・ボス素材・深淵の核を消費');w.closeGenericModal();
+  const capacity=s.camp.vaultSize;s.camp.vaultSize=s.storage.length;const goldBefore=s.vaultGold;check(!w.craftEquipment('iron_sword')&&s.vaultGold===goldBefore,'倉庫満杯で無消費・作成停止');s.camp.vaultSize=capacity;
+  s.screen='battle';s.floor=1;s.hp=1000;s.equipped.weapon={key:'test',name:'試験武器',type:'weapon',baseAtk:20,archetype:'sword',craftEffect:'elite_hunter'};s.mystery.eggHatched=false;s.equipped.armor=null;s.equipped.accessory=null;
+  w.Math.random=()=>.5;
+  const hit=(isElite)=>{s.currentEnemy={name:'標的',hp:10000,maxHp:10000,atk:1,def:0,isElite,actionType:'normal'};s.playerAttackBuff=1;s.guaranteedCrit=false;w.playerCombatAction('attack');return 10000-s.currentEnemy.hp;};
+  check(hit(true)>hit(false)*2,'Rare条件付き特性が戦闘で発動');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+},300);
+</script>

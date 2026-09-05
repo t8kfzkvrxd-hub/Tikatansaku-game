@@ -144,6 +144,51 @@ window.addEventListener('load', () => setTimeout(() => {
     w.loadState();
     check(game.state.mystery.eggHatched && game.state.mystery.crownAwakened && game.state.mystery.keyOwned, '神秘進行を保存・復元できる');
 
+    game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 1000000; game.state.deepCrystals = 100;
+    for (const type of ['blacksmith','shop','tavern','lab']) {
+      game.state.camp[type] = 1;
+      while (game.state.camp[type] < 5) {
+        const levelBefore = game.state.camp[type];
+        const goldBefore = game.state.vaultGold;
+        const crystalsBefore = game.state.deepCrystals;
+        const expectedGold = w.getFacilityUpgradeCost(type);
+        const expectedCrystals = w.getFacilityCrystalCost(type);
+        check(w.performFacilityUpgrade(type), `${type} Lv${levelBefore}→${levelBefore + 1}を購入できる`);
+        check(game.state.camp[type] === levelBefore + 1 && game.state.vaultGold === goldBefore - expectedGold && game.state.deepCrystals === crystalsBefore - expectedCrystals, `${type}の表示価格・消費・レベル遷移が一致`);
+        w.closeGenericModal();
+      }
+    }
+    game.state.camp.vaultLevel = 1; game.state.camp.vaultSize = 20;
+    for (let expectedLevel = 2; expectedLevel <= 3; expectedLevel++) {
+      const sizeBefore = game.state.camp.vaultSize;
+      check(w.performFacilityUpgrade('vault'), `倉庫Lv${expectedLevel}へ増築できる`);
+      check(game.state.camp.vaultLevel === expectedLevel && game.state.camp.vaultSize === sizeBefore + 10, '倉庫レベルと容量が正確に連動');
+      w.closeGenericModal();
+    }
+    w.saveState();
+    const savedFacilities = JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')).camp;
+    check(savedFacilities.blacksmith === 5 && savedFacilities.shop === 5 && savedFacilities.tavern === 5 && savedFacilities.lab === 5 && savedFacilities.vaultLevel === 3, '施設レベルをセーブデータへ保存');
+
+    const areaCases = [[30,2],[31,3],[40,3],[41,4],[50,4],[51,5],[60,5]];
+    for (const [floor, areaIndex] of areaCases) {
+      game.state.floor = floor;
+      check(w.getCurrentArea() === game.AREAS[areaIndex], `B${floor}Fのエリア境界が正しい`);
+    }
+    check([10,20,30,40,50,60].every(w.isBossFloor) && !w.isBossFloor(31), 'ボス階判定が10〜60Fで正しい');
+    check([5,15,25,35,45,55].every(w.isSafeReturnFloor) && !w.isSafeReturnFloor(60), '安全帰還階判定が正しい');
+    for (const floor of [40,50,60]) {
+      game.state.floor = floor;
+      const boss = w.getCurrentArea().boss;
+      w.startBossBattle(boss);
+      check(game.state.currentEnemy.gimmick === boss.gimmick, `B${floor}Fボスの固有ギミックを開始`);
+    }
+    game.state.equipped.accessory = {key:'mother_tree_heart',turnRegen:2}; game.state.hp = 20; game.state.maxHp = 100;
+    game.state.mystery.eggHatched = false; game.state.statusEffects = {poison:0,bleed:0,bind:0,paralysis:0,weakened:0};
+    game.state.currentEnemy = {name:'訓練体',icon:'◇',hp:100,maxHp:100,atk:1,def:0,actionType:'normal',nextMult:1,isBoss:false};
+    w.setTimeout = () => 0; w.playerCombatAction('attack');
+    check(game.state.hp === 22, '母樹の心核の行動時回復が発動');
+    w.setTimeout = nativeTimeout;
+
     w.localStorage.setItem('lastSeenVersion', game.GAME_VERSION);
     check(w.localStorage.getItem('lastSeenVersion') === game.GAME_VERSION, '更新通知の確認バージョンを保存できる');
     w.localStorage.setItem('UNRELATED_TEST_KEY', 'keep-me');

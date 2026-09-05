@@ -904,7 +904,7 @@
         <span>⚔️ 攻 <b id="ui-atk">12</b></span>
         <span>🛡️ 防 <b id="ui-def">3</b></span>
         <span>💥 会心 <b id="ui-crit">5%</b></span>
-        <span>🪙 金 <b id="ui-gold" style="color:var(--gold);">0</b></span>
+        <span><span id="ui-gold-label">🏦 地上保管G</span> <b id="ui-gold" style="color:var(--gold);">0</b></span>
         <span>🔮 核 <b id="ui-core" style="color:var(--core);">0</b></span>
         <span id="ui-greed-badge" class="greed-badge" style="display:none;">🔥 GREED ×1.0</span>
       </div>
@@ -1149,9 +1149,17 @@
     /* ==========================================================================
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
-    const MAX_DUNGEON_FLOOR = 30;
-    const GAME_VERSION = '0.5.1';
+    const MAX_DUNGEON_FLOOR = 60;
+    const BOSS_FLOORS = [10, 20, 30, 40, 50, 60];
+    const SAFE_RETURN_FLOORS = [5, 15, 25, 35, 45, 55];
+    const GAME_VERSION = '0.7.0';
     const UPDATE_NOTES = [
+      '全敵に固有素材を追加。狩猟・帰還・作成・+10派生・ボス覚醒のループを実装',
+      '鍛冶屋の作成／武器ツリー、隠し派生、素材図鑑を追加。既存セーブ対応',
+      '敵の完成装備ドロップを低確率化。通常敵・EliteからMythic/Abyssal装備は出現しません',
+      '酒場報酬に上限を設定し、装備鍛錬を+10までに制限',
+      'Epic以下一括売却・高レア確認売却・倉庫カテゴリと素材スタック表示を修正',
+      'エリートの階層倍率重複を抑制し、ボス固有攻略の重要性を維持',
       '戦闘UIに通常攻撃・強攻撃・防御・武器固有スキルを接続',
       '出撃前支援と煙玉による通常戦闘からの逃走を実装',
       '研究所・防御強化・商人の友・酒場依頼を正式実装',
@@ -1164,7 +1172,12 @@
       'Legendary出現率を大幅に調整し、神話級Mythic・深淵級Abyssalを追加',
       '超希少装備のPity・初発見記録・専用演出を追加',
       '6段階の共通ドロップテーブルとレアリティ別図鑑を実装',
-      '確認画面付きの安全なセーブデータ初期化機能を追加'
+      '確認画面付きの安全なセーブデータ初期化機能を追加',
+      '地下60Fまで拡張し、地下森林・水没都市・肉壁迷宮を追加',
+      '40F・50F・60Fボスと専用ギミック・Boss Uniqueを追加',
+      '施設強化を共通設定化し、Lv5機能・不足理由・解放演出を実装',
+      '深層イベント・状態異常・深層結晶・探索記録を追加',
+      '帰還・ボス・エリア・研究所表示を60F対応へ統一'
     ];
 
     // Underground Lore & Mysteries (地下世界の真相)
@@ -1174,7 +1187,13 @@
       { id: 'lore_3', title: '放棄された研究日誌 04', text: '「被験体EX-03の細胞分裂が止まらない。深淵の核から放射される紫光は、人間を神に変えるのか、それとも肉塊に変えるのか？」' },
       { id: 'lore_4', title: '死んだ冒険者の手帳', text: '「5階ごとの帰還転移門だけが唯一の救いだ。欲をかいて進んだ奴は、一人残らずこの迷宮の餌食になった。」' },
       { id: 'lore_5', title: '血文字の警告', text: '「怪しい商人の売る呪われた仮面には手を出すな。金は手に入るが、その代償にお前の魂が蝕まれる。」' },
-      { id: 'lore_6', title: '深淵の予言書', text: '「地下1000階の玉座にて、深淵の王が目覚めを待つ。全ての迷宮は彼を育てるための巨大な胃袋である。」' }
+      { id: 'lore_6', title: '深淵の予言書', text: '「地下1000階の玉座にて、深淵の王が目覚めを待つ。全ての迷宮は彼を育てるための巨大な胃袋である。」' },
+      { id:'lore_7',title:'植生実験記録31',text:'「地上種を紫光へ適応させた。だが森は今や研究員の思考を菌糸経由で読んでいる。」' },
+      { id:'lore_8',title:'母樹の年輪',text:'「森は自然発生ではない。放棄研究施設の排熱と変異胞子が育てた巨大な封印だ。」' },
+      { id:'lore_9',title:'水没都市の避難碑',text:'「王ネレウスは水を止めず、下層から来る鼓動を冷やすため都市を沈めた。」' },
+      { id:'lore_10',title:'最後の潜水士記録',text:'「水底のさらに下で壁が呼吸している。都市は沈んだのではなく、呑まれた。」' },
+      { id:'lore_11',title:'肉壁の神経記憶',text:'「研究所、森、都市は一つの生体器官へ接続されている。これは迷宮ではない。」' },
+      { id:'lore_12',title:'1000階への脈動',text:'「60階の核は心臓ですらない。遠い王座へ血を送る、無数の小さな節の一つだ。」' }
     ];
 
     // Synergies (装備シナジー)
@@ -1204,7 +1223,7 @@
         id: 'syn_titan',
         name: '🗿 剛力金剛',
         setTag: 'titan',
-        desc: '2部位: 防御力+8、HP+40。3部位: 防御時に被ダメ30%軽減 ＆ 確定反射カウンター！',
+        desc: '2部位: 防御力+8、HP+40。3部位: パリィ率55%＆防御力/HP強化（JUST GUARD時は確定反撃）',
         reqLevels: [2, 3]
       }
     ];
@@ -1319,6 +1338,9 @@
         isCurse: true, baseAtk: 20, baseDef: 10, hp: 60,
         bossUnique: true, desc: '【30Fボス秘宝】深淵の変異因子。HP50%以下で変異暴走し攻撃力2.5倍！'
       },
+      mother_tree_heart: { key:'mother_tree_heart',name:'母樹の心核',icon:'🌱',type:'accessory',rarity:'Legendary',bossUnique:true,hp:55,baseDef:8,turnRegen:2,desc:'【40Fボス秘宝】戦闘中、行動ごとにHP2回復' },
+      nereus_crown: { key:'nereus_crown',name:'水底王の冠',icon:'🌊',type:'accessory',rarity:'Legendary',bossUnique:true,hp:45,crit:10,lowHpGuard:true,desc:'【50Fボス秘宝】HP35%以下で通常ガード軽減+10%' },
+      living_core_relic: { key:'living_core_relic',name:'胎動核の遺物',icon:'🫀',type:'accessory',rarity:'Legendary',bossUnique:true,baseAtk:12,hp:40,pulsePower:true,desc:'【60Fボス秘宝】異なる行動を続けると攻撃力が探索中上昇' },
 
       // Build Synergies (Thunder static, Blood covenant)
       thunder_ring: {
@@ -1399,6 +1421,33 @@
         ],
         elite: { name: '被験体第9号', icon: '🧬', hp: 280, atk: 54, def: 16, isElite: true, trait: 'guard_breaker', traitName: '装甲破砕触手', hint: '防御時にガードゲージを大きく破壊する' },
         boss: { name: '【失敗作EX-03】', icon: '👾', hp: 950, atk: 58, def: 22, gimmick: 'mutate_form' }
+      },
+      {
+        id:4, name:'地下森林 (31〜40F)', tag:'地下森林', min:31, max:40,
+        enemies:[
+          {name:'寄生樹人',icon:'🌿',hp:180,atk:54,def:17,trait:'regen_cell',traitName:'樹液再生',hint:'2ターンごとに再生する'},
+          {name:'深淵胞子',icon:'🍄',hp:145,atk:59,def:12,trait:'spore_poison',traitName:'増殖胞子毒',hint:'毒が重なる前に倒せ'},
+          {name:'巨大根蜘蛛',icon:'🕷️',hp:165,atk:62,def:15,trait:'skill_bind',traitName:'根糸拘束',hint:'被弾するとスキルCDが延長'}
+        ], elite:{name:'古森の捕食王',icon:'🌳',hp:390,atk:68,def:22,isElite:true,trait:'ancient_growth',traitName:'古森成長',hint:'毎ターン攻撃と防御が成長'},
+        boss:{name:'【深根の母樹】',icon:'🌲',hp:1350,atk:68,def:25,gimmick:'mother_tree'}
+      },
+      {
+        id:5, name:'水没都市 (41〜50F)', tag:'水没都市', min:41, max:50,
+        enemies:[
+          {name:'水没騎士',icon:'🌊',hp:220,atk:70,def:30,trait:'counter_heavy',traitName:'潮流受け流し',hint:'強攻撃をJUST GUARDしてくる'},
+          {name:'深海クラゲ',icon:'🪼',hp:175,atk:73,def:16,trait:'paralysis',traitName:'麻痺触手',hint:'次ターンのスキルを封印'},
+          {name:'沈殿ワニ',icon:'🐊',hp:240,atk:75,def:20,trait:'low_hp_frenzy',traitName:'瀕死暴走',hint:'低HPで攻撃力が急上昇'}
+        ], elite:{name:'沈没船の船長',icon:'⚓',hp:480,atk:82,def:28,isElite:true,trait:'captain_phase',traitName:'亡霊船団',hint:'HP低下で連撃と防御強化'},
+        boss:{name:'【水底王ネレウス】',icon:'👑',hp:1800,atk:82,def:32,gimmick:'rising_water'}
+      },
+      {
+        id:6, name:'肉壁迷宮 (51〜60F)', tag:'肉壁迷宮', min:51, max:60,
+        enemies:[
+          {name:'脈動肉塊',icon:'🫀',hp:280,atk:83,def:24,trait:'death_pulse',traitName:'治癒脈動',hint:'長期戦で周囲の肉壁から回復'},
+          {name:'観測眼球',icon:'👁️',hp:230,atk:88,def:22,trait:'copy_buff',traitName:'模倣視線',hint:'プレイヤーの攻撃バフをコピー'},
+          {name:'血走獣',icon:'🩸',hp:265,atk:90,def:20,trait:'low_hp_frenzy',traitName:'血走暴走',hint:'HPが減るほど危険'}
+        ], elite:{name:'神経節の守護者',icon:'🧠',hp:600,atk:98,def:30,isElite:true,trait:'action_memory',traitName:'行動記憶',hint:'同じ行動を連続すると即座に反撃'},
+        boss:{name:'【深淵胎動核】',icon:'❤️',hp:2600,atk:100,def:36,gimmick:'three_phase_core'}
       }
     ];
 
@@ -1419,6 +1468,43 @@
       merchantFriendLv: { name: '商人の友', icon: '🤝', desc: '商人枠+1 & 20%割引', baseCost: 140, costPerLv: 120, maxLv: 1 }
     };
 
+    const FACILITY_CONFIG = {
+      blacksmith: { name:'鍛冶屋', icon:'🔨', maxLevel:5, baseCost:120, growth:1.65, unlocks:['初期設備','装備鍛錬','特性付与','特性再抽選','高レア能力強化'] },
+      shop: { name:'道具屋', icon:'🏪', maxLevel:5, baseCost:120, growth:1.60, unlocks:['基本商品','傷薬・護符','持込上限拡張','煙玉・解毒薬','上級補給品'] },
+      tavern: { name:'冒険者の酒場', icon:'🍺', maxLevel:5, baseCost:120, growth:1.62, unlocks:['噂話','討伐依頼','救助NPC加入','複数依頼','特殊賞金首'] },
+      lab: { name:'深淵研究所', icon:'🔬', maxLevel:5, baseCost:120, growth:1.68, unlocks:['敵図鑑詳細','次ボス解析','ボスHP-15%','部屋傾向予測','深層危険解析'] },
+      vault: { name:'倉庫', icon:'📦', maxLevel:20, baseCost:160, growth:1.32, unlocks:[] }
+    };
+
+    function getFacilityUpgradeCost(type) {
+      const cfg = FACILITY_CONFIG[type];
+      const level = type === 'vault' ? state.camp.vaultLevel : Number(state.camp[type]);
+      if (!cfg || level >= cfg.maxLevel) return null;
+      return Math.round(cfg.baseCost * Math.pow(cfg.growth, Math.max(0, level - 1)) / 10) * 10;
+    }
+
+    function getFacilityCrystalCost(type) {
+      const level = type === 'vault' ? state.camp.vaultLevel : Number(state.camp[type]);
+      return type !== 'vault' && level >= 4 ? 3 : (type !== 'vault' && level >= 3 ? 1 : 0);
+    }
+
+    function getFacilityButtonText(type) {
+      const cost = getFacilityUpgradeCost(type);
+      if (cost === null) return 'MAX';
+      const crystals = getFacilityCrystalCost(type);
+      if (state.vaultGold < cost) return `あと${cost - state.vaultGold}G必要`;
+      if (state.deepCrystals < crystals) return `深層結晶あと${crystals - state.deepCrystals}`;
+      return `強化 ${cost}G${crystals ? ` +結晶${crystals}` : ''}`;
+    }
+
+    function isFacilityUpgradeDisabled(type) {
+      const cost = getFacilityUpgradeCost(type);
+      return cost === null || state.vaultGold < cost || state.deepCrystals < getFacilityCrystalCost(type);
+    }
+
+    function isBossFloor(floor) { return BOSS_FLOORS.includes(Number(floor)); }
+    function isSafeReturnFloor(floor) { return SAFE_RETURN_FLOORS.includes(Number(floor)); }
+
     function getTalentUpgradeCost(key) {
       const cfg = TALENT_CONFIG[key];
       if (!cfg) return 100;
@@ -1434,10 +1520,7 @@
       return 75 + ((item && item.refineCount) || 0) * 40;
     }
 
-    function getVaultUpgradeCost(level) {
-      const lv = level || 1;
-      return 100 + lv * 60; // Lv1->160G, Lv2->220G, Lv3->280G, Lv4->340G, etc.
-    }
+    function getVaultUpgradeCost() { return getFacilityUpgradeCost('vault'); }
 
     let state = {
       screen: 'town', // 'town' | 'door_select' | 'battle' | 'event'
@@ -1459,6 +1542,7 @@
 
       vaultGold: 0,
       abyssCores: 0, // ボス素材「深淵の核」
+      deepCrystals: 0,
       storage: [],
       equipped: { weapon: null, armor: null, accessory: null },
       
@@ -1479,6 +1563,10 @@
       preparedBuffs: { chestRareBonus: 0, goldMult: 1.0 },
       expeditionPolicy: 'normal', // 'normal' | 'mining' | 'bounty' | 'excavate'
       bossFirstKills: {}, // { 10: true, 20: true, 30: true }
+      maxUnlockedFloor: 30,
+      selectedStartFloor: 1,
+      deepestFloorReached: 0,
+      runRecords: { mostKills:0, highestGreed:0, mostGold:0, bossesDefeated:0 },
 
       // Mystery progression
       mystery: {
@@ -1518,6 +1606,10 @@
       guardBroken: false,
       playerPoisonTurns: 0,
       playerPoisonDmg: 0,
+      statusEffects: { poison:0, bleed:0, paralysis:0, bind:0, weakened:0 },
+      waterLevel: 0,
+      bossAdds: 0,
+      lastPlayerAction: null,
       
       // Dungeon Run Modifiers (リスク・リターン契約)
       modifiers: {
@@ -1545,7 +1637,8 @@
         rewardGold: 150,
         completed: false
       },
-      rarityProgress: { mythicPity: 0, abyssalPity: 0, mythicTotalDrops: 0, abyssalTotalDrops: 0, upperDropHistory: [] }
+      rarityProgress: { mythicPity: 0, abyssalPity: 0, mythicTotalDrops: 0, abyssalTotalDrops: 0, upperDropHistory: [] },
+      craftProgress: { materials: {}, recipes: {}, crafted: {} }
     };
 
     // Immutable baseline used by the save reset flow and development tests.
@@ -1557,6 +1650,7 @@
           camp: state.camp,
           vaultGold: state.vaultGold,
           abyssCores: state.abyssCores,
+          deepCrystals: state.deepCrystals,
           storage: state.storage,
           equipped: state.equipped,
           talents: state.talents,
@@ -1569,6 +1663,11 @@
           ,mystery: state.mystery
           ,starterPerk: state.starterPerk
           ,rarityProgress: state.rarityProgress
+          ,craftProgress: state.craftProgress
+          ,maxUnlockedFloor: state.maxUnlockedFloor
+          ,deepestFloorReached: state.deepestFloorReached
+          ,runRecords: state.runRecords
+          ,selectedStartFloor: state.selectedStartFloor
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(d));
       } catch (e) {}
@@ -1588,6 +1687,7 @@
 
           state.vaultGold = p.vaultGold || 0;
           state.abyssCores = p.abyssCores || 0;
+          state.deepCrystals = Number(p.deepCrystals) || 0;
           state.storage = p.storage || [];
           state.equipped = p.equipped || { weapon: null, armor: null, accessory: null };
           state.talents = Object.assign(state.talents, p.talents || {});
@@ -1605,6 +1705,18 @@
           }
           state.starterPerk = p.starterPerk || null;
           state.rarityProgress = Object.assign(state.rarityProgress, p.rarityProgress || {});
+          state.craftProgress = { materials: {}, recipes: {}, crafted: {}, ...(p.craftProgress || {}) };
+          state.maxUnlockedFloor = Math.max(30, Number(p.maxUnlockedFloor) || 30);
+          state.deepestFloorReached = Number(p.deepestFloorReached) || 0;
+          state.runRecords = Object.assign(state.runRecords, p.runRecords || {});
+          state.selectedStartFloor = [1,31,41,51].includes(Number(p.selectedStartFloor)) ? Number(p.selectedStartFloor) : 1;
+
+          // Normalize legacy saves so string/null levels cannot break buttons or MAX checks.
+          ['blacksmith','shop','tavern','lab'].forEach(key => {
+            state.camp[key] = Math.max(1, Math.min(FACILITY_CONFIG[key].maxLevel, Number(state.camp[key]) || 1));
+          });
+          state.camp.vaultLevel = Math.max(1, Math.min(FACILITY_CONFIG.vault.maxLevel, Number(state.camp.vaultLevel) || 1));
+          state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
         } else {
           initStarterItems();
         }
@@ -1830,7 +1942,7 @@
       initAudio();
       playSound('click');
       const stats = getPlayerStats();
-      state.floor = 1;
+      state.floor = Math.min(state.selectedStartFloor || 1, state.maxUnlockedFloor || 30);
       state.hp = stats.maxHp;
       state.maxHp = stats.maxHp;
       state.dungeonGold = 0;
@@ -1845,6 +1957,8 @@
       state.usedVoidCloak = false;
       state.thunderCharges = 0;
       state.abyssGrowth = 0;
+      state.statusEffects = { poison:0, bleed:0, paralysis:0, bind:0, weakened:0 };
+      state.lastPlayerAction = null;
       state.guardFatigue = 0;
       state.guardStamina = 100;
       state.guardBroken = false;
@@ -2103,8 +2217,8 @@
     function sellOverflowItem(idx) {
       initAudio();
       const item = state.inventory[idx];
-      if (!item || item.locked) return;
-      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？')) return;
+      if (!canSellStoredItem(item)) return;
+      if (['Legendary','Mythic','Abyssal'].includes(item.rarity) && !window.confirm(`【${item.name}】を売却しますか？ この操作は取り消せません。`)) return;
       const price = getItemSellPrice(item);
       state.dungeonGold += price;
       state.inventory.splice(idx, 1);
@@ -2115,8 +2229,8 @@
 
     function sellOverflowStorageItem(idx) {
       const item = state.storage[idx];
-      if (!item || item.locked) return;
-      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？')) return;
+      if (!canSellStoredItem(item)) return;
+      if (['Legendary','Mythic','Abyssal'].includes(item.rarity) && !window.confirm(`【${item.name}】を売却しますか？ この操作は取り消せません。`)) return;
       const price = getItemSellPrice(item);
       state.storage.splice(idx, 1);
       state.vaultGold += price;
@@ -2129,7 +2243,7 @@
       initAudio();
       let earned = 0;
       for (let i = state.inventory.length - 1; i >= 0; i--) {
-        if (state.inventory[i].rarity === 'Common') {
+        if (state.inventory[i].rarity === 'Common' && canSellStoredItem(state.inventory[i])) {
           earned += getItemSellPrice(state.inventory[i]);
           state.inventory.splice(i, 1);
         }
@@ -2328,14 +2442,15 @@
        ROOM GENERATION (毎階の2〜3個の選択肢)
        ========================================================================== */
     function getCurrentArea() {
-      if (state.floor <= 10) return AREAS[0];
-      if (state.floor <= 20) return AREAS[1];
-      return AREAS[2];
+      return AREAS.find(area => state.floor >= area.min && state.floor <= area.max) || AREAS[AREAS.length - 1];
     }
 
     function generateDoorsForFloor() {
-      const isBossFloor = (state.floor === 10 || state.floor === 20 || state.floor === 30);
-      const isSafePortalFloor = (state.floor % 5 === 0 && !isBossFloor);
+      const bossFloor = isBossFloor(state.floor);
+      const isSafePortalFloor = isSafeReturnFloor(state.floor);
+      state.deepestFloorReached = Math.max(state.deepestFloorReached || 0, state.floor);
+      state.runRecords.highestGreed = Math.max(state.runRecords.highestGreed || 0, state.greedLevel || 0);
+      saveState();
 
       // Turn effects check (Curse damage)
       const stats = getPlayerStats();
@@ -2354,7 +2469,7 @@
       }
 
       // Check Boss Encounter
-      if (isBossFloor) {
+      if (bossFloor) {
         state.screen = 'battle';
         startBossBattle(getCurrentArea().boss);
         return;
@@ -2436,6 +2551,15 @@
           risk: 'mid', riskText: '謎'
         }
       ];
+      if (state.floor >= 31) {
+        const deepSigns = {
+          4:['🍄 喋る菌糸','菌糸ネットワークが取引か警告を持ちかける。'],
+          5:['🫧 空気の残る部屋','沈没都市に残された空気室と宝物庫。'],
+          6:['🫀 脈打つ祭壇','肉壁があなた自身の声で選択を迫る。']
+        };
+        const deep = deepSigns[getCurrentArea().id];
+        doorPool.push({type:'deep_area_event',icon:deep[0].slice(0,2),sign:deep[0],desc:deep[1],risk:'mid',riskText:'深層固有'});
+      }
 
       // Research forecasts and GREED alter actual room composition.
       if (state.camp.lab >= 4) {
@@ -2546,6 +2670,8 @@
         startMysteryEvent();
       } else if (door.type === 'sealed_vault') {
         openSealedVault();
+      } else if (door.type === 'deep_area_event') {
+        startDeepAreaEvent();
       }
     }
 
@@ -2565,19 +2691,20 @@
       const area = getCurrentArea();
       let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
       
-      const scale = 1 + (state.floor * 0.08);
-      const eliteScale = isElite ? 1.5 : 1.0;
+      const scale = isElite ? 1 + (state.floor - area.min) * 0.015 : 1 + (state.floor * 0.08);
+      const eliteScale = 1.0;
       const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
       state.currentEnemy = {
         name: enemyTemplate.name,
         icon: enemyTemplate.icon,
         maxHp: Math.round(enemyTemplate.hp * scale * eliteScale),
         hp: Math.round(enemyTemplate.hp * scale * eliteScale),
-        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0) * greedAtkMult * (isElite ? 1.3 : 1.0)),
+        atk: Math.round(enemyTemplate.atk * scale * (state.modifiers.enemyAtkMult || 1.0) * greedAtkMult * (isElite ? 0.8 : 1.0)),
         def: Math.round(enemyTemplate.def * scale),
         isBoss: false,
         isElite: isElite,
         trait: enemyTemplate.trait,
+        materialSource: enemyTemplate.materialSource,
         traitName: enemyTemplate.traitName,
         hint: enemyTemplate.hint,
         turnCount: 0
@@ -2607,10 +2734,13 @@
         def: bossTemplate.def,
         isBoss: true,
         gimmick: bossTemplate.gimmick
+        ,materialSource: bossTemplate.materialSource
       };
       state.bossTurnCount = 0;
-      state.bossBarrier = (bossTemplate.gimmick === 'shield_barrier');
+      state.bossBarrier = ['shield_barrier','mother_tree'].includes(bossTemplate.gimmick);
       state.bossMutated = false;
+      state.bossAdds = bossTemplate.gimmick === 'mother_tree' ? 2 : 0;
+      state.waterLevel = 0;
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
@@ -2664,6 +2794,19 @@
           e.actionType = state.bossMutated ? 'critical_smash' : 'normal';
           e.pendingAction = state.bossMutated ? '☣️【変異暴走連撃】苛烈な連続打撃！' : '触手なぎ払い';
           e.nextMult = state.bossMutated ? 1.6 : 1.1;
+        } else if (e.gimmick === 'mother_tree') {
+          e.actionType = state.bossTurnCount % 3 === 0 ? 'heal_roots' : 'heavy';
+          e.pendingAction = state.bossAdds > 0 ? `🌿 根${state.bossAdds}体が本体を防護中` : (e.actionType === 'heal_roots' ? '🌱 根の再生を開始' : '⚠️ 巨根なぎ払い');
+          e.nextMult = e.actionType === 'heavy' ? 1.45 : .8;
+        } else if (e.gimmick === 'rising_water') {
+          e.actionType = state.waterLevel >= 70 ? 'critical_smash' : 'normal';
+          e.pendingAction = `🌊 水位 ${state.waterLevel}% ${state.waterLevel >= 70 ? '溺圧大波！排水推奨' : '上昇中'}`;
+          e.nextMult = 1 + state.waterLevel / 100;
+        } else if (e.gimmick === 'three_phase_core') {
+          const ratio=e.hp/e.maxHp; e.phase=ratio>.66?1:(ratio>.33?2:3);
+          e.actionType=e.phase===1?'normal':(e.phase===2?'heavy':'critical_smash');
+          e.pendingAction=`❤️ Phase ${e.phase}：${e.phase===1?'外殻収縮':e.phase===2?'脈動連撃':'暴走・全器官攻撃'}`;
+          e.nextMult=[0,1.0,1.45,1.85][e.phase];
         }
       } else {
         const r = Math.random();
@@ -2744,6 +2887,17 @@
       }
     }
 
+    function processPlayerStatuses() {
+      let damage=0;
+      if (state.statusEffects.poison>0) { damage+=3+state.statusEffects.poison; state.statusEffects.poison--; }
+      if (state.statusEffects.bleed>0) { damage+=Math.max(3,Math.round(state.maxHp*.04)); state.statusEffects.bleed--; }
+      if (state.statusEffects.bind>0) state.statusEffects.bind--;
+      if (state.statusEffects.paralysis>0) state.statusEffects.paralysis--;
+      if (state.statusEffects.weakened>0) state.statusEffects.weakened--;
+      if (damage>0) { state.hp-=damage;addLog(`状態異常によりHP-${damage}`,'danger');spawnFloatingFx(`-${damage}`,'damage'); }
+      return damage;
+    }
+
     function playerCombatAction(action) {
       if (!state.currentEnemy || state.hp <= 0) return;
       initAudio();
@@ -2752,6 +2906,24 @@
       const enemy = state.currentEnemy;
       const weapon = state.equipped.weapon;
       const archetype = weapon?.archetype || 'sword';
+      if (weapon?.craftEffect === 'elite_hunter' && enemy.isElite) stats.atk = Math.round(stats.atk * 2.5);
+      if (weapon?.craftEffect === 'desperate' && state.hp <= stats.maxHp * 0.35) stats.atk = Math.round(stats.atk * 2);
+      if (action === 'skill' && state.statusEffects.paralysis > 0) {
+        state.statusEffects.paralysis--;
+        addLog('⚡ 麻痺により武器スキルを使用できない！','danger'); render(); return;
+      }
+      const statusDamage = processPlayerStatuses();
+      if (statusDamage && state.hp <= 0) { returnToTown(false); return; }
+      if (enemy.trait === 'action_memory' && state.lastPlayerAction === action) {
+        const memoryDmg=Math.max(8,Math.round(enemy.atk*.45)); state.hp-=memoryDmg;
+        addLog(`🧠 同じ行動「${action}」を読まれ、${memoryDmg}の記憶反撃！`,'danger');
+        if(state.hp<=0){returnToTown(false);return;}
+      }
+      if (state.equipped.accessory?.key === 'living_core_relic' && state.lastPlayerAction && state.lastPlayerAction !== action) {
+        state.abyssGrowth=(state.abyssGrowth||0)+1;
+        addLog('🫀 異なる行動の連鎖で攻撃力+1','gold');
+      }
+      state.lastPlayerAction=action;
 
       // The hatchling's regeneration is a real once-per-player-turn effect.
       const hasDragon = state.mystery.eggHatched || state.storage.some(i => i.key === 'dragon_hatchling') || state.inventory.some(i => i.key === 'dragon_hatchling');
@@ -2760,6 +2932,13 @@
         state.hp += regen;
         addLog(`🐉 深淵の幼竜の加護でHPが${regen}回復した。`, 'heal');
         spawnFloatingFx(`🐉 +${regen}HP`, 'heal');
+      }
+      const heartRegen = state.equipped.accessory?.turnRegen || 0;
+      if (heartRegen > 0 && state.hp < stats.maxHp) {
+        const regen = Math.min(heartRegen, stats.maxHp - state.hp);
+        state.hp += regen;
+        addLog(`🌱 母樹の心核がHPを${regen}回復した。`, 'heal');
+        spawnFloatingFx(`🌱 +${regen}HP`, 'heal');
       }
 
       if (action === 'attack' || action === 'heavy' || action === 'skill') {
@@ -3015,6 +3194,15 @@
           addLog('ルーン障壁を破壊した！古代の守護者が隙を晒した！', 'gold');
           setTimeout(() => enemyTurn(false), 300);
         }
+      } else if (action === 'attack_roots' && enemy.gimmick === 'mother_tree' && state.bossAdds > 0) {
+        state.bossAdds--;
+        state.bossBarrier = state.bossAdds > 0;
+        addLog(`🌿 守護根を破壊！ 残り${state.bossAdds}体`,'gold');
+        setTimeout(()=>enemyTurn(false),250);
+      } else if (action === 'drain_water' && enemy.gimmick === 'rising_water') {
+        state.waterLevel=Math.max(0,state.waterLevel-35);
+        addLog(`🚰 排水機構を作動！ 水位を${state.waterLevel}%へ低下`,'gold');
+        setTimeout(()=>enemyTurn(false),250);
       }
 
       updateHeader();
@@ -3025,6 +3213,12 @@
       if (!state.currentEnemy || state.hp <= 0) return;
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
+      if (enemy.gimmick === 'rising_water') state.waterLevel=Math.min(100,state.waterLevel+15);
+      if (enemy.gimmick === 'mother_tree' && enemy.actionType === 'heal_roots') {
+        const heal=Math.min(55,enemy.maxHp-enemy.hp); enemy.hp+=heal;
+        if (state.bossAdds===0) {state.bossAdds=1;state.bossBarrier=true;}
+        addLog(`🌱 母樹がHP${heal}回復し、守護根を再生した！`,'danger');
+      }
       if (enemy.stunned) {
         enemy.stunned = false;
         addLog(`💫 ${enemy.name}はスタンして行動できない！`, 'gold');
@@ -3048,6 +3242,7 @@
         const fatigueReductions = [0, 0.55, 0.45, 0.30];
         let reduction = isJustGuard ? 0.80 : (fatigueReductions[Math.min(3, state.guardFatigue)] || 0);
         if (state.equipped.armor?.key === 'guardian_aegis') reduction = Math.min(0.85, reduction + 0.15);
+        if (state.equipped.accessory?.lowHpGuard && state.hp <= stats.maxHp * 0.35) reduction = Math.min(0.90, reduction + 0.10);
         dmg = Math.max(Math.ceil(enemyAtk * (isJustGuard ? 0.10 : 0.18)), Math.round(baseDmg * (1 - reduction)));
       } else if (state.guardBroken) {
         dmg = Math.max(1, Math.round(baseDmg * 1.35));
@@ -3083,6 +3278,13 @@
         state.playerPoisonDmg = enemy.isElite ? 6 : 3;
         addLog(`☣️ ${enemy.name}の呪毒を受けた！`, 'danger');
       }
+      if (enemy.trait === 'spore_poison') { state.statusEffects.poison=Math.min(6,state.statusEffects.poison+2); addLog('☠️ 胞子毒が蓄積した！','danger'); }
+      if (enemy.trait === 'skill_bind') { state.skillCooldown+=1; state.statusEffects.bind=2; addLog('🕸️ 拘束されスキルCD+1','danger'); }
+      if (enemy.trait === 'paralysis') { state.statusEffects.paralysis=1; addLog('⚡ 麻痺：次のスキル使用不可','danger'); }
+      if (enemy.trait === 'ancient_growth') { enemy.atk=Math.round(enemy.atk*1.07);enemy.def+=2;addLog('🌳 捕食王が成長した','danger'); }
+      if (enemy.trait === 'low_hp_frenzy' && enemy.hp<enemy.maxHp*.4) enemy.atk=Math.round(enemy.atk*1.08);
+      if (enemy.trait === 'captain_phase' && enemy.hp<enemy.maxHp*.5) { enemy.nextMult=(enemy.nextMult||1)*1.25;enemy.def+=1; }
+      if (enemy.trait === 'copy_buff' && state.playerAttackBuff>1) { enemy.atk=Math.round(enemy.atk*state.playerAttackBuff);addLog('👁️ 攻撃バフを模倣された！','danger'); }
       if (enemy.trait === 'rage_stack') {
         enemy.atk = Math.round(enemy.atk * 1.08);
         addLog(`🔥 ${enemy.name}の攻撃力が上昇した！`, 'danger');
@@ -3163,6 +3365,7 @@
     function onEnemyKilled() {
       const enemy = state.currentEnemy;
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
+      dropMonsterMaterials(enemy);
       state.runKills++;
       if (state.equipped.weapon?.key === 'abyssal_devourer') {
         const growth = state.greedLevel > 0 ? 2 + state.greedLevel : 2;
@@ -3186,6 +3389,9 @@
       earnedGold = Math.round(earnedGold * (state.modifiers.goldMult || 1));
       if (state.expeditionPolicy === 'bounty') earnedGold = Math.round(earnedGold * 1.5);
       state.dungeonGold += earnedGold;
+      state.runRecords.mostGold=Math.max(state.runRecords.mostGold||0,state.dungeonGold);
+      state.runRecords.mostKills=Math.max(state.runRecords.mostKills||0,state.runKills);
+      if(state.floor>=31&&Math.random()<0.12){state.deepCrystals++;addLog('🔷 深層結晶を発見！','gold');}
 
       spawnFloatingFx(`💀 討伐！ +${earnedGold}G`, 'gold');
       addLog(`討伐成功！ ${enemy.name} を撃破！ 金貨 +${earnedGold}G`, 'gold');
@@ -3207,6 +3413,12 @@
           } else if (state.floor === 30) {
             sigItem = { ...UNIQUE_ITEMS.mutagen_core, id: 'boss30_' + Date.now() };
             extraCores = 3;
+          } else if (state.floor === 40) {
+            sigItem = { ...UNIQUE_ITEMS.mother_tree_heart, id:'boss40_'+Date.now() }; extraCores=3;
+          } else if (state.floor === 50) {
+            sigItem = { ...UNIQUE_ITEMS.nereus_crown, id:'boss50_'+Date.now() }; extraCores=4;
+          } else if (state.floor === 60) {
+            sigItem = { ...UNIQUE_ITEMS.living_core_relic, id:'boss60_'+Date.now() }; extraCores=5;
           } else {
             sigItem = generateItem(state.floor, 'Legendary');
           }
@@ -3216,12 +3428,12 @@
           playSound('legendary');
           spawnFloatingFx(`👑 ボス初討伐！ 固有秘宝GET！`, 'crit');
           addLog(`【初回撃破達成】守護ボスの固有秘宝【${sigItem.name}】と深淵の核×${extraCores}を獲得！`, 'gold');
+          state.runRecords.bossesDefeated=Object.keys(state.bossFirstKills).length;
         } else {
           // Repeat bosses use the centralized table (Epic floor, Legendary ~7%).
           state.abyssCores += 1;
-          const bossDrop = generateItem(state.floor, null, 'boss_repeat');
-          giveItemToBag(bossDrop);
-          addLog(`ボス周回撃破！ 【${bossDrop.name}】[${bossDrop.rarity}] と深淵の核を獲得！`, 'gold');
+          if (Math.random() < 0.10) giveItemToBag(generateItem(state.floor, null, 'boss_repeat'));
+          addLog('ボス周回撃破！ 固有素材と深淵の核を獲得！', 'gold');
         }
 
         // Check Broken Crown awakening
@@ -3243,14 +3455,16 @@
           }
         });
 
-        // 30F Boss Clear Ceremony
-        if (state.floor === 30) {
-          setTimeout(() => showLayer1ClearModal(), 800);
+        if ([30,40,50,60].includes(state.floor)) {
+          const clearedFloor=state.floor;
+          state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,Math.min(60,clearedFloor+10));
+          saveState();
+          setTimeout(() => showDepthMilestoneModal(clearedFloor), 800);
           return;
         }
-      } else if (enemy.isElite || Math.random() < (0.45 - (state.expeditionPolicy === 'mining' ? 0.15 : 0))) {
+      } else if (Math.random() < (enemy.isElite ? 0.08 : 0.03)) {
         // Elite or standard drop
-        const item = generateItem(state.floor, null, enemy.isElite ? 'elite' : 'normal');
+        const item = generateItem(state.floor, enemy.isElite ? (Math.random()<0.3?'Epic':'Rare') : (Math.random()<0.2?'Rare':'Common'), 'monster');
         giveItemToBag(item);
       }
 
@@ -3324,6 +3538,20 @@
       `;
     }
 
+    function showDepthMilestoneModal(floor) {
+      const final=floor===MAX_DUNGEON_FLOOR;
+      const titles={30:'深淵第一層 突破',40:'地下森林 踏破',50:'水没都市 踏破',60:'深淵第二層 踏破'};
+      const next={30:'31F 地下森林への階段が開いた。',40:'41F 水没都市への道が解禁。',50:'51F 肉壁迷宮が脈動を始めた。',60:'さらに下へ続く脈動階段が存在する。しかし今は封印されている……'};
+      const m=document.getElementById('modal-layer');m.style.display='flex';m.className='legendary-modal';
+      m.innerHTML=`<div class="card" style="max-width:480px;width:100%;border:2px solid ${final?'#f43f5e':'#fbbf24'};padding:24px;text-align:center;"><div style="font-size:52px;">${final?'❤️🌌':'🏆✨'}</div><h1 style="color:#fff;font-size:23px;">${titles[floor]}</h1><p style="color:#cbd5e1;margin:12px;">${next[floor]}</p><div style="font-size:11px;color:#94a3b8;">最高到達 B${state.deepestFloorReached}F / 現在実装済み最深部 B${MAX_DUNGEON_FLOOR}F</div><button class="btn btn-gold" style="margin-top:14px;" onclick="continueAfterMilestone(${floor})">${final?'戦利品を持って地上へ帰還':'新たな深層へ進む'}</button></div>`;
+    }
+
+    function continueAfterMilestone(floor) {
+      closeGenericModal();state.currentEnemy=null;
+      if(floor===MAX_DUNGEON_FLOOR){returnToTown(true);return;}
+      state.floor=floor+1;generateDoorsForFloor();
+    }
+
     function closeLayer1ClearModal() {
       initAudio();
       playSound('escape');
@@ -3349,8 +3577,8 @@
         return 'Epic';
       }
 
-      let abyssal = floor < 11 ? 0 : (floor < 21 ? 0.0002 : 0.0006);
-      let mythic = floor < 11 ? 0.0015 : (floor < 21 ? 0.0040 : 0.0050);
+      let abyssal = floor < 11 ? 0 : (floor < 21 ? 0.0002 : (floor < 51 ? 0.0006 : 0.0008));
+      let mythic = floor < 11 ? 0.0015 : (floor < 21 ? 0.0040 : (floor < 31 ? 0.0050 : 0.0055));
       let legendary = 0.006 + (floor >= 21 ? 0.002 : (floor >= 11 ? 0.001 : 0));
       abyssal += Math.min(0.00015, luck * 0.000001) + greed * 0.00004;
       mythic += Math.min(0.0010, luck * 0.00001) + greed * 0.00012;
@@ -3372,7 +3600,7 @@
       if (source === 'elite') return r < abyssal + mythic + legendary + 0.28 ? 'Epic' : 'Rare';
       if (source === 'sealed_vault' || source === 'cursed_chest') return 'Epic';
 
-      const epic = 0.075 + Math.min(0.13, luck * 0.0010) + greed * 0.018;
+      const epic = 0.075 + Math.min(0.13, luck * 0.0010) + greed * 0.018 + (floor>=31?Math.min(.04,Math.floor((floor-21)/10)*.01):0);
       const rare = 0.27 + Math.min(0.24, luck * 0.0020) + greed * 0.035;
       if (r < abyssal + mythic + legendary + epic) return 'Epic';
       if (r < abyssal + mythic + legendary + epic + rare) return 'Rare';
@@ -4191,6 +4419,22 @@
       render();
     }
 
+    function startDeepAreaEvent() {
+      const areaId = getCurrentArea().id;
+      const variants = {
+        4:{title:'🍄 喋る菌糸',icon:'🍄',text:'菌糸は研究施設が地上生物を地下へ移植した記憶を囁く。蜜を飲むか、胞子を採取するか？'},
+        5:{title:'🫧 水没都市の空気室',icon:'🌊',text:'住民が水位上昇から逃げた記録と、まだ乾いた宝箱が残されている。'},
+        6:{title:'👁️ 記憶を読む眼',icon:'👁️',text:'眼球は「迷宮そのものが1000階の王を育てる胎盤だ」と、あなたの声で告げる。'}
+      };
+      const ev = variants[areaId];
+      state.screen='event';
+      state.currentEvent={title:ev.title,icon:ev.icon,text:ev.text,choices:[
+        {text:'危険を承知で深層結晶を採取する',action:()=>{const gain=Math.random()<.25?2:1;state.deepCrystals+=gain;state.hp=Math.max(1,state.hp-Math.round(state.maxHp*.12));addLog(`🔷 深層結晶+${gain} / HPを代償にした`,'gold');endEvent();}},
+        {text:'安全な恩恵を受ける',action:()=>{const heal=Math.round(state.maxHp*(.12+Math.random()*.08));state.hp=Math.min(state.maxHp,state.hp+heal);addLog(`深層の残響からHP${heal}を回復した`,'heal');endEvent();}},
+        {text:'記録だけ持ち帰る',action:()=>{discoverLore();state.dungeonGold+=40+state.floor*2;addLog('深層記録と金貨を回収した','gold');endEvent();}}
+      ]}; render();
+    }
+
     function endEvent() {
       state.screen = 'door_select';
       state.floor++;
@@ -4201,55 +4445,40 @@
        TOWN & CAMP GROWTH (拠点の成長)
        ========================================================================== */
     function upgradeCampFacility(fac) {
-      initAudio();
-      const maxLevels = { blacksmith: 3, shop: 3, lab: 4, tavern: 3 };
-      if (maxLevels[fac] && state.camp[fac] >= maxLevels[fac]) {
-        addLog('この施設は最大レベルです。', 'info'); render(); return;
-      }
-      let cost;
-      if (fac === 'vault') {
-        cost = getVaultUpgradeCost(state.camp.vaultLevel);
-      } else {
-        cost = (state.camp[fac] || 1) * 120;
-      }
-
-      if (state.vaultGold < cost) {
-        addLog(`ゴールドが足りません！ 必要: ${cost}G (所持: ${state.vaultGold}G)`, 'danger');
-        render();
-        return;
-      }
-
-      state.vaultGold -= cost;
-      if (fac === 'vault') {
-        state.camp.vaultLevel = (state.camp.vaultLevel || 1) + 1;
-        state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
-        playSound('heal');
-        addLog(`📦 倉庫を拡張！ 容量が ${state.camp.vaultSize} 枠 (Lv.${state.camp.vaultLevel}) に増加！`, 'gold');
-      } else {
-        state.camp[fac] = (state.camp[fac] || 1) + 1;
-        playSound('heal');
-        const facNames = { blacksmith: '鍛冶屋', shop: '道具屋', lab: '深淵研究所', tavern: '冒険者酒場' };
-        addLog(`【${facNames[fac] || fac}】をレベルアップ！ 現在 Lv.${state.camp[fac]}`, 'gold');
-      }
-      saveState();
-      updateHeader();
-      render();
+      performFacilityUpgrade(fac);
     }
 
     function upgradeVault() {
+      performFacilityUpgrade('vault');
+    }
+
+    function performFacilityUpgrade(type) {
       initAudio();
-      const cost = getVaultUpgradeCost(state.camp.vaultLevel);
-      if (state.vaultGold < cost) {
-        addLog(`ゴールドが足りません！ 必要: ${cost}G`, 'danger');
-        render();
-        return;
+      const cfg = FACILITY_CONFIG[type];
+      const cost = getFacilityUpgradeCost(type);
+      const crystalCost = getFacilityCrystalCost(type);
+      if (!cfg || cost === null) { addLog('この施設はMAXです。','info'); render(); return false; }
+      if (state.vaultGold < cost || state.deepCrystals < crystalCost) {
+        addLog(`強化資源不足：必要 ${cost}G${crystalCost ? ` / 深層結晶${crystalCost}` : ''}（地上保管G ${state.vaultGold}）`, 'danger');
+        render(); return false;
       }
       state.vaultGold -= cost;
-      state.camp.vaultLevel += 1;
-      state.camp.vaultSize += 10;
+      state.deepCrystals -= crystalCost;
+      if (type === 'vault') { state.camp.vaultLevel += 1; state.camp.vaultSize += 10; }
+      else state.camp[type] += 1;
+      const newLevel = type === 'vault' ? state.camp.vaultLevel : state.camp[type];
       playSound('heal');
-      addLog(`📦 倉庫を増築！ Lv.${state.camp.vaultLevel} / ${state.camp.vaultSize}枠`, 'gold');
-      saveState(); render();
+      addLog(`${cfg.icon} ${cfg.name}をLv.${newLevel}へ強化！`, 'gold');
+      saveState(); updateHeader(); render();
+      showFacilityUpgradeModal(type, newLevel);
+      return true;
+    }
+
+    function showFacilityUpgradeModal(type, level) {
+      const cfg = FACILITY_CONFIG[type];
+      const unlock = type === 'vault' ? `倉庫容量が${state.camp.vaultSize}枠になりました！` : `${cfg.unlocks[level - 1]}が解放されました！`;
+      const m = document.getElementById('modal-layer'); m.style.display='flex'; m.className='legendary-modal';
+      m.innerHTML=`<div class="card" style="max-width:430px;width:100%;border:2px solid #fbbf24;padding:22px;text-align:center;"><div style="font-size:36px;">🏗️</div><div style="font-size:11px;letter-spacing:2px;color:#fbbf24;">FACILITY UPGRADED</div><h2 style="color:#fff;margin:8px;">${cfg.icon} ${cfg.name} Lv.${level}</h2><p style="color:#cbd5e1;font-size:13px;">${unlock}</p><button class="btn btn-gold" style="margin-top:14px;" onclick="closeGenericModal()">確認</button></div>`;
     }
 
     function upgradeTalent(key) {
@@ -4284,13 +4513,14 @@
         return;
       }
       const cost = getRefineCost(item);
+      if ((Number(item.refineCount) || 0) >= 10) { addLog('装備強化は+10でMAXです。', 'info'); render(); return; }
       if (state.vaultGold < cost) {
         addLog(`ゴールドが不足しています！ 必要: ${cost}G (所持: ${state.vaultGold}G)`, 'danger');
         render();
         return;
       }
       state.vaultGold -= cost;
-      item.refineCount = (item.refineCount || 0) + 1;
+      item.refineCount = (Number(item.refineCount) || 0) + 1;
       if (slot === 'weapon') {
         item.baseAtk = (item.baseAtk || 0) + 3;
         item.name = item.name.replace(/\(\+\d+\)/, '') + `(+${item.refineCount})`;
@@ -4354,6 +4584,22 @@
       saveState(); closeGenericModal(); render();
     }
 
+    function rerollEquipmentAffix(slot) {
+      const item=state.equipped[slot]; if(!item||!item.affix||state.camp.blacksmith<4)return;
+      if(state.vaultGold<120||state.deepCrystals<1){addLog('再抽選には120Gと深層結晶1が必要','danger');render();return;}
+      const pool=EQUIPMENT_AFFIXES[slot].filter(a=>a.key!==item.affix);const next=pool[Math.floor(Math.random()*pool.length)];
+      state.vaultGold-=120;state.deepCrystals--;item.affix=next.key;item.affixName=next.name;item.desc=`${item.desc.split(' 【')[0]} 【${next.name}: ${next.desc}】`;
+      addLog(`🎲 特性を【${next.name}】へ再抽選した`,'gold');saveState();render();
+    }
+
+    function enhanceHighRarity(slot) {
+      const item=state.equipped[slot];if(!item||!['Mythic','Abyssal'].includes(item.rarity)||state.camp.blacksmith<5)return;
+      if(item.highEnhanced){addLog('この高位装備は強化済み','info');return;}
+      if(state.vaultGold<400||state.deepCrystals<3){addLog('高位強化には400Gと深層結晶3が必要','danger');render();return;}
+      state.vaultGold-=400;state.deepCrystals-=3;item.highEnhanced=true;if(item.baseAtk)item.baseAtk+=6;if(item.baseDef)item.baseDef+=5;if(item.hp)item.hp+=20;
+      item.desc+=' 【高位共鳴強化済み】';addLog(`💠 ${item.name}の固有能力が共鳴した`,'gold');saveState();render();
+    }
+
     function closeGenericModal() {
       document.getElementById('modal-layer').style.display = 'none';
     }
@@ -4369,8 +4615,9 @@
         }
         state.preparedItems = state.preparedItems || [];
         const currentPots = state.preparedItems.filter(i => i.type === 'potion').length;
-        if (currentPots >= 3) {
-          addLog('出撃持込の傷薬は最大3個までです！', 'danger');
+        const carryLimit = state.camp.shop >= 3 ? 5 : 3;
+        if (currentPots >= carryLimit) {
+          addLog(`出撃持込の補給品は最大${carryLimit}個までです！`, 'danger');
           render();
           return;
         }
@@ -4382,11 +4629,11 @@
           type: 'potion',
           heal: 40,
           rarity: 'Common',
-          desc: '持参したHP40回復薬 (探索持込)'
+          healPercent:10, desc: 'HP40 + 最大HP10%回復 (探索持込)'
         });
         playSound('click');
         spawnFloatingFx('🧪 傷薬を出撃準備！', 'info');
-        addLog(`探索用の特製傷薬を購入！出撃準備完了 (持込: ${currentPots + 1}/3個)`, 'gold');
+        addLog(`探索用の特製傷薬を購入！出撃準備完了 (持込: ${currentPots + 1}/${carryLimit}個)`, 'gold');
       } else if (type === 'charm') {
         const cost = 45;
         if (state.vaultGold < cost) {
@@ -4405,6 +4652,10 @@
         playSound('gold');
         spawnFloatingFx('🍀 幸運護符 出撃準備！', 'gold');
         addLog(`幸運の護符を購入！次の探索で宝箱レア率 +${state.preparedBuffs.chestRareBonus}%`, 'gold');
+      } else if (type === 'smoke' || type === 'antidote' || type === 'greater') {
+        const defs={smoke:{cost:60,item:{name:'携帯煙玉',icon:'💨',type:'escape_item',rarity:'Rare',desc:'通常戦闘から即時離脱'}},antidote:{cost:40,item:{name:'万能解毒薬',icon:'💊',type:'potion',heal:10,cureAll:true,rarity:'Rare',desc:'状態異常を全解除しHP10回復'}},greater:{cost:90,item:{name:'上級傷薬',icon:'🧴',type:'potion',heal:0,healPercent:30,rarity:'Epic',desc:'最大HP30%回復'}}};
+        const def=defs[type]; if(state.vaultGold<def.cost){addLog(`ゴールド不足！ 必要:${def.cost}G`,'danger');render();return;}
+        state.vaultGold-=def.cost;state.preparedItems.push({...def.item,id:`prep_${type}_${Date.now()}_${Math.random()}`});addLog(`${def.item.name}を出撃準備へ追加`,'gold');
       }
       saveState();
       updateHeader();
@@ -4426,6 +4677,10 @@
       render();
     }
 
+    function selectStartFloor(floor) {
+      if(floor>state.maxUnlockedFloor)return;state.selectedStartFloor=floor;saveState();render();
+    }
+
     function getItemSellPrice(item) {
       if (!item) return 0;
       const basePrices = { Common: 15, Rare: 45, Epic: 120, Legendary: 320, Mythic: 1200, Abyssal: 5000 };
@@ -4445,16 +4700,37 @@
       }
     }
 
+    function canSellStoredItem(item) {
+      return !!item && !item.locked && !Object.values(state.equipped).some(e => e && (e === item || (e.id && e.id === item.id)));
+    }
+
+    let storageCategory = 'all';
+    function setStorageCategory(category) { storageCategory = category; renderSubPanel(); }
+    function getStorageRows(list, filter = 'all') {
+      const rows = [];
+      list.forEach((it, idx) => {
+        const category = ['weapon','armor','accessory','material'].includes(it.type) ? it.type : ['potion','escape_item','consumable'].includes(it.type) ? 'consumable' : 'other';
+        if (filter !== 'all' && category !== filter) return;
+        const existing = it.type === 'material' && rows.find(r => r.it.type === 'material' && (r.it.key || r.it.name) === (it.key || it.name) && !!r.it.locked === !!it.locked);
+        if (existing) existing.count++;
+        else rows.push({it, idx, count:1});
+      });
+      return rows;
+    }
+    function getTavernReward() {
+      return Math.round(Math.max(0, Math.min(1000, Number(state.bounty?.rewardGold) || 150)) * (state.expeditionPolicy === 'bounty' ? 1.5 : 1));
+    }
+
     function sellItemFromStorage(index) {
       initAudio();
       const item = state.storage[index];
       if (!item) return;
-      if (item.locked) {
+      if (!canSellStoredItem(item)) {
         addLog('🔒 ロックされているアイテムは売却できません！先にロックを解除してください。', 'danger');
         render();
         return;
       }
-      if (item.rarity === 'Abyssal' && !window.confirm('本当に深淵級装備を売却しますか？ この操作は取り消せません。')) return;
+      if (['Legendary','Mythic','Abyssal'].includes(item.rarity) && !window.confirm(`【${item.name}】を売却しますか？ この操作は取り消せません。`)) return;
       const price = getItemSellPrice(item);
       state.vaultGold += price;
       state.storage.splice(index, 1);
@@ -4468,13 +4744,13 @@
 
     function bulkSellStorage(maxRarity = 'Common') {
       initAudio();
-      const allowedRarities = maxRarity === 'Common' ? ['Common'] : ['Common', 'Rare'];
+      const allowedRarities = {Common:['Common'],Rare:['Common','Rare'],Epic:['Common','Rare','Epic']}[maxRarity] || [];
       let soldCount = 0;
       let totalEarned = 0;
 
       for (let i = state.storage.length - 1; i >= 0; i--) {
         const item = state.storage[i];
-        if (allowedRarities.includes(item.rarity) && !item.locked && item.type !== 'relic') {
+        if (allowedRarities.includes(item.rarity) && canSellStoredItem(item)) {
           const price = getItemSellPrice(item);
           totalEarned += price;
           soldCount++;
@@ -4526,15 +4802,15 @@
     function claimTavernBounty() {
       initAudio();
       if (state.camp.tavern < 2 || !state.bounty || !state.bounty.completed) return;
-      const reward = Math.round((state.bounty.rewardGold || 150) * (state.expeditionPolicy === 'bounty' ? 1.5 : 1));
+      const reward = getTavernReward();
       state.vaultGold += reward;
       playSound('gold');
       spawnFloatingFx(`💰 討伐達成 +${reward}G`, 'gold');
       addLog(`冒険者の酒場で賞金首の報酬 +${reward}G を受け取った！ 新たな依頼が張り出された。`, 'gold');
 
       // Setup next bounty
-      const nextKills = (state.bounty.targetKills || 5) + 3;
-      const nextGold = Math.round(reward * 1.35);
+      const nextKills = Math.min(30, (Number(state.bounty.targetKills) || 5) + 3);
+      const nextGold = Math.min(1000, Math.round(Math.min(1000, Number(state.bounty.rewardGold) || 150) * 1.35));
       state.bounty = {
         targetKills: nextKills,
         currentKills: 0,
@@ -4544,6 +4820,14 @@
       saveState();
       updateHeader();
       render();
+    }
+
+    function selectTavernContract(type) {
+      if (state.camp.tavern < 4) return;
+      const defs={short:{targetKills:5,rewardGold:180,label:'短期討伐'},elite:{targetKills:10,rewardGold:420,label:'Elite掃討'},boss:{targetKills:18,rewardGold:850,label:'深層賞金首'}};
+      if(type==='boss'&&state.camp.tavern<5)return;
+      state.bounty={...defs[type],currentKills:0,completed:false,type};
+      addLog(`📜 ${defs[type].label}を受注した`,'gold');saveState();render();
     }
 
     function equipItem(index, fromVault = false) {
@@ -4571,8 +4855,10 @@
       if (!item || item.type !== 'potion') return;
 
       const stats = getPlayerStats();
-      const healed = Math.min(stats.maxHp - state.hp, item.heal);
+      const amount=(item.heal||0)+Math.round(stats.maxHp*(item.healPercent||0)/100);
+      const healed = Math.min(stats.maxHp - state.hp, amount);
       state.hp += healed;
+      if(item.cureAll) state.statusEffects={poison:0,bleed:0,paralysis:0,bind:0,weakened:0};
       playSound('heal');
       addLog(`${item.name} を服用。HP +${healed} 回復！`, 'heal');
       state.inventory.splice(index, 1);
@@ -4640,7 +4926,7 @@
         if (isCriticalHp) {
           nudge.innerHTML = `🚨 瀕死！ 5F帰還門まで: <b style="color:#fff; font-size:12px;">あと${remain}階</b> 耐え抜け！`;
           nudge.className = 'goal-nudge critical-nudge';
-        } else if (state.floor === 10 || state.floor === 20 || state.floor === 30) {
+        } else if (isBossFloor(state.floor)) {
           nudge.textContent = `💀 BOSS FLOOR: 決死の戦い！`;
           nudge.className = 'goal-nudge';
         } else if (remain === 0) {
@@ -4661,6 +4947,7 @@
       document.getElementById('ui-def').textContent = stats.def;
       document.getElementById('ui-crit').textContent = stats.crit + '%';
       document.getElementById('ui-gold').textContent = inDungeon ? state.dungeonGold : state.vaultGold;
+      document.getElementById('ui-gold-label').textContent = inDungeon ? '🪙 未保管G' : '🏦 地上保管G';
       document.getElementById('ui-core').textContent = state.abyssCores;
 
       // Badges
@@ -4672,13 +4959,16 @@
     }
 
     function getLabBossIntelHtml() {
-      const nextBossFloor = state.bossFirstKills?.[10] ? (state.bossFirstKills?.[20] ? 30 : 20) : 10;
-      const area = AREAS.find(a => a.max === nextBossFloor) || AREAS[2];
+      const nextBossFloor = BOSS_FLOORS.find(f => !state.bossFirstKills?.[f]) || MAX_DUNGEON_FLOOR;
+      const area = AREAS.find(a => a.max === nextBossFloor) || AREAS[AREAS.length-1];
       const boss = area.boss;
       const gimmicks = {
         heavy_charge: '3ターンごとの溜め強撃',
         shield_barrier: '古代障壁（解除可能）',
-        mutate_form: 'HP50%以下で変異・攻撃上昇'
+        mutate_form: 'HP50%以下で変異・攻撃上昇',
+        mother_tree: '守護根・自己再生',
+        rising_water: '毎ターン水位上昇（排水可能）',
+        three_phase_core: 'HPに応じた三段階変異・行動学習'
       };
       const shownHp = state.camp.lab >= 3 ? Math.round(boss.hp * 0.85) : boss.hp;
       return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
@@ -4718,6 +5008,7 @@
             <div style="font-size:36px; margin-bottom:4px;">🏕️</div>
             <h2 style="font-size:18px; font-weight:900; color:#fff;">生存者の野営キャンプ</h2>
             <div style="font-size:10px;color:#64748b;margin-bottom:3px;">Version ${GAME_VERSION}</div>
+            <div style="font-size:11px;color:#cbd5e1;margin-bottom:7px;">🏆 最高到達 B${state.deepestFloorReached}F / 解放 B${state.maxUnlockedFloor}F　⚔️最多討伐 ${state.runRecords.mostKills}　🔥最高GREED ${state.runRecords.highestGreed}　💰最多未保管G ${state.runRecords.mostGold}</div>
             <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">深淵から生還した者だけがこの拠点を発展させられる。</p>
             
             <!-- Expedition Policy Selection -->
@@ -4741,6 +5032,7 @@
                 ].map(p => `<button class="btn ${state.starterPerk === p[0] ? 'btn-gold' : 'btn-sub'} btn-xs" onclick="selectStarterPerk('${p[0]}')" title="${p[2]}">${p[1]}</button>`).join('')}
               </div>
             </div>
+            <div style="display:flex;gap:4px;margin-bottom:8px;align-items:center;font-size:10.5px;color:#94a3b8;"><span>開始地点:</span>${[1,31,41,51].filter(f=>f<=state.maxUnlockedFloor).map(f=>`<button class="btn ${state.selectedStartFloor===f?'btn-gold':'btn-sub'} btn-xs" onclick="selectStartFloor(${f})">B${f}F</button>`).join('')}</div>
 
             <button class="btn btn-gold" style="font-size:16px; padding:14px; width:100%;" ${state.starterPerk ? '' : 'disabled'} onclick="startDungeonRun()">
               ${state.starterPerk ? '🪜 地下迷宮へ潜る (探索開始)' : '支援を選ぶと探索開始できます'}
@@ -4751,27 +5043,30 @@
           <div class="card">
             <div class="card-title">
               <span>🏛️ 拠点施設・発展</span>
-              <span style="font-size:11px; color:var(--muted);">所持金: ${state.vaultGold}G / 核: ${state.abyssCores}</span>
+              <span style="font-size:11px; color:var(--muted);">🏦 地上保管G: ${state.vaultGold} / 核: ${state.abyssCores} / 結晶: ${state.deepCrystals}</span>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <!-- Blacksmith -->
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🔨 鍛冶屋 Lv.${state.camp.blacksmith}</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('blacksmith')">施設強化 (${state.camp.blacksmith * 120}G)</button>
+                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('blacksmith') ? 'disabled' : ''} onclick="upgradeCampFacility('blacksmith')">${getFacilityButtonText('blacksmith')}</button>
                 </div>
                 <div style="font-size:10.5px; color:#94a3b8;">
                   ${state.camp.blacksmith >= 2 ? '装備を鍛え直して基礎威力を強化可能' : 'Lv2で装備の鍛錬・強化が解放'}
                 </div>
+                <div style="display:flex;gap:4px"><button class="btn btn-sub btn-xs" onclick="closeGenericModal()">強化</button><button class="btn btn-gold btn-xs" onclick="openCrafting('create')">作成</button><button class="btn btn-sub btn-xs" onclick="openCrafting('tree')">武器ツリー</button></div>
                 ${state.camp.blacksmith >= 2 ? `
                   <div style="display:flex; gap:4px; margin-top:2px; width:100%;">
-                    ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (${getRefineCost(state.equipped.weapon)}G)</button>` : ''}
-                    ${state.equipped.armor ? `<button class="btn btn-sub btn-xs" style="flex:1;" onclick="refineEquippedItem('armor')">🛡️ 防具強化 (${getRefineCost(state.equipped.armor)}G)</button>` : ''}
+                    ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" ${state.equipped.weapon.refineCount >= 10 ? 'disabled' : ''} onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (${state.equipped.weapon.refineCount >= 10 ? 'MAX +10' : getRefineCost(state.equipped.weapon)+'G'})</button>` : ''}
+                    ${state.equipped.armor ? `<button class="btn btn-sub btn-xs" style="flex:1;" ${state.equipped.armor.refineCount >= 10 ? 'disabled' : ''} onclick="refineEquippedItem('armor')">🛡️ 防具強化 (${state.equipped.armor.refineCount >= 10 ? 'MAX +10' : getRefineCost(state.equipped.armor)+'G'})</button>` : ''}
                   </div>
                   ${state.camp.blacksmith >= 3 ? `<div style="display:flex;gap:4px;width:100%;margin-top:3px;">
                     ${state.equipped.weapon && !state.equipped.weapon.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('weapon')">武器に特性付与 (150G)</button>` : ''}
                     ${state.equipped.armor && !state.equipped.armor.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('armor')">防具に特性付与 (150G)</button>` : ''}
                   </div>` : ''}
+                  ${state.camp.blacksmith >= 4 && state.equipped.weapon?.affix ? `<button class="btn btn-sub btn-xs" style="width:100%" onclick="rerollEquipmentAffix('weapon')">🎲 武器特性再抽選 120G +結晶1</button>`:''}
+                  ${state.camp.blacksmith >= 5 && ['Mythic','Abyssal'].includes(state.equipped.weapon?.rarity) ? `<button class="btn btn-purple btn-xs" style="width:100%" onclick="enhanceHighRarity('weapon')">💠 高位能力強化 400G +結晶3</button>`:''}
                 ` : ''}
               </div>
 
@@ -4779,7 +5074,7 @@
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🏪 道具屋 Lv.${state.camp.shop}</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('shop')">施設拡張 (${state.camp.shop * 120}G)</button>
+                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('shop') ? 'disabled' : ''} onclick="upgradeCampFacility('shop')">${getFacilityButtonText('shop')}</button>
                 </div>
                 <div style="font-size:10.5px; color:#94a3b8;">
                   ${state.camp.shop >= 2 ? '潜入前の携行補給品を購入可能' : 'Lv2で探索持込アイテムの購入が解放'}
@@ -4789,6 +5084,8 @@
                     <button class="btn btn-sub btn-xs" style="flex:1;" onclick="buyExpeditionSupply('potion')">🧪 傷薬持込 (30G)</button>
                     <button class="btn btn-gold btn-xs" style="flex:1;" onclick="buyExpeditionSupply('charm')">🍀 幸運護符 (45G)</button>
                   </div>
+                  ${state.camp.shop >= 4 ? `<div style="display:flex;gap:4px;width:100%;"><button class="btn btn-sub btn-xs" style="flex:1" onclick="buyExpeditionSupply('smoke')">💨 煙玉 60G</button><button class="btn btn-sub btn-xs" style="flex:1" onclick="buyExpeditionSupply('antidote')">💊 解毒薬 40G</button></div>`:''}
+                  ${state.camp.shop >= 5 ? `<button class="btn btn-purple btn-xs" style="width:100%" onclick="buyExpeditionSupply('greater')">🧴 上級傷薬 90G</button>`:''}
                 ` : ''}
               </div>
 
@@ -4796,7 +5093,7 @@
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">📦 倉庫 Lv.${state.camp.vaultLevel} (${state.camp.vaultSize}枠)</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeVault()">増築 (${vaultCost}G)</button>
+                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('vault') ? 'disabled' : ''} onclick="upgradeVault()">${getFacilityButtonText('vault')}</button>
                 </div>
                 <div style="font-size:10.5px; color:#94a3b8;">容量+10枠 / 未持ち帰り防止</div>
               </div>
@@ -4805,7 +5102,7 @@
               <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">🍺 冒険者の酒場 Lv.${state.camp.tavern}</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('tavern')">改築 (${state.camp.tavern * 120}G)</button>
+                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('tavern') ? 'disabled' : ''} onclick="upgradeCampFacility('tavern')">${getFacilityButtonText('tavern')}</button>
                 </div>
                 <div style="font-size:10.5px; color:#e2e8f0; width:100%;">
                   ${state.camp.tavern < 2 ? `<div style="color:#94a3b8;padding:5px;">🔒 酒場Lv2で討伐依頼を解放</div>` : state.bounty ? `
@@ -4816,11 +5113,12 @@
                       </div>
                       ${state.bounty.completed ? `
                         <button class="btn btn-gold btn-xs" style="width:100%; margin-top:4px; padding:3px;" onclick="claimTavernBounty()">
-                          🎉 達成！ 報酬 +${state.bounty.rewardGold}G を受取
+                          🎉 達成！ 報酬 +${getTavernReward()}G を受取
                         </button>
                       ` : `
-                        <div style="font-size:10px; color:#94a3b8; margin-top:2px;">達成報酬: ${state.bounty.rewardGold}G</div>
+                        <div style="font-size:10px; color:#94a3b8; margin-top:2px;">達成報酬: ${getTavernReward()}G（最大1500G）</div>
                       `}
+                      ${state.camp.tavern >= 4 && !state.bounty.completed ? `<div style="display:flex;gap:3px;margin-top:4px;"><button class="btn btn-sub btn-xs" onclick="selectTavernContract('short')">短期</button><button class="btn btn-sub btn-xs" onclick="selectTavernContract('elite')">Elite</button>${state.camp.tavern>=5?`<button class="btn btn-purple btn-xs" onclick="selectTavernContract('boss')">賞金首</button>`:''}</div>`:''}
                     </div>
                   ` : ''}
                 </div>
@@ -4830,7 +5128,7 @@
               <div class="item-row" style="grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:4px;">
                 <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
                   <div style="font-size:12px;font-weight:bold;color:#fff;">🔬 深淵研究所 Lv.${state.camp.lab}</div>
-                  <button class="btn btn-sub btn-xs" onclick="upgradeCampFacility('lab')">研究拡張 (${state.camp.lab * 120}G)</button>
+                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('lab') ? 'disabled' : ''} onclick="upgradeCampFacility('lab')">${getFacilityButtonText('lab')}</button>
                 </div>
                 <div style="font-size:10.5px;color:#cbd5e1;line-height:1.5;">
                   Lv1 敵図鑑詳細${state.camp.lab >= 2 ? ' / Lv2 次ボス能力解析' : ''}${state.camp.lab >= 3 ? ' / Lv3 ボス最大HP-15%' : ''}${state.camp.lab >= 4 ? ' / Lv4 部屋危険度予測' : ''}
@@ -4878,9 +5176,9 @@
       // VIEW: SAFE POINT (5階ごとの安全帰還ポイント特別演出画面)
       else if (state.screen === 'safe_point') {
         const area = getCurrentArea();
-        const nextBossFloor = Math.ceil(state.floor / 10) * 10;
+        const nextBossFloor = BOSS_FLOORS.find(f=>f>state.floor) || MAX_DUNGEON_FLOOR;
         const bossRemain = nextBossFloor - state.floor;
-        const nextAreaIdx = Math.min(2, Math.floor(state.floor / 10));
+        const nextAreaIdx = Math.min(AREAS.length-1, Math.floor(state.floor / 10));
         const nextArea = AREAS[nextAreaIdx];
 
         const lootCount = state.inventory.length;
@@ -4989,6 +5287,8 @@
         const eHpPct = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
         const skillInfo = getEquippedSkillInfo();
         const smokeCount = state.inventory.filter(i => i.type === 'escape_item').length;
+        const statusLabels={poison:'☠️ 毒',bleed:'🩸 出血',paralysis:'⚡ 麻痺',bind:'🕸️ 拘束',weakened:'⬇️ 弱体'};
+        const statuses=Object.entries(state.statusEffects).filter(([,v])=>v>0).map(([k,v])=>`${statusLabels[k]} ${v}T`).join(' / ');
         vp.innerHTML = `
           ${getUnclaimedLootBarHtml()}
           <div class="scene-box">
@@ -5009,6 +5309,7 @@
               ${state.camp.lab >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
               ${Object.values(state.equipped).some(i => i?.archetype === 'thunder') ? `<div style="font-size:10.5px;color:#facc15;">⚡ 雷チャージ ${state.thunderCharges}/3（3で追加30ダメージ＆スタン）</div>` : ''}
               <div style="font-size:10.5px;color:${state.guardStamina <= 30 ? '#f87171' : '#93c5fd'};">🛡️ GUARD ${state.guardStamina}/100 ${state.guardFatigue >= 2 ? `⚠️ 疲労${state.guardFatigue}` : ''}</div>
+              ${statuses ? `<div style="font-size:10.5px;color:#fca5a5;">${statuses}</div>` : ''}
             </div>
 
             <!-- Combat Actions -->
@@ -5016,9 +5317,11 @@
               <button class="btn btn-red" onclick="playerCombatAction('attack')">⚔️ 通常攻撃</button>
               <button class="btn btn-purple" onclick="playerCombatAction('heavy')">💥 強攻撃</button>
               <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 防御</button>
-              <button class="btn btn-gold" ${state.skillCooldown > 0 ? 'disabled' : ''} onclick="playerCombatAction('skill')">✨ ${skillInfo.name}${state.skillCooldown > 0 ? `（あと${state.skillCooldown}T）` : ''}</button>
+              <button class="btn btn-gold" ${state.skillCooldown > 0 || state.statusEffects.paralysis > 0 ? 'disabled' : ''} onclick="playerCombatAction('skill')">✨ ${skillInfo.name}${state.statusEffects.paralysis > 0 ? '（麻痺封印）' : state.skillCooldown > 0 ? `（あと${state.skillCooldown}T）` : ''}</button>
+              ${e.gimmick==='mother_tree' && state.bossAdds>0 ? `<button class="btn btn-green" style="grid-column:1/-1;" onclick="playerCombatAction('attack_roots')">🌿 守護根を破壊（残り${state.bossAdds}）</button>`:''}
+              ${e.gimmick==='rising_water' ? `<button class="btn btn-blue" style="grid-column:1/-1;" onclick="playerCombatAction('drain_water')">🚰 排水する（水位${state.waterLevel}%）</button>`:''}
               ${smokeCount > 0 && !e.isBoss ? `<button class="btn btn-sub" style="grid-column:1 / -1;" onclick="escapeBattleWithSmoke()">💨 煙玉で逃走（残り${smokeCount}）</button>` : ''}
-              ${e.isBoss && state.bossBarrier ? `
+              ${e.isBoss && e.gimmick === 'shield_barrier' && state.bossBarrier ? `
                 <button class="btn btn-purple" style="grid-column:1 / -1;" onclick="playerCombatAction('disrupt_barrier')">
                   ⚡ ルーン障壁を解除する (好機!)
                 </button>
@@ -5113,15 +5416,18 @@
                 <div style="display:flex; gap:4px;">
                   <button class="btn btn-sub btn-xs" style="padding:2px 6px; font-size:10px;" onclick="bulkSellStorage('Common')">Common一括</button>
                   <button class="btn btn-gold btn-xs" style="padding:2px 6px; font-size:10px;" onclick="bulkSellStorage('Rare')">Rare以下一括</button>
+                  <button class="btn btn-gold btn-xs" style="padding:2px 6px; font-size:10px;" onclick="bulkSellStorage('Epic')">Epic以下一括</button>
                 </div>
               </div>
             </div>
           `;
         }
 
-        let listHtml = list.length === 0
+        if (isTown) controlsHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${[['all','すべて'],['weapon','武器'],['armor','防具'],['accessory','アクセサリー'],['material','素材'],['consumable','消耗品']].map(([key,label]) => `<button class="btn btn-${storageCategory === key ? 'gold' : 'sub'} btn-xs" onclick="setStorageCategory('${key}')">${label}</button>`).join('')}</div>`;
+        const rows = isTown ? getStorageRows(list, storageCategory) : list.map((it,idx) => ({it,idx,count:1}));
+        let listHtml = rows.length === 0
           ? '<div style="font-size:11px; color:#94a3b8; text-align:center; padding:20px;">アイテムはありません</div>'
-          : list.map((it, idx) => {
+          : rows.map(({it, idx, count}) => {
             const diffs = getEquipComparison(it);
             let diffHtml = '';
             if (diffs.length > 0) {
@@ -5146,14 +5452,14 @@
                   </button>
                   <span style="font-size:16px;">${it.icon}</span>
                   <div>
-                    <div class="item-name">${it.name} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
+                    <div class="item-name">${it.name}${it.type === 'material' ? ` ×${count}` : ''} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
                     <div class="item-stats">${getItemStatSummary(it)}</div>
                     ${diffHtml}
                   </div>
                 </div>
                 <div style="display:flex; gap:4px; align-items:center;">
-                  ${isTown && it.type !== 'relic' ? `
-                    <button class="btn btn-gold btn-xs" style="padding:3px 6px; font-size:10px;" ${it.locked ? 'disabled title="ロック中"' : ''} onclick="sellItemFromStorage(${idx})">
+                  ${isTown ? `
+                    <button class="btn btn-gold btn-xs" style="padding:3px 6px; font-size:10px;" ${!canSellStoredItem(it) ? 'disabled title="装備中またはロック中"' : ''} onclick="sellItemFromStorage(${idx})">
                       売却 (${sellPrice}G)
                     </button>
                   ` : ''}
@@ -5214,6 +5520,7 @@
             <span>収集率: ${knownItems}種</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">${rarityCollectionHtml}</div>
+          ${materialCodexHtml()}
           <div style="font-size:11px;font-weight:bold;color:#f9a8d4;margin-bottom:4px;">超希少装備コレクション:</div>
           <div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto;">${upperCatalogHtml}</div>
           ${upperHistoryHtml ? `<details style="margin:7px 0;"><summary style="font-size:11px;color:#67e8f9;">初発見記録</summary>${upperHistoryHtml}</details>` : ''}
@@ -5376,5 +5683,6 @@
       initAudio();
     }, { once: true });
   </script>
+  <script src="crafting.js"></script>
 </body>
 </html>

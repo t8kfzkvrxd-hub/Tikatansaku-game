@@ -1,0 +1,40 @@
+<!doctype html><meta charset="utf-8"><title>Small fixes tests</title>
+<iframe id="game" src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload = () => setTimeout(() => {
+ const w = document.querySelector('iframe').contentWindow, out = [];
+ const check = (ok, name) => { if (!ok) throw Error(name); out.push('PASS: '+name); };
+ try {
+  const s = w.__gameDebug.state;
+  w.closeGenericModal(); w.setTimeout = () => 0;
+  s.screen='town'; s.camp.tavern=5; s.expeditionPolicy='bounty'; s.vaultGold=100000;
+  s.bounty={rewardGold:1e12,targetKills:5,completed:true};
+  for(let i=0;i<100;i++) { s.bounty.completed=true; const gold=s.vaultGold; w.claimTavernBounty(); check(s.vaultGold-gold<=1500 && s.bounty.rewardGold<=1000,'酒場報酬上限 '+i); }
+  s.camp.blacksmith=2; s.equipped.weapon.refineCount=9; w.refineEquippedItem('weapon'); const gold=s.vaultGold, atk=s.equipped.weapon.baseAtk;
+  w.refineEquippedItem('weapon'); check(s.equipped.weapon.refineCount===10 && s.vaultGold===gold && s.equipped.weapon.baseAtk===atk && w.document.getElementById('viewport').textContent.includes('MAX +10'),'+10強化上限・MAX表示');
+  const item=(id,rarity,type='weapon')=>({id,name:id,icon:'📦',rarity,type,baseAtk:1});
+  const locked={...item('locked','Epic'),locked:true};
+  s.storage=[item('common','Common'),item('rare','Rare'),item('epic','Epic'),locked,s.equipped.weapon,item('mythic','Mythic'),item('abyssal','Abyssal')];
+  s.activeTab='bag'; w.bulkSellStorage('Epic'); check(s.storage.length===4,'Epic以下一括売却・装備中とロック中を保護');
+  let confirmations=0; w.confirm=()=>{confirmations++; return false;}; w.sellItemFromStorage(2); check(s.storage.length===4,'高レア売却キャンセル');
+  w.confirm=()=>{confirmations++;return true;}; w.sellItemFromStorage(2);w.sellItemFromStorage(2);check(s.storage.length===2&&confirmations===3,'Mythic・Abyssal確認売却');
+  w.sellItemFromStorage(0);w.sellItemFromStorage(1); check(s.storage.length===2,'手動売却も装備中・ロック中を保護');
+  s.storage=[item('w','Rare'),item('a','Rare','armor'),item('acc','Rare','accessory'),item('p','Rare','potion'),...Array.from({length:12},(_,i)=>({...item('mat'+i,'Rare','material'),key:'scale',name:'炎竜の鱗'}))];
+  for(const category of ['all','weapon','armor','accessory','material','consumable']) { w.setStorageCategory(category);check(w.getStorageRows(s.storage,category).length===(category==='all'?5:1),'カテゴリ '+category); }
+  w.setStorageCategory('material');check(w.document.body.textContent.includes('炎竜の鱗 ×12')&&s.storage.length===16,'素材スタック表示・データ保持');
+  w.sellItemFromStorage(4);check(s.storage.length===15 && w.getStorageRows(s.storage,'material')[0].count===11,'素材売却後にスタック更新');
+  s.modifiers.enemyAtkMult=1;s.greedLevel=0;s.camp.lab=3;
+  for(const area of w.__gameDebug.AREAS) {
+   s.floor=area.max-1;w.startNormalBattle(true); const elite={...s.currentEnemy};
+   s.floor=area.max;w.startBossBattle(area.boss);check(s.currentEnemy.maxHp>elite.maxHp*1.5 && s.currentEnemy.atk>elite.atk,'ボスとエリート比較 B'+area.max);
+   if(area.boss.gimmick==='mutate_form')s.currentEnemy.hp=s.currentEnemy.maxHp*.4;
+   if(area.boss.gimmick==='rising_water')s.waterLevel=80;
+   if(area.boss.gimmick==='three_phase_core')s.currentEnemy.hp=s.currentEnemy.maxHp*.2;
+   for(let i=0;i<2;i++)w.decideEnemyIntent();
+   check(s.currentEnemy.nextMult>1.3 || s.bossBarrier,'ボスの危険技・障壁・フェーズ B'+area.max);
+  }
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.message);}
+ document.getElementById('results').textContent=out.join('\n');
+},300);
+</script>
