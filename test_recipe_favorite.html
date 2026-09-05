@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{const f=document.querySelector('iframe'),w=f.contentWindow,s=w.__gameDebug.state,out=[],check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},wait=ms=>new Promise(r=>setTimeout(r,ms));try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.screen='town';delete s.craftProgress.favorites;
+ check(Object.keys(w.forgeProgress().favorites).length===0,'old save defaults');
+ const id=w.eval('Object.keys(CRAFT_RECIPES).find(id=>recipeVisible(id)&&!CRAFT_RECIPES[id].parent&&!forgeOwnership().some(i=>i.key===id))');check(!!id,'unowned recipe');
+ const owned=JSON.stringify(s.equipped);w.openRecipeDetail(id);const button=()=>w.document.querySelector('[data-recipe-favorite]');check(button().getAttribute('aria-pressed')==='false','detail OFF');button().click();check(button().textContent==='★ お気に入り済み','detail ON');button().click();check(button().textContent==='☆ お気に入り','detail OFF toggle');button().click();
+ w.openCrafting('create');w.setForgeFilter('favorite',true);check(w.document.querySelector(`[data-recipe="${id}"] button[data-recipe-favorite]`)?.getAttribute('aria-pressed')==='true','favorite list synchronized');
+ w.document.querySelector(`[data-recipe="${id}"] button[data-recipe-favorite]`).click();check(!w.document.querySelector(`[data-recipe="${id}"]`),'favorite filter removal immediate');w.openRecipeDetail(id);check(button().getAttribute('aria-pressed')==='false','list to detail synchronized');button().click();
+ w.loadState();check(w.forgeProgress().favorites[id]===true,'saved reload');check(JSON.stringify(s.equipped)===owned,'owned gear unchanged');
+ for(const [width,height]of [[1366,768],[740,360],[844,390],[932,430]]){f.style.width=width+'px';f.style.height=height+'px';await wait(100);w.openRecipeDetail(id);const b=button(),r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&r.left>=0&&r.right<=width&&r.height>=44,width+' visible tap target');b.click();check(b.getAttribute('aria-pressed')==='false',width+' OFF');b.click();check(b.getAttribute('aria-pressed')==='true',width+' ON');}
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n')};
+</script>
