@@ -3,7 +3,7 @@
 body.at-home #game-container,body.at-home #danger-vignette,body.at-home #item-toast-container{display:none}
 body.at-home{overflow:hidden}
 body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto}
-.home-art{position:absolute;inset:0;overflow:hidden}
+.home-art{position:absolute;inset:0;overflow:hidden;z-index:0}
 .home-background{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
 .home-shade{position:absolute;inset:0;background:linear-gradient(90deg,transparent 36%,#050a1220 55%,#050a127a 78%,#050a12a8),linear-gradient(0deg,#050a1255,transparent 50%);pointer-events:none}
 .home-menu{position:relative;margin-left:65%;width:29%;min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:50px 0;z-index:2;text-align:center;text-shadow:0 2px 14px #000}
@@ -23,21 +23,24 @@ body.at-home #modal-layer>.card{max-height:90vh;max-height:90dvh;overflow-y:auto
 .home-version{font-size:10px;letter-spacing:.12em;color:#8b9aaa}.home-warning{font-size:12px;color:#f5b7a9;margin:10px 0}
 .home-settings-list{display:grid;gap:10px}
 .home-scene{position:absolute;inset:0;pointer-events:none}
-.home-background,.home-scene{animation:none;transform:none}
-.environment-effects{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.home-mist{position:absolute;left:41%;top:49%;width:23%;height:52%;background:radial-gradient(ellipse at 40% 75%,#bddef044,transparent 55%),radial-gradient(ellipse at 75% 40%,#adcce92b,transparent 50%);animation:home-fog-rise 11s linear -3s infinite}
-.home-mist-second{left:45%;top:43%;width:20%;height:60%;background:radial-gradient(ellipse at 60% 80%,#bbd7e83a,transparent 48%);animation-duration:15s;animation-delay:-10s}
+.home-background,.home-scene,.home-character-still{animation:none;transform:none}
+.home-background{position:relative;z-index:0}
+.environment-effects{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.home-character-still{position:absolute;inset:0;width:100%;height:100%;z-index:2;clip-path:polygon(0 0,39% 0,39% 42%,43% 70%,48% 100%,0 100%);pointer-events:none}
+.home-shade{z-index:1;background:linear-gradient(90deg,transparent 58%,#050a1240 78%,#050a1280)}
+.home-mist{position:absolute;left:41%;top:49%;width:23%;height:52%;background:radial-gradient(ellipse at 40% 75%,#bddef099,transparent 55%),radial-gradient(ellipse at 75% 40%,#adcce970,transparent 50%);animation:home-fog-rise 9s linear -3s infinite}
+.home-mist-second{left:45%;top:43%;width:20%;height:60%;background:radial-gradient(ellipse at 60% 80%,#bbd7e880,transparent 48%);animation-duration:12s;animation-delay:-8s}
 .home-blue,.home-red,.home-lantern,.home-distant-light{position:absolute;pointer-events:none}
-.home-blue{left:44%;top:58%;width:15%;height:25%;background:radial-gradient(ellipse,#78bbff38,transparent 70%);animation:home-glow 8s ease-in-out -2s infinite}
+.home-blue{left:44%;top:58%;width:15%;height:25%;background:radial-gradient(ellipse,#78bbffa0,transparent 70%);animation:home-glow 7s ease-in-out -2s infinite}
 .home-red{left:51%;top:82%;width:7%;height:9%;background:radial-gradient(ellipse,#bd3b3620,transparent 70%);animation:home-glow 12s ease-in-out -7s infinite}
-.home-lantern{width:8%;height:14%;background:radial-gradient(ellipse,#ffbf7040,transparent 65%);animation:home-lamp 2.7s ease-in-out -1s infinite}
+.home-lantern{width:8%;height:14%;background:radial-gradient(ellipse,#ffbf70b0,transparent 65%);animation:home-lamp 2.7s ease-in-out -1s infinite}
 .home-lantern-near{left:51%;top:84%}.home-lantern-far{left:89%;top:82%;animation-duration:3.7s;animation-delay:-2.3s}
 .home-distant-light{left:41%;top:3%;width:14%;height:25%;background:radial-gradient(ellipse at 55% 24%,#aedbff30,transparent 45%);animation:home-glow 9s ease-in-out -5s infinite}
 .home-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.home-particles i{position:absolute;left:var(--x);top:var(--y);width:2px;height:2px;background:#c7e3ff;border-radius:50%;box-shadow:0 0 4px #93c9ff;animation:home-particle var(--duration) linear var(--delay) infinite}
+.home-particles i{position:absolute;left:var(--x);top:var(--y);width:3px;height:3px;background:#e1f2ff;border-radius:50%;box-shadow:0 0 7px 1px #93c9ff;animation:home-particle var(--duration) linear var(--delay) infinite}
 .home-update-hint{font-size:11px;color:#d1bf99;margin:0 0 12px}
-@keyframes home-fog-rise{0%{transform:translate(0,9%);opacity:0}25%,65%{opacity:.55}100%{transform:translate(3%,-15%);opacity:0}}
-@keyframes home-particle{0%{transform:translate(0,12px);opacity:0}20%,75%{opacity:.6}100%{transform:translate(13px,-26px);opacity:0}}
+@keyframes home-fog-rise{0%{transform:translate(0,16%);opacity:0}20%,70%{opacity:.7}100%{transform:translate(5%,-25%);opacity:0}}
+@keyframes home-particle{0%{transform:translate(0,24px);opacity:0}20%,75%{opacity:.9}100%{transform:translate(24px,-65px);opacity:0}}
 @keyframes home-glow{0%,100%{opacity:.35}50%{opacity:.75}}
 @keyframes home-lamp{0%,100%{opacity:.35}36%{opacity:.65}61%{opacity:.45}82%{opacity:.58}}
 body.home-reduced #home-screen *{animation:none!important}

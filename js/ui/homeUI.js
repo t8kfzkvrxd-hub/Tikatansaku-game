@@ -23,6 +23,7 @@ function fitHomeArtwork(home){
  const positions=[[48,72],[55,63],[59,79],[47,49],[54,30],[40,15],[21,18],[18,24],[57,86],[45,36]];
  positions.forEach(([x,y],i)=>{const p=document.createElement('i');p.style.cssText=`--x:${x}%;--y:${y}%;--delay:-${i*1.7}s;--duration:${12+i%4*2}s`;effects.querySelector('.home-particles').append(p);});
  scene.append(effects);
+ const foreground=image.cloneNode();foreground.className='home-character-still';foreground.removeAttribute('fetchpriority');scene.append(foreground);
  const fit=()=>{
   if(!image.naturalWidth||!art.clientWidth||!art.clientHeight)return;
   const scale=Math.max(art.clientWidth/image.naturalWidth,art.clientHeight/image.naturalHeight);

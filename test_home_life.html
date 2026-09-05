@@ -35,7 +35,7 @@ window.onload=async()=>{
   }
   const selectors=['.home-mist','.home-mist-second','.home-particles i','.home-blue','.home-red','.home-lantern','.home-distant-light'];
   check(!d.querySelector('.home-local-patch,.home-breath-patch,.home-character-atmosphere'),'no character animation layers');
-  check(d.querySelectorAll('#home-screen img').length===1,'single original image only');
+  check(d.querySelectorAll('#home-screen img').length===2&&d.querySelector('.home-background').src===d.querySelector('.home-character-still').src,'same unchanged source for static foreground');
   const reduced=w.matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced)check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'reduced also stops pseudo-elements');
   const samples=[];
