@@ -1981,8 +1981,11 @@
     }
 
     function generateItem(floor, forcedRarity = null, source = 'normal') {
-      if(!forcedRarity&&source==='normal'&&Math.random()<.01)return {...UNIQUE_ITEMS.ancient_key,id:crypto.randomUUID()};
-      return createMaterialReward(source==='monster'?'enemy':source,floor,forcedRarity);
+      const reward=createMaterialReward(source==='monster'?'enemy':source,floor,forcedRarity);
+      if(!forcedRarity&&source==='normal'&&Math.random()<.01){
+        const key={...UNIQUE_ITEMS.ancient_key,id:crypto.randomUUID()};reward.rewards.push(key);reward.name+='・'+key.name;
+      }
+      return reward;
     }
 
     function generateLegacyEquipment(floor, forcedRarity = null, source = 'normal') {
@@ -2208,6 +2211,11 @@
     }
 
     function giveItemToBag(item) {
+      if(item.type==='material_bundle'){
+        if(item.claimed)return;item.claimed=true;
+        if(!item.rewards.length)addLog('素材は見つからなかった。','info');
+        item.rewards.forEach(giveItemToBag);return;
+      }
       if(['weapon','armor','accessory'].includes(item.type))item=createMaterialReward(state.currentEnemy?.isBoss?'boss':'chest',state.floor,item.rarity);
       if(item.type==='material')discoverMaterial(item.key);
       normalizeEquipment(item);
@@ -2454,7 +2462,7 @@
         playSound('player_hurt');
         spawnFloatingFx(`👁️ 呪縛！ -${hpCost} MaxHP`, 'danger');
         giveItemToBag(item);
-        addLog(`呪いの宝箱を開封！ 最大HP -${hpCost}の代償で素材【${item.name}】を獲得`, 'danger');
+        addLog(`呪いの宝箱を開封！ 最大HP -${hpCost} / 抽選結果：${item.name}`, 'danger');
         state.floor++;
         setTimeout(() => generateDoorsForFloor(), 500);
         return;

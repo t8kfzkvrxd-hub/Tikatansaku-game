@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[],check=(v,n)=>{if(!v)throw Error(n);};try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.complete=false;s.bossFirstKills={};
+ for(const [clear,limit]of [[0,2],[100,3],[300,4],[500,5]]){if(clear)s.bossFirstKills[clear]=true;check(w.materialTierLimit()===limit,'gate');s.floor=1;const p=w.materialDropPlan();check(p.after.slice(limit+1).every(v=>v===0),'locked remains zero');}
+ const names=['Common','Rare','Epic','Legendary','Mythic','Abyssal'];let seed=12345;const rng=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ for(const source of ['enemy','elite','boss','chest','cursed_chest','gather','event','normal','boss_repeat']){
+ const p=w.materialDropPlan({source:source==='boss_repeat'?'boss':source,repeat:source==='boss_repeat',limit:5,floor:1}),counts=Array(6).fill(0);let total=0,multi=0;
+ for(let n=0;n<10000;n++){const hits=w.rollMaterialPlan(p,rng);check(new Set(hits).size===hits.length,'duplicate tier');for(const i of hits)counts[i]++;total+=hits.length+p.guaranteed.length;if(new Set([...hits,...p.guaranteed]).size>1)multi++;}
+ out.push(source+': '+names.map((r,i)=>{check(Math.abs(counts[i]/10000-p.after[i])<.018,'simulation '+source+r);check(Math.abs(p.after[i]-Math.min(1,p.before[i]+.02))<1e-10,'exact +2');return r+' '+(p.before[i]*100).toFixed(3)+'→'+(p.after[i]*100).toFixed(3)+'% 実測'+counts[i]/100+'%';}).join(' / ')+` 平均${total/10000} 複数${multi/100}% 確定${p.guaranteed.length}`);
+ }
+ check(w.materialDropPlan({source:'abyss'}).after.every(p=>p===0),'abyss locked');s.bossFirstKills[1000]=true;
+ const deep=w.materialDropPlan({source:'abyss'});let deepCount=0;for(let i=0;i<10000;i++)deepCount+=w.rollMaterialPlan(deep,rng).length;check(Math.abs(deepCount/10000-.07)<.018,'deep simulation');out.push('深淵原質 5→7% 実測'+deepCount/100+'%');
+ s.floor=1;s.inventory=[];const bundle=w.createMaterialReward('chest',1,null,()=>0);w.giveItemToBag(bundle);check(s.inventory.length===6,'all six awarded');w.giveItemToBag(bundle);check(s.inventory.length===6,'bundle once');check(!s.inventory.some(i=>i.key==='post_abyss'),'no deep in story');
+ const fixed=w.createMaterialReward('event',1,'Rare',()=>.999);check(fixed.type==='material'&&fixed.rarity==='Rare','fixed reward');
+ const enemy={materialSource:w.eval('AREAS[0].enemies[0].materialSource'),parts:[]};s.inventory=[];const keys=w.dropMonsterMaterials(enemy,()=>0);check(keys.length===6&&new Set(keys).size===6,'actual enemy single roll per tier');
+ const base=w.materialDropPlan({source:'enemy',limit:5}),broken=w.materialDropPlan({source:'enemy',limit:5,parts:[{tier:0,rate:.22},{tier:0,rate:.22}]});check(broken.after[0]>base.after[0]&&broken.after[0]<=1,'part merge');
+ const max=w.materialDropPlan({source:'enemy',limit:5,materialBonus:999,rareBonus:999,parts:Array(100).fill({tier:0,rate:.22})});check(max.after.every(p=>p<=1),'cap');
+ s.storage.push(...s.inventory);w.saveState();const count=s.storage.length;w.loadState();check(s.storage.length===count,'save load');
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');};</script>

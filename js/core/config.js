@@ -1,8 +1,9 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.26.0';
+    const GAME_VERSION = '0.26.1';
     const UPDATE_NOTES = [
+      '素材をレアリティ別の独立抽選に変更。重複経路・部位・装備補正を統合後、最終確率を一律＋2ポイント（上限100%）。確定報酬は別枠、クリア解禁条件と既存素材は維持。深淵原質は将来の深淵専用',
       'スマホ横画面のロビーHUD・施設ラベルを分離。戦闘を全幅化し、部位選択・ダメージ表示・4コマンドを整理。装備や施設の内部スクロールとタップ領域を改善',
       '戦闘開始時の参加者へ共通EXPを一度だけ付与。途中で気絶した同行者も対象。既存Lv・EXPと共通必要EXP表は維持',
       '47ビルドの実動作監査と条件・数値説明を追加。戦闘間の状態残留、毒特攻判定、属性変換、同行者の撃破・報酬補正を修正。ビルド詳細と戦闘表示を追加',

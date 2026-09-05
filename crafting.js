@@ -8,17 +8,11 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  const source=MONSTER_MATERIALS[enemy.materialSource];
  if(!source) return;
  if(enemy.isBoss)discoverMaterial('abyss_core');
- const roll=rng();
- const tier=enemy.isBoss?3:enemy.isElite?(roll<.015?4:roll<.08?3:roll<.55?2:1):(roll<.002?4:roll<.01?3:roll<.05?2:roll<.20?1:0);
- const keys=[source.keys[Math.min(materialTierLimit(),tier)],...(typeof partRewardRolls==='function'?partRewardRolls(enemy,rng):[])];
  const companion=companionCombatUnit();
  const companionBonus=companion?.hp>0?(companionStats(companion.id).effects.materialChance||0):0;
- if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[Math.min(materialTierLimit(),enemy.isBoss?3:enemy.isElite?1:0)]);
- if(enemy.isBoss&&rng()<.05)keys.push(source.keys[Math.min(materialTierLimit(),4)]);
  const rareBonus=(equipmentEffects().rareMaterial||0)+(companion?.hp>0?companionStats(companion.id).effects.rareMaterial||0:0)+(enemy.buildBroken&&(buildTags(state.equipped).has('farming')||companion?.hp>0&&buildTags(characterEquipment(companion.id)).has('farming'))?5:0);
- if(rng()*100<Math.min(25,rareBonus))keys.push(source.keys[Math.min(materialTierLimit(),2)]);
- if(materialTierLimit()>=5&&rng()<.03)keys.push(source.keys[5]);
- if(clearedMaterialMilestone(1000)&&rng()<.05)keys.push('post_abyss');
+ const plan=materialDropPlan({source:enemy.isBoss?'boss':enemy.isElite?'elite':'enemy',materialBonus:(equipmentEffects().materialChance||0)+companionBonus,rareBonus,quality:partyChestQuality(),repeat:!!state.bossFirstKills[state.floor],parts:ensureEnemyParts(enemy).map(p=>({tier:PART_TYPES[p.id].tier,rate:p.broken?.22:.08}))});
+ const keys=[...plan.guaranteed,...rollMaterialPlan(plan,rng)].map(t=>source.keys[t]);
  keys.forEach(key=>{
   discoverMaterial(key);
   const material={...MATERIALS[key],key,type:'material',id:crypto.randomUUID(),locked:false};

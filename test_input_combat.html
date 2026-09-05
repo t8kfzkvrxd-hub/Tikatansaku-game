@@ -6,9 +6,10 @@ window.onload=async()=>{
  w.closeGenericModal();s.chapter.pending=null;s.chapter.companion=null;
  for(const cursed of [true,false]){
   s.currentDoors=[];s.screen='door_select';s.floor=2;s.inventory=[];
-  for(let i=0;i<20;i++)w.openChestEvent(cursed);
-  if(!cursed){const choice=s.currentEvent.choices[0];for(let i=0;i<20;i++)choice.action();}
-  check(s.inventory.length===1,'20 chest calls give one reward '+cursed);await wait(600);
+  const originalRandom=w.Math.random;w.Math.random=()=>.01;
+  w.openChestEvent(cursed);const choice=!cursed?s.currentEvent.choices[0]:null;if(choice)choice.action();const count=s.inventory.length;
+  for(let i=0;i<20;i++){w.openChestEvent(cursed);if(choice)choice.action();}
+  check(count>0&&s.inventory.length===count,'20 chest calls do not duplicate material bundle '+cursed);w.Math.random=originalRandom;await wait(600);
  }
  for(const action of ['attack','heavy','defend','skill']){
   s.floor=10;s.hp=10000;s.maxHp=10000;w.startBossBattle(w.__gameDebug.AREAS[0].boss);s.currentEnemy.hp=100000;s.currentEnemy.maxHp=100000;s.currentEnemy.atk=1;s.skillCooldown=0;

@@ -791,7 +791,6 @@
         } else {
           // Repeat bosses use the centralized table (Epic floor, Legendary ~7%).
           state.abyssCores += 1;
-          if (Math.random() < 0.10) giveItemToBag(generateItem(state.floor, null, 'boss_repeat'));
           addLog('ボス周回撃破！ 固有素材と深淵の核を獲得！', 'gold');
         }
 
@@ -815,10 +814,6 @@
         });
 
         afterChapterBoss(state.floor);return;
-      } else if (Math.random() < (enemy.isElite ? 0.08 : 0.03)) {
-        // Elite or standard drop
-        const item = generateItem(state.floor, enemy.isElite ? (Math.random()<0.3?'Epic':'Rare') : (Math.random()<0.2?'Rare':'Common'), 'monster');
-        giveItemToBag(item);
       }
 
       state.currentEnemy = null;
