@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{
+ const w=document.querySelector('iframe').contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)};
+ try{
+ w.closeGenericModal();s.chapter.pending=null;s.chapter.companion=null;
+ for(const cursed of [true,false]){
+  s.currentDoors=[];s.screen='door_select';s.floor=2;s.inventory=[];s.talents.discernEyeLv=0;
+  for(let i=0;i<20;i++)w.openChestEvent(cursed);
+  if(!cursed){const choice=s.currentEvent.choices[0];for(let i=0;i<20;i++)choice.action();}
+  check(s.inventory.length===1,'20 chest calls give one reward '+cursed);await wait(600);
+ }
+ for(const action of ['attack','heavy','defend','skill']){
+  s.floor=10;s.hp=10000;s.maxHp=10000;w.startBossBattle(w.__gameDebug.AREAS[0].boss);s.currentEnemy.hp=100000;s.currentEnemy.maxHp=100000;s.currentEnemy.atk=1;s.skillCooldown=0;
+  const enemy=s.currentEnemy;
+  w.playerCombatAction(action);const hp=enemy.hp;
+  const button=d.querySelector(`[onclick="playerCombatAction('${action}')"]`);
+  for(let i=0;i<20;i++){button.dispatchEvent(new w.PointerEvent('pointerdown',{pointerType:'touch',bubbles:true}));button.dispatchEvent(new w.PointerEvent('pointerup',{pointerType:'touch',bubbles:true}));button.click();w.playerCombatAction(action);}
+  check(enemy.hp===hp&&enemy.acting,'action lock '+action);
+  check([...d.querySelectorAll('[onclick^="playerCombatAction"]')].every(b=>b.disabled),'buttons disabled '+action);
+  await wait(350);check(!enemy.acting,'unlock after enemy '+action);
+ }
+ s.chapter.owned.elna=true;s.chapter.companion='elna';s.chapter.pending=null;s.companionBattle={};s.lastPlayerAction='attack';
+ s.chapter.equipment.elna=w.emptyEquipmentSlots();
+ const enemy={hp:100000,maxHp:100000,def:0,atk:40,name:'test',actionType:'attack'};
+ const random=w.Math.random;w.Math.random=()=>.99;
+ w.companionTurn(enemy);const base=100000-enemy.hp;check(base>0,'Elna normal attack');
+ s.chapter.equipment.elna.weapon={baseAtk:100,effects:{fireDamage:7,poisonChance:100,poisonBonus:120},type:'weapon'};
+ enemy.hp=100000;w.companionTurn(enemy);check(100000-enemy.hp>base,'Elna ATK and fire');
+ enemy.hp=100000;enemy.gearPoison=3;w.companionTurn(enemy);check(100000-enemy.hp>200,'Elna poison conditional');
+ const unit=w.companionCombatUnit();unit.hp=200;const playerHp=s.hp;w.companionReceiveAttack(enemy,40);check(unit.hp===160&&s.hp===playerHp,'independent HP');
+ s.chapter.equipment.elna.armor={baseDef:20};unit.hp=200;w.companionReceiveAttack(enemy,40);check(unit.hp===180,'Elna DEF');
+ unit.hp=1;w.companionReceiveAttack(enemy,40);check(unit.hp===0,'Elna incapacitated');const before=enemy.hp;w.companionTurn(enemy);check(enemy.hp===before,'incapacitated cannot attack');
+ unit.hp=200;s.currentEnemy=enemy;s.screen='battle';s.lastPlayerAction='defend';w.Math.random=()=>.1;const heroHp=s.hp;w.enemyTurn(true);check(unit.hp<200&&s.hp===heroHp,'enemy turn targets Elna without hurting player');
+ check(!w.equipmentEffects().fireDamage,'effects do not leak to player');w.Math.random=random;
+ s.hp=10;w.startBloodAltarEvent();s.currentEvent.choices[0].action();check(!s.currentEvent.claimed,'failed choice permits another choice');s.currentEvent.choices[1].action();
+ s.chapter.companion=null;s.floor=2;s.hp=100;w.startNormalBattle();s.currentEnemy.hp=0;
+ w.onEnemyKilled();const kills=s.runKills,gold=s.dungeonGold;for(let i=0;i<20;i++)w.onEnemyKilled();check(s.runKills===kills&&s.dungeonGold===gold,'kill rewards once');await wait(500);
+ s.screen='door_select';s.returnResolved=false;s.inventory=[];s.dungeonGold=100;const vault=s.vaultGold;
+ for(let i=0;i<20;i++)w.finalizeSafeReturn();check(s.vaultGold===vault+100,'return reward once');
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};</script>

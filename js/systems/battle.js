@@ -204,7 +204,11 @@
     }
 
     function playerCombatAction(action) {
-      if (!state.currentEnemy || state.hp <= 0) return;
+      if (!state.currentEnemy || state.hp <= 0 || state.screen!=='battle'||state.currentEnemy.acting||state.currentEnemy.rewardClaimed) return;
+      if(action==='skill'&&(state.skillCooldown>0||state.statusEffects.paralysis>0))return;
+      const actingEnemy=state.currentEnemy;actingEnemy.acting=true;actingEnemy.actionQueued=false;
+      syncActionButtons();
+      try {
       initAudio();
 
       const stats = getPlayerStats();
@@ -341,7 +345,7 @@
           return;
         }
 
-        setTimeout(() => enemyTurn(false), 250);
+        queueEnemyTurn(false,250);
       } 
       // 2. STRONG ATTACK (強攻撃: 高威力 / 次ターン被ダメ+35%の隙 / 敵迎撃構え時はカウンター被弾)
       else if (action === 'heavy') {
@@ -394,7 +398,7 @@
           return;
         }
 
-        setTimeout(() => enemyTurn(false), 250);
+        queueEnemyTurn(false,250);
       }
       // 3. DEFEND (身を守る: ダメージ激減 & 次ターン攻撃力+35% & 盾反撃)
       else if (action === 'defend') {
@@ -414,7 +418,7 @@
         state.playerAttackBuff = 1.35; // Next attack buffed
         spawnFloatingFx(intentCanJustGuard && !state.guardBroken ? '✨ JUST GUARD！' : '🛡️ ガード', 'info');
         addLog(intentCanJustGuard && !state.guardBroken ? '✨ 敵の大技を読み切り、JUST GUARDを狙う！' : '盾を構えた。連続使用するとガード疲労が蓄積する。', 'normal');
-        setTimeout(() => enemyTurn(true), 250);
+        queueEnemyTurn(true,250);
       }
       // 4. WEAPON SKILL (装備固有スキル)
       else if (action === 'skill') {
@@ -497,7 +501,7 @@
           return;
         }
 
-        setTimeout(() => enemyTurn(false), 250);
+        queueEnemyTurn(false,250);
       }
       // 5. DISRUPT BARRIER (20F Ancient Guardian gimmick)
       else if (action === 'disrupt_barrier') {
@@ -506,24 +510,27 @@
           playSound('crit');
           spawnFloatingFx('⚡ 障壁解除！好機！', 'crit');
           addLog('ルーン障壁を破壊した！古代の守護者が隙を晒した！', 'gold');
-          setTimeout(() => enemyTurn(false), 300);
+        queueEnemyTurn(false,300);
         }
       } else if (action === 'attack_roots' && enemy.gimmick === 'mother_tree' && state.bossAdds > 0) {
         state.bossAdds--;
         state.bossBarrier = state.bossAdds > 0;
         addLog(`🌿 守護根を破壊！ 残り${state.bossAdds}体`,'gold');
-        setTimeout(()=>enemyTurn(false),250);
+        queueEnemyTurn(false,250);
       } else if (action === 'drain_water' && enemy.gimmick === 'rising_water') {
         state.waterLevel=Math.max(0,state.waterLevel-35);
         addLog(`🚰 排水機構を作動！ 水位を${state.waterLevel}%へ低下`,'gold');
-        setTimeout(()=>enemyTurn(false),250);
+        queueEnemyTurn(false,250);
       }
 
       updateHeader();
       render();
+      } finally {if(!actingEnemy.actionQueued){actingEnemy.acting=false;if(state.screen==='battle'&&state.currentEnemy===actingEnemy&&!actingEnemy.rewardClaimed)render();}syncActionButtons();}
     }
 
     function enemyTurn(isPlayerDefending = false) {
+      const actingEnemy=state.currentEnemy;
+      try {
       if (!state.currentEnemy || state.hp <= 0) return;
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
@@ -531,7 +538,8 @@
       equipmentPoisonTick(enemy);
       if(enemy.hp<=0){onEnemyKilled();return;}
       const gearEffects=equipmentEffects();
-      if(Math.random()*100<Math.max(0,Math.min(45,gearEffects.dodge||0)-(enemy.gimmick==='rising_water'&&state.waterLevel>=70?20:0))) {
+      const companion=companionCombatUnit(),targetsCompanion=companion?.hp>0&&Math.random()<0.35;
+      if(!targetsCompanion&&Math.random()*100<Math.max(0,Math.min(45,gearEffects.dodge||0)-(enemy.gimmick==='rising_water'&&state.waterLevel>=70?20:0))) {
         state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.dodgeAttack||0)/100);
         addLog('💨 回避成功！'+(gearEffects.dodgeAttack?' 次の攻撃を強化':''),'gold');decideEnemyIntent();updateHeader();render();return;
       }
@@ -551,6 +559,7 @@
       if(enemy.trait==='captain_phase'&&enemy.turnCount%2===0){enemy.summons=Math.min(2,(enemy.summons||0)+1);addLog(`⚓ 亡霊船員を召喚（${enemy.summons}/2）`,'danger');}
 
       let enemyAtk = enemy.atk * (enemy.nextMult || 1.0);
+      if(targetsCompanion){companionReceiveAttack(enemy,enemyAtk);decideEnemyIntent();updateHeader();render();return;}
       deepEnemyTurn(enemy,isPlayerDefending);
       enemyAtk=enemy.atk*(enemy.nextMult||1);
       if(enemy.inheritTurns>0){enemyAtk+=enemy.inheritedAtk||0;enemy.inheritTurns--;}
@@ -693,10 +702,13 @@
       decideEnemyIntent();
       updateHeader();
       render();
+      } finally {if(actingEnemy){actingEnemy.acting=false;actingEnemy.actionQueued=false;}if(state.screen==='battle'&&state.currentEnemy===actingEnemy&&!actingEnemy?.rewardClaimed)render();}
     }
 
     function onEnemyKilled() {
-      if(!state.currentEnemy)return;
+      if(!state.currentEnemy||state.currentEnemy.rewardClaimed)return;
+      state.currentEnemy.rewardClaimed=true;
+      syncActionButtons();
       const enemy = state.currentEnemy;
       awardCompanionExperience(enemy);
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
@@ -805,4 +817,3 @@
       state.floor++;
       setTimeout(() => generateDoorsForFloor(), 400);
     }
-

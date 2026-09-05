@@ -458,8 +458,9 @@
       // VIEW: EVENT
       else if (state.screen === 'event') {
         const ev = state.currentEvent;
+        prepareEventChoices(ev);
         let choicesHtml = ev.choices.map((c, i) => `
-          <button class="btn btn-sub" style="text-align:left; justify-content:flex-start; padding:12px;" onclick="state.currentEvent.choices[${i}].action()">
+          <button class="btn btn-sub" style="text-align:left; justify-content:flex-start; padding:12px;" onclick="chooseEvent(${ev.inputId},${i})">
             ▶ ${c.text}
           </button>
         `).join('');
@@ -480,6 +481,11 @@
       renderSubPanel();
       if(state.chapter){const banner=state.screen==='town'?chapterTownHtml():tutorialBanner();if(banner)vp.insertAdjacentHTML('afterbegin',banner);}
       if(typeof syncLobbyScreen==='function')syncLobbyScreen();
+      if(state.screen==='battle'){
+        const unit=companionCombatUnit();
+        if(unit){const stats=companionStats(unit.id);vp.insertAdjacentHTML('beforeend',`<div class="card">${CHARACTER_DATA[unit.id]?.name||unit.id} HP ${unit.hp}/${stats.maxHp} / ATK ${stats.atk} / DEF ${stats.def}${unit.hp<=0?' — 戦闘不能':''}</div>`);}
+      }
+      syncActionButtons();
     }
 
     function renderSubPanel() {

@@ -11,7 +11,9 @@ function dropMonsterMaterials(enemy, rng=Math.random) {
  const roll=rng();
  const tier=enemy.isBoss?3:enemy.isElite?(roll<.015?4:roll<.08?3:roll<.55?2:1):(roll<.002?4:roll<.01?3:roll<.05?2:roll<.20?1:0);
  const keys=[source.keys[tier]];
- if(rng()*100<Math.min(50,equipmentEffects().materialChance||0))keys.push(source.keys[enemy.isBoss?3:enemy.isElite?1:0]);
+ const companion=companionCombatUnit();
+ const companionBonus=companion?.hp>0?(companionStats(companion.id).effects.materialChance||0):0;
+ if(rng()*100<Math.min(50,(equipmentEffects().materialChance||0)+companionBonus))keys.push(source.keys[enemy.isBoss?3:enemy.isElite?1:0]);
  if(enemy.isBoss&&rng()<.05)keys.push(source.keys[4]);
  keys.forEach(key=>{
   discoverMaterial(key);

@@ -71,9 +71,9 @@ window.addEventListener('load', () => setTimeout(() => {
     w.selectStarterPerk('luck'); w.startDungeonRun();
     check(game.state.inventory.some(i => i.name.includes('携帯傷薬')), '道具屋購入品が探索開始時に消えない');
 
-    game.state.camp.tavern = 3; game.state.camp.rescuedAdventurer = false; w.selectStarterPerk('luck'); w.startDungeonRun();
+    game.state.screen='town';game.state.camp.tavern = 3; game.state.camp.rescuedAdventurer = false; w.selectStarterPerk('luck'); w.startDungeonRun();
     const hpWithoutLeon = game.state.maxHp;
-    game.state.camp.rescuedAdventurer = true; w.selectStarterPerk('luck'); w.startDungeonRun();
+    game.state.screen='town';game.state.camp.rescuedAdventurer = true; w.selectStarterPerk('luck'); w.startDungeonRun();
     check(game.state.maxHp === hpWithoutLeon + 20, '特製スープは酒場Lv3かつレオン救助後のみ発動');
 
     game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000; game.state.camp.blacksmith = 3;

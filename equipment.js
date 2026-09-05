@@ -47,9 +47,9 @@ function migrateEquipment() {
  [...state.storage,...state.inventory].forEach(normalizeEquipment);
 }
 function equippedAccessories() {return [state.equipped.accessory,state.equipped.accessory2].filter(Boolean);}
-function equipmentEffects() {
- const effects={};Object.values(state.equipped).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
- if(state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
+function equipmentEffects(slots=state.equipped) {
+ const effects={};Object.values(slots).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
+ if(slots===state.equipped&&state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
  return effects;
 }
 function equipmentSynergies() {
@@ -68,17 +68,17 @@ function unequipItem(slot) {
  if(state.screen==='town'&&list.length>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return;}
  list.push(item);state.equipped[slot]=null;saveState();render();
 }
-function equipmentAttackStats(stats,enemy,action) {
- const e=equipmentEffects();
- const quarry=Object.values(state.equipped).filter(i=>i?.quarrySource&&i.quarrySource===enemy.materialSource).reduce((sum,i)=>sum+(i.effects?.quarryPower||0),0);
+function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.hp) {
+ const e=equipmentEffects(slots);
+ const quarry=Object.values(slots).filter(i=>i?.quarrySource&&i.quarrySource===enemy.materialSource).reduce((sum,i)=>sum+(i.effects?.quarryPower||0),0);
  stats.atk*=1+Math.min(60,quarry)/100;
  if(enemy.gearPoison>0) {stats.atk*=1+Math.min(200,e.poisonBonus||0)/100;stats.crit+=e.poisonCrit||0;}
- if(state.hp<=stats.maxHp*.35)stats.atk*=1+Math.min(150,e.lowHpPower||0)/100;
+ if(hp<=stats.maxHp*.35)stats.atk*=1+Math.min(150,e.lowHpPower||0)/100;
  if(action==='skill')stats.atk*=1+Math.min(100,e.skillPower||0)/100;
  stats.atk=Math.round(stats.atk);
 }
-function equipmentHit(enemy,action,isCrit=false) {
- const e=equipmentEffects();
+function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
+ const e=equipmentEffects(slots);
  if(e.fireDamage){enemy.hp-=e.fireDamage;addLog(`🔥 炎追撃 ${e.fireDamage}ダメージ`,'gold');}
  if(Math.random()*100<Math.min(85,(e.poisonChance||0)+(isCrit?(e.critPoison||0):0))) {enemy.gearPoison=3;addLog('☠️ 敵に毒を付与（3T）','gold');}
  if(action==='heavy'&&e.breakPower){enemy.def=Math.max(0,enemy.def-e.breakPower);addLog(`🔨 防御破壊 -${e.breakPower}`,'gold');}

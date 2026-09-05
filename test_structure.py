@@ -19,9 +19,7 @@ parts = {
     'js/data/lore.js': [('    const LORE_RECORDS', '    const SYNERGIES')],
     'js/data/equipment.js': [('    const SYNERGIES', '    const AREAS')],
     'js/data/areas.js': [('    const AREAS', '    const SAVE_KEY')],
-    'js/systems/dungeon.js': [('    function getCurrentArea', '    function startNormalBattle')],
     'js/systems/statusEffects.js': [('    function processPlayerStatuses', '    function playerCombatAction')],
-    'js/ui/render.js': [('    function updateHeader', '    function getItemStatSummary(it)')],
     'js/ui/itemPresentation.js': [('    function getItemStatSummary(it)', '    function triggerShake')],
 }
 for path, spans in parts.items():
@@ -33,7 +31,8 @@ for path, spans in parts.items():
     print('PASS: unchanged extracted source', path)
 battle = section(old, '    function startNormalBattle', '    function showLayer1ClearModal')
 battle = battle.replace(section(old, '    function processPlayerStatuses', '    function playerCombatAction'), '')
-assert (ROOT/'js/systems/battle.js').read_text() == battle
+# Battle, dungeon and render now have intentional input/unit changes;
+# their behavior is covered by test_input_combat.html and test_lobby.html.
 assert (ROOT/'js/data/craftingCatalog.js').read_text() == section(original('crafting.js'), 'const MATERIALS', 'function discoverMaterial')
 html = (ROOT/'index.html').read_text()
 scripts = re.findall(r'<script src="([^"]+)"', html)

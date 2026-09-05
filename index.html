@@ -1270,10 +1270,10 @@
     /* ==========================================================================
        STATS & SYNERGIES CALCULATION
        ========================================================================== */
-    function getSynergyBreakdown() {
+    function getSynergyBreakdown(slots=state.equipped) {
       const pieces = { blood: 0, gold: 0, curse: 0, titan: 0 };
-      Object.keys(state.equipped).forEach(slot => {
-        const it = state.equipped[slot];
+      Object.keys(slots).forEach(slot => {
+        const it = slots[slot];
         if (it) {
           if (it.setTag && pieces[it.setTag] !== undefined) pieces[it.setTag]++;
           if (it.isCurse) pieces.curse++;
@@ -1421,6 +1421,9 @@
        START RUN & TOWN FLOW
        ========================================================================== */
     function startDungeonRun() {
+      if(state.screen!=='town')return;
+      state.companionBattle={};
+      state.returnResolved=false;
       initAudio();
       playSound('click');
       const stats = getPlayerStats();
@@ -1530,6 +1533,8 @@
     }
 
     function finalizeSafeReturn() {
+      if(state.screen==='town'||state.returnResolved)return;
+      state.returnResolved=true;
       playSound('escape');
       state.vaultGold += state.dungeonGold;
       
@@ -1588,6 +1593,8 @@
     }
 
     function finalizeDeath(customKeptItems = null, customLostItems = null) {
+      if(state.screen==='town'||state.returnResolved)return;
+      state.returnResolved=true;
       playSound('gameover');
       let keptItems = customKeptItems;
       let lostItems = customLostItems;
@@ -1884,7 +1891,9 @@
     }
 
     function confirmEmergencyEscape(keepCount) {
+      if(state.screen==='town'||state.returnResolved)return;
       const selected = new Set(state.pendingEmergencySelection || []);
+      if(selected.size!==keepCount)return;
       const keptItems = state.inventory.filter((_, idx) => selected.has(idx));
       const lostItems = state.inventory.filter((_, idx) => !selected.has(idx));
 
@@ -1901,6 +1910,7 @@
       });
 
       const keptGold = Math.floor(state.dungeonGold * 0.6);
+      state.returnResolved=true;
       state.vaultGold += keptGold;
 
       showResultModal({
@@ -2391,6 +2401,7 @@
     }
 
     function escapeBattleWithSmoke() {
+      if(state.currentEnemy?.acting)return;
       if (!state.currentEnemy || state.currentEnemy.isBoss) return;
       const smokeIndex = state.inventory.findIndex(i => i.type === 'escape_item');
       if (smokeIndex < 0) return;
@@ -2507,6 +2518,7 @@
     }
 
     function diveDeeperFromSafePoint() {
+      if(state.screen!=='safe_point'||!lockTransition())return;
       initAudio();
       playSound('click');
       state.greedLevel = (state.greedLevel || 0) + 1;
@@ -2523,6 +2535,10 @@
        ROOM EVENTS (RISK & REWARD / DILEMMAS)
        ========================================================================== */
     function openChestEvent(isCursed = false) {
+      const room=state.currentDoors;
+      if(!room||room.chestClaimed)return;
+      room.chestClaimed=true;
+      document.querySelectorAll('#viewport button').forEach(b=>{b.disabled=true;b.style.pointerEvents='none';});
       if (isCursed) {
         // Cursed Chest: Guaranteed Epic or Legendary, but permanently reduces Max HP
         const item = generateItem(state.floor, null, 'cursed_chest');
@@ -2628,7 +2644,7 @@
           {
             text: 'HP30を捧げて攻撃力+8の祝福を得る',
             action: () => {
-              if (state.hp <= 30) { addLog('体力が足りず血を捧げられない！', 'danger'); return; }
+              if (state.hp <= 30) { addLog('体力が足りず血を捧げられない！', 'danger'); return false; }
               state.hp -= 30;
               state.equipped.weapon = state.equipped.weapon || { name: '血の契約刃', icon: '🗡️', type: 'weapon', rarity: 'Rare', baseAtk: 6 };
               state.equipped.weapon.baseAtk = (state.equipped.weapon.baseAtk || 0) + 8;
@@ -2722,7 +2738,7 @@
           {
             text: `特製傷薬 (HP45回復) - ${potPrice}G`,
             action: () => {
-              if (state.dungeonGold < potPrice) { addLog('ゴールドが足りない！', 'danger'); return; }
+              if (state.dungeonGold < potPrice) { addLog('ゴールドが足りない！', 'danger'); return false; }
               state.dungeonGold -= potPrice;
               state.inventory.push({ id: 'pot_m', name: '特製傷薬', icon: '🧪', type: 'potion', heal: 45, rarity: 'Common', desc: 'HP45回復' });
               playSound('click');
@@ -2733,14 +2749,14 @@
           {
             text: `${item1.name} [${item1.rarity}] - ${rarePrice}G (${getItemStatSummary(item1)})`,
             action: () => {
-              if (state.dungeonGold < rarePrice) { addLog('ゴールドが足りない！', 'danger'); return; }
+              if (state.dungeonGold < rarePrice) { addLog('ゴールドが足りない！', 'danger'); return false; }
               state.dungeonGold -= rarePrice; giveItemToBag(item1); playSound('click'); endEvent();
             }
           },
           ...(state.talents.merchantFriendLv > 0 ? [{
             text: `🤝 友好枠: ${item2.name} [${item2.rarity}] - ${epicPrice}G (${getItemStatSummary(item2)})`,
             action: () => {
-              if (state.dungeonGold < epicPrice) { addLog('ゴールドが足りない！', 'danger'); return; }
+              if (state.dungeonGold < epicPrice) { addLog('ゴールドが足りない！', 'danger'); return false; }
               state.dungeonGold -= epicPrice; giveItemToBag(item2); playSound('click'); endEvent();
             }
           }] : []),
@@ -2883,6 +2899,7 @@
     }
 
     function endEvent() {
+      if(state.screen!=='event')return;
       state.screen = 'door_select';
       state.floor++;
       generateDoorsForFloor();
@@ -3462,6 +3479,7 @@
   <script src="chapter-story.js"></script>
   <script src="chapter-system.js"></script>
   <script src="companion-equipment.js"></script>
+  <script src="js/systems/inputSafety.js"></script>
   <script src="forge-ui.js"></script>
   <script src="js/ui/homeUI.js"></script>
   <script src="js/ui/orientationUI.js"></script>

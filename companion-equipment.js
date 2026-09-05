@@ -38,6 +38,17 @@ function companionStats(id='elna'){
   if(it.affix==='critical')s.crit+=8;if(it.affix==='lifesteal')s.vamp+=3;if(it.affix==='max_hp')s.maxHp+=25;
   for(const [key,n]of Object.entries(it.effects||{}))s.effects[key]=(s.effects[key]||0)+n;
  }
+ const syn=getSynergyBreakdown(slots),count=id=>syn.find(x=>x.id===id)?.count||0;
+ if(count('syn_titan')>=2){s.def+=8;s.maxHp+=40;if(count('syn_titan')>=3){s.def+=14;s.maxHp+=60;}}
+ if(count('syn_blood')>=2)s.vamp+=count('syn_blood')>=3?10:4;
+ if(count('syn_curse')>=2){s.atk+=25;s.crit+=15;if(count('syn_curse')>=3){s.atk+=35;s.crit+=15;s.maxHp=Math.floor(s.maxHp*.85);}}
+ const hp=state.companionBattle?.[id]?.hp??s.maxHp,items=Object.values(slots).filter(Boolean),curses=items.filter(i=>i.isCurse).length;
+ s.atk+=curses*14;s.crit+=curses*8;
+ if(count('syn_blood')>=1&&hp<=s.maxHp*.5){s.atk=Math.round(s.atk*1.35);s.vamp+=4;if(hp<=s.maxHp*.25){s.atk=Math.round(s.atk*1.35);s.vamp+=8;}}
+ if(count('syn_gold')>=1&&state.floor>0){s.atk+=Math.floor(state.dungeonGold/100)*2;s.def+=Math.floor(state.dungeonGold/100);}
+ if(items.some(i=>i.isBerserk)&&hp<=s.maxHp*.5)s.atk*=2;
+ s.def+=items.filter(i=>i.affix==='low_hp_def'&&hp<=s.maxHp*.4).length*8;
+ s.demeritDamage=Math.max(-40,items.reduce((n,i)=>n+(i.demeritDamageTaken||0)-(i.affix==='damage_reduction'?10:0),0));
  return s;
 }
 function characterProgress(id){
@@ -54,12 +65,51 @@ function selectCompanion(id){
 function companionTurn(enemy){
  const id=state.chapter?.companion;
  if(!id||!state.chapter.owned[id]||state.chapter.pending||state.hp<=0||enemy.hp<=0)return;
- const stats=companionStats(id),before=enemy.hp;
- const damage=Math.max(1,Math.round(stats.atk*.3-enemy.def*.15))+(stats.effects.fireDamage||0);
- enemy.hp-=damage;applyRootProtection(enemy,before);
- addLog(`${CHARACTER_DATA[id]?.name||id}の支援追撃！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
+ const unit=companionCombatUnit(),stats=companionStats(id),slots=characterEquipment(id),before=enemy.hp;
+ if(!unit||unit.hp<=0)return false;
+ unit.hp=Math.min(stats.maxHp,unit.hp+Object.values(slots).filter(Boolean).reduce((n,i)=>n+(i.turnRegen||0),0));
+ unit.hp=Math.max(0,unit.hp-(unit.poison>0?5:0));unit.poison=Math.max(0,unit.poison-1);
+ if(unit.hp<=0){addLog(`${CHARACTER_DATA[id]?.name||id}は毒で戦闘不能！`,'danger');return false;}
+ let action=state.lastPlayerAction||'attack';
+ if(!['attack','heavy','skill','defend'].includes(action))action='attack';
+ unit.defending=action==='defend';
+ unit.cooldown=Math.max(0,unit.cooldown-1);
+ if(unit.defending){addLog(`${CHARACTER_DATA[id]?.name||id}は防御を構えた。`,'info');return false;}
+ if(action==='skill'&&unit.cooldown>0)action='attack';
+ if(action==='skill')unit.cooldown=Math.max(1,3-(stats.effects.skillHaste||0));
+ equipmentAttackStats(stats,enemy,action,slots,unit.hp);
+ const weapon=slots.weapon;
+ if(weapon?.craftEffect==='elite_hunter'&&enemy.isElite)stats.atk*=2.5;
+ if(weapon?.craftEffect==='desperate'&&unit.hp<=stats.maxHp*.35)stats.atk*=2;
+ if(action==='heavy'&&weapon?.affix==='boss_slayer'&&enemy.isBoss)stats.atk*=1.25;
+ if(action==='heavy'&&weapon?.affix==='elite_slayer'&&enemy.isElite)stats.atk*=1.3;
+ const crit=Math.random()*100<Math.min(85,stats.crit);
+ const damage=Math.max(1,Math.round(stats.atk*(action==='heavy'?1.5:action==='skill'?1.8:1)*(unit.attackBuff||1)*(crit?1.5+(stats.effects.critDamage||0)/100:1)-enemy.def));
+ unit.attackBuff=1;enemy.hp-=damage;equipmentHit(enemy,action,crit,slots);applyRootProtection(enemy,before);
+ unit.hp=Math.min(stats.maxHp,unit.hp+Math.floor(damage*stats.vamp/100));
+ addLog(`${CHARACTER_DATA[id]?.name||id}の${action==='skill'?'スキル':action==='heavy'?'強攻撃':'通常攻撃'}！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
+ if(enemy.hp<=0&&enemy.gearPoison)unit.hp=Math.min(stats.maxHp,unit.hp+(stats.effects.poisonHeal||0));
  if(enemy.hp<=0){enemy.hp=0;onEnemyKilled();return true;}
  return false;
+}
+function companionCombatUnit(){
+ const id=state.chapter?.companion;if(!id||!state.chapter.owned[id]||state.chapter.pending)return null;
+ state.companionBattle ||= {};
+ return state.companionBattle[id] ||= {id,hp:companionStats(id).maxHp,poison:0,cooldown:0,attackBuff:1};
+}
+function companionReceiveAttack(enemy,attack){
+ const unit=companionCombatUnit();if(!unit||unit.hp<=0)return false;
+ const stats=companionStats(unit.id),e=stats.effects,slots=characterEquipment(unit.id),name=CHARACTER_DATA[unit.id]?.name||unit.id;
+ if(Math.random()*100<Math.min(45,e.dodge||0)){unit.attackBuff=1+Math.min(150,e.dodgeAttack||0)/100;addLog(`${name}が回避！`,'gold');return true;}
+ const just=unit.defending&&['heavy','critical_smash'].includes(enemy.actionType),guard=unit.defending&&enemy.actionType!=='grab_prep';
+ const defense=stats.def;
+ let damage=Math.max(1,Math.round((attack-defense)*(guard?(just?.2:.45):1)));
+ damage=Math.max(1,Math.round(damage*(1+stats.demeritDamage/100)));
+ unit.hp=Math.max(0,unit.hp-damage);
+ if(unit.hp>0&&guard){unit.hp=Math.min(stats.maxHp,unit.hp+(e.guardHeal||0));if(just)unit.attackBuff=1+Math.min(150,e.justAttack||0)/100;}
+ if(['curse_poison','spore_poison'].includes(enemy.trait))unit.poison=2;
+ addLog(`${enemy.name} → ${name}：${damage}ダメージ${unit.hp<=0?'・戦闘不能':''}`,'danger');
+ return true;
 }
 function awardCompanionExperience(enemy){
  const id=state.chapter?.companion;if(!id||!state.chapter.owned[id])return;
@@ -102,6 +152,6 @@ function openCharacterEquipment(id='player',slot=null,page=0){
  showChapterModal('👥 キャラ／装備',`<div class="forge-actions">${tabs}</div><p>総能力 ATK ${stats.atk} / DEF ${stats.def} / HP ${stats.maxHp} / 会心 ${stats.crit}%</p>${id!=='player'?'<p>通常探索の主人公とは別装備。エルナの物語戦では基礎能力・炎追撃・会心・スキル威力/CT・ガード回復・回避を反映します。その他の特殊効果は物語戦では適用しません。</p>':''}${rows}${selection}`,`<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
  if(id!=='player'){
   const p=characterProgress(id);
-  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><b>Lv.${p.level} / EXP ${p.exp}${p.level<100?' / '+p.level*30:' MAX'}</b><p>通常戦闘では敵の行動前に支援追撃（攻撃力30%・炎追撃）。主人公が敵を倒した場合は追撃なし。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
+  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><b>Lv.${p.level} / EXP ${p.exp}${p.level<100?' / '+p.level*30:' MAX'}</b><p>敵行動前に1回、主人公と同じ種類の行動を取ります（スキルCT中は通常攻撃）。独立HP・DEFで敵の攻撃対象となり、HP0で探索中は戦闘不能。出撃時に全回復。主人公が倒した敵には攻撃しません。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
  }
 }
