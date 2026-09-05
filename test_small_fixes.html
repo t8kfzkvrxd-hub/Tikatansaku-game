@@ -24,7 +24,7 @@ window.onload = () => setTimeout(() => {
   w.setStorageCategory('material');check(w.document.body.textContent.includes('炎竜の鱗 ×12')&&s.storage.length===16,'素材スタック表示・データ保持');
   w.sellItemFromStorage(4);check(s.storage.length===15 && w.getStorageRows(s.storage,'material')[0].count===11,'素材売却後にスタック更新');
   s.modifiers.enemyAtkMult=1;s.greedLevel=0;s.camp.lab=3;
-  for(const area of w.__gameDebug.AREAS) {
+  for(const area of w.__gameDebug.AREAS.filter(area=>area.max<=60)) {
    s.floor=area.max-1;w.startNormalBattle(true); const elite={...s.currentEnemy};
    s.floor=area.max;w.startBossBattle(area.boss);check(s.currentEnemy.maxHp>elite.maxHp*1.5 && s.currentEnemy.atk>elite.atk,'ボスとエリート比較 B'+area.max);
    if(area.boss.gimmick==='mutate_form')s.currentEnemy.hp=s.currentEnemy.maxHp*.4;

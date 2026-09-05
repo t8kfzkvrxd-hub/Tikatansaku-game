@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>地下探索型・持ち帰りローグライト - ABYSS DELVER</title>
-  <meta name="description" content="地下30階の深淵に挑む持ち帰り型ローグライト。生還か、更なる深層か。緊張感あふれるリスクとリターン。" />
+  <meta name="description" content="地下100階の迷宮に挑む持ち帰り型ローグライト。生還か、更なる深層か。緊張感あふれるリスクとリターン。" />
   <style>
     /* ==========================================================================
        RESET & THEME
@@ -1160,11 +1160,16 @@
     /* ==========================================================================
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
-    const MAX_DUNGEON_FLOOR = 60;
-    const BOSS_FLOORS = [10, 20, 30, 40, 50, 60];
-    const SAFE_RETURN_FLOORS = [5, 15, 25, 35, 45, 55];
-    const GAME_VERSION = '0.8.1';
+    const MAX_DUNGEON_FLOOR = 100;
+    const BOSS_FLOORS = [10,20,30,40,50,60,70,80,90,100];
+    const SAFE_RETURN_FLOORS = [5,15,25,35,45,55,65,75,85,95];
+    const GAME_VERSION = '0.9.0';
     const UPDATE_NOTES = [
+      '地下100Fまで拡張。記憶墓地・鏡写しの街・忘却回廊・境界層と4体のボスを追加',
+      '第1章全10話、幼馴染エルナの無料同行登録、3モードの実地チュートリアル、記憶の書庫を追加',
+      '100F通常ボス後の乱入・エルナ操作の物語戦・第1章の結末を追加。物語の途中再開に対応',
+      '60F残修正：帰還表示、遺物成長、呪毒解除、母樹の根、船長召喚、水位不利益、肉塊回復を接続',
+      '新敵固有素材100種・追加レシピ96種、研究所Lv5の深層危険解析を追加',
       '更新通知の本文だけをスクロール可能にし、小さい画面でも操作ボタンを表示',
       '装備を7枠へ拡張。旧装備を保持して自動移行、アクセサリー2枠対応',
       '素材レシピ145種・タグ効果・毒／会心／ガード／回避などの混成ビルドを追加',
@@ -1458,7 +1463,7 @@
       {
         id:6, name:'肉壁迷宮 (51〜60F)', tag:'肉壁迷宮', min:51, max:60,
         enemies:[
-          {name:'脈動肉塊',icon:'🫀',hp:280,atk:83,def:24,trait:'death_pulse',traitName:'治癒脈動',hint:'長期戦で周囲の肉壁から回復'},
+          {name:'脈動肉塊',icon:'🫀',hp:280,atk:83,def:24,trait:'death_pulse',traitName:'治癒脈動',hint:'撃破後、次の敵が3ターン最大HP6%回復'},
           {name:'観測眼球',icon:'👁️',hp:230,atk:88,def:22,trait:'copy_buff',traitName:'模倣視線',hint:'プレイヤーの攻撃バフをコピー'},
           {name:'血走獣',icon:'🩸',hp:265,atk:90,def:20,trait:'low_hp_frenzy',traitName:'血走暴走',hint:'HPが減るほど危険'}
         ], elite:{name:'神経節の守護者',icon:'🧠',hp:600,atk:98,def:30,isElite:true,trait:'action_memory',traitName:'行動記憶',hint:'同じ行動を連続すると即座に反撃'},
@@ -1679,6 +1684,7 @@
           ,starterPerk: state.starterPerk
           ,rarityProgress: state.rarityProgress
           ,craftProgress: state.craftProgress
+          ,chapter: state.chapter
           ,maxUnlockedFloor: state.maxUnlockedFloor
           ,deepestFloorReached: state.deepestFloorReached
           ,runRecords: state.runRecords
@@ -1724,7 +1730,7 @@
           state.maxUnlockedFloor = Math.max(30, Number(p.maxUnlockedFloor) || 30);
           state.deepestFloorReached = Number(p.deepestFloorReached) || 0;
           state.runRecords = Object.assign(state.runRecords, p.runRecords || {});
-          state.selectedStartFloor = [1,31,41,51].includes(Number(p.selectedStartFloor)) ? Number(p.selectedStartFloor) : 1;
+          state.selectedStartFloor = [1,...BOSS_FLOORS.map(f=>f+1).filter(f=>f<=MAX_DUNGEON_FLOOR)].includes(Number(p.selectedStartFloor)) ? Number(p.selectedStartFloor) : 1;
 
           // Normalize legacy saves so string/null levels cannot break buttons or MAX checks.
           ['blacksmith','shop','tavern','lab'].forEach(key => {
@@ -1739,6 +1745,8 @@
         initStarterItems();
       }
       migrateEquipment();
+      let savedChapter=null;try{savedChapter=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')?.chapter;}catch(e){}
+      migrateChapter(savedChapter);
     }
 
     function showResetSaveConfirmation() {
@@ -1768,6 +1776,7 @@
 
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
       initStarterItems();
+      migrateChapter(null);
       saveState();
 
       if (reloadPage) {
@@ -1923,7 +1932,8 @@
       if (equippedAccessories().some(i=>i.isBerserk) && state.hp <= (maxHp * 0.5)) {
         atk *= 2;
       }
-      if (state.equipped.weapon?.key === 'abyssal_devourer') atk += (state.abyssGrowth || 0);
+      if (state.equipped.weapon?.key === 'abyssal_devourer' || equippedAccessories().some(i=>i.key==='living_core_relic')) atk += (state.abyssGrowth || 0);
+      if(state.statusEffects.weakened>0)atk=Math.round(atk*.8);
 
       // GREED Modifiers (リスク＆リターン)
       if (state.greedLevel > 0) {
@@ -1976,6 +1986,8 @@
       state.abyssGrowth = 0;
       state.statusEffects = { poison:0, bleed:0, paralysis:0, bind:0, weakened:0 };
       state.lastPlayerAction = null;
+      state.pendingEnemyPulse=0;clearPlayerStatuses();
+      state.effectSeal=null;state.lastDefeatedEnemy=null;
       state.guardFatigue = 0;
       state.guardStamina = 100;
       state.guardBroken = false;
@@ -2115,6 +2127,7 @@
       saveState();
       state.screen = 'town';
       state.floor = 0;
+      if(state.chapter?.pending?.kind==='return'){state.chapter.pending=null;state.chapter.checkpoint=null;saveState();}
       updateHeader();
       render();
     }
@@ -2463,6 +2476,7 @@
     }
 
     function generateDoorsForFloor() {
+      state.floor=Math.min(MAX_DUNGEON_FLOOR,state.floor);
       const bossFloor = isBossFloor(state.floor);
       const isSafePortalFloor = isSafeReturnFloor(state.floor);
       state.deepestFloorReached = Math.max(state.deepestFloorReached || 0, state.floor);
@@ -2574,7 +2588,7 @@
           5:['🫧 空気の残る部屋','沈没都市に残された空気室と宝物庫。'],
           6:['🫀 脈打つ祭壇','肉壁があなた自身の声で選択を迫る。']
         };
-        const deep = deepSigns[getCurrentArea().id];
+        const deep = deepSigns[getCurrentArea().id] || ['📖 記憶の残響',getCurrentArea().rule];
         doorPool.push({type:'deep_area_event',icon:deep[0].slice(0,2),sign:deep[0],desc:deep[1],risk:'mid',riskText:'深層固有'});
       }
 
@@ -2627,6 +2641,10 @@
       const shuffled = doorPool.sort(() => 0.5 - Math.random());
       const hasObserver = equippedAccessories().some(i=>i.key === 'abyssal_observer');
       state.currentDoors = shuffled.slice(0, hasObserver ? 4 : 3);
+      if(state.chapter?.contract&&!state.chapter.read[10]&&state.chapter.mode!=='skip'&&TUTORIAL_STEPS[state.floor]){
+        const training=doorPool.find(d=>d.type===TUTORIAL_STEPS[state.floor][2]);
+        if(training)state.currentDoors=[{...training,sign:'🌻 '+training.sign}];
+      }
       if (hasObserver && state.currentDoors[3]) {
         state.currentDoors[3].sign = `👁️ 隠された道：${state.currentDoors[3].sign}`;
         state.currentDoors[3].desc += ' 【観測済み：表示どおりの危険度と報酬】';
@@ -2708,7 +2726,7 @@
       const area = getCurrentArea();
       let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
       
-      const scale = isElite ? 1 + (state.floor - area.min) * 0.015 : 1 + (state.floor * 0.08);
+      const scale = isElite || state.floor>=61 ? 1 + (state.floor - area.min) * 0.015 : 1 + (state.floor * 0.08);
       const eliteScale = 1.0;
       const greedAtkMult = [1, 1.10, 1.25, 1.45][Math.min(3, state.greedLevel || 0)];
       state.currentEnemy = {
@@ -2725,10 +2743,13 @@
         traitName: enemyTemplate.traitName,
         hint: enemyTemplate.hint,
         turnCount: 0
+        ,obscured: area.id===9&&Math.random()<.3
       };
 
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
+      applyEnemyPulse(state.currentEnemy);
+      if(state.chapter?.contract&&!state.chapter.read[10]&&state.floor===7&&state.chapter.mode!=='skip'){state.statusEffects.poison=2;addLog('🌻 エルナ：毒を受けたらバッグの万能解毒薬を使おう。','info');}
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
@@ -2758,6 +2779,7 @@
       state.bossMutated = false;
       state.bossAdds = bossTemplate.gimmick === 'mother_tree' ? 2 : 0;
       state.waterLevel = 0;
+      applyEnemyPulse(state.currentEnemy);
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
@@ -2867,6 +2889,7 @@
       }
 
       // Calculate Expected Damages for player HUD
+      deepEnemyIntent(e);
       let rawEnemyAtk = e.atk * e.nextMult;
       if (state.playerExposed) rawEnemyAtk *= 1.35; // Player exposed penalty
       e.expectedDmg = Math.max(1, Math.round(rawEnemyAtk - stats.def));
@@ -2911,6 +2934,7 @@
       if (state.statusEffects.bind>0) state.statusEffects.bind--;
       if (state.statusEffects.paralysis>0) state.statusEffects.paralysis--;
       if (state.statusEffects.weakened>0) state.statusEffects.weakened--;
+      if(state.statusEffects.curse>0){damage+=4;state.statusEffects.curse--;}
       if (damage>0) { state.hp-=damage;addLog(`状態異常によりHP-${damage}`,'danger');spawnFloatingFx(`-${damage}`,'damage'); }
       return damage;
     }
@@ -2922,8 +2946,10 @@
       const stats = getPlayerStats();
       const enemy = state.currentEnemy;
       const weapon = state.equipped.weapon;
+      const enemyHpBeforeAction=enemy.hp;
       const archetype = weapon?.archetype || 'sword';
       equipmentAttackStats(stats,enemy,action);
+      recordDepthAction(enemy,action,stats);
       if (weapon?.craftEffect === 'elite_hunter' && enemy.isElite) stats.atk = Math.round(stats.atk * 2.5);
       if (weapon?.craftEffect === 'desperate' && state.hp <= stats.maxHp * 0.35) stats.atk = Math.round(stats.atk * 2);
       if (action === 'skill' && state.statusEffects.paralysis > 0) {
@@ -2988,7 +3014,7 @@
         if (state.guaranteedCrit) { isCrit = true; state.guaranteedCrit = false; }
 
         let baseDmg = stats.atk * (isCrit ? 1.8 + Math.min(150,equipmentEffects().critDamage||0)/100 : 1.0) * (state.playerAttackBuff || 1.0);
-        let targetDef = (enemy.isBoss && state.bossBarrier) ? enemy.def * 3 : enemy.def;
+        let targetDef = (enemy.gimmick==='shield_barrier' && state.bossBarrier) ? enemy.def * 3 : enemy.def;
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 4 - 2)));
 
         state.playerAttackBuff = 1.0; // Consumed
@@ -3034,6 +3060,7 @@
         }
 
         equipmentHit(enemy,action,isCrit);
+        applyRootProtection(enemy,enemyHpBeforeAction);
         // Vampirism
         if (stats.vamp > 0) {
           const healed = Math.min(stats.maxHp - state.hp, stats.vamp);
@@ -3077,7 +3104,7 @@
         let mult = (archetype === 'greatsword') ? 2.5 : 1.9;
         if (enemy.actionType === 'falter') mult *= 1.4; // Falter bonus: +40% more damage!
         let baseDmg = stats.atk * mult * (state.playerAttackBuff || 1.0);
-        let targetDef = (enemy.isBoss && state.bossBarrier) ? enemy.def * 3 : enemy.def;
+        let targetDef = (enemy.gimmick==='shield_barrier' && state.bossBarrier) ? enemy.def * 3 : enemy.def;
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 6 - 3)));
         if (weapon?.affix === 'boss_slayer' && enemy.isBoss) dmg = Math.round(dmg * 1.25);
         if (weapon?.affix === 'elite_slayer' && enemy.isElite) dmg = Math.round(dmg * 1.30);
@@ -3095,6 +3122,7 @@
         }
         spawnFloatingFx(`💥 強撃 -${dmg}！ ${enemy.actionType === 'falter' ? '(隙特効!)' : '(隙あり被ダメ+35%)'}`, 'crit');
         addLog(`渾身の力で武器を叩きつけた！ ${enemy.name} に ${dmg} の強打！`, 'gold');
+        applyRootProtection(enemy,enemyHpBeforeAction);
 
         if (enemy.hp <= 0) {
           enemy.hp = 0;
@@ -3189,7 +3217,7 @@
         }
 
         equipmentHit(enemy,action);
-        state.skillCooldown = Math.max(1,2-(equipmentEffects().skillHaste||0));
+        state.skillCooldown = Math.max(1,2-(equipmentEffects().skillHaste||0))+(enemy.gimmick==='rising_water'&&state.waterLevel>=70?1:0);
         addThunderCharge(enemy, '武器スキル');
 
         if (hasDragon) {
@@ -3197,6 +3225,7 @@
           spawnFloatingFx('🔥 幼竜の息吹 -8', 'crit');
           addLog(`幼竜の火炎追撃！ ${enemy.name}に8ダメージ。`, 'gold');
         }
+        applyRootProtection(enemy,enemyHpBeforeAction);
 
         if (enemy.hp <= 0) {
           enemy.hp = 0;
@@ -3237,7 +3266,7 @@
       equipmentPoisonTick(enemy);
       if(enemy.hp<=0){onEnemyKilled();return;}
       const gearEffects=equipmentEffects();
-      if(Math.random()*100<Math.min(45,gearEffects.dodge||0)) {
+      if(Math.random()*100<Math.max(0,Math.min(45,gearEffects.dodge||0)-(enemy.gimmick==='rising_water'&&state.waterLevel>=70?20:0))) {
         state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.dodgeAttack||0)/100);
         addLog('💨 回避成功！'+(gearEffects.dodgeAttack?' 次の攻撃を強化':''),'gold');decideEnemyIntent();updateHeader();render();return;
       }
@@ -3253,8 +3282,14 @@
         decideEnemyIntent(); updateHeader(); render(); return;
       }
       enemy.turnCount = (enemy.turnCount || 0) + 1;
+      if(enemy.pulseTurns>0){enemy.pulseTurns--;const heal=Math.min(Math.round(enemy.maxHp*.06),enemy.maxHp-enemy.hp);enemy.hp+=heal;addLog(`🫀 肉塊の残響が敵を${heal}回復（残り${enemy.pulseTurns}T）`,'danger');}
+      if(enemy.trait==='captain_phase'&&enemy.turnCount%2===0){enemy.summons=Math.min(2,(enemy.summons||0)+1);addLog(`⚓ 亡霊船員を召喚（${enemy.summons}/2）`,'danger');}
 
       let enemyAtk = enemy.atk * (enemy.nextMult || 1.0);
+      deepEnemyTurn(enemy,isPlayerDefending);
+      enemyAtk=enemy.atk*(enemy.nextMult||1);
+      if(enemy.inheritTurns>0){enemyAtk+=enemy.inheritedAtk||0;enemy.inheritTurns--;}
+      if(enemy.trait==='captain_phase'){enemyAtk*=enemy.hp<enemy.maxHp*.5?1.25:1;enemyAtk+=(enemy.summons||0)*3;}
       if (state.playerExposed) {
         enemyAtk *= 1.35; // Exposed penalty
         state.playerExposed = false; // reset
@@ -3277,6 +3312,7 @@
       }
 
       // Apply demerit damages (e.g. Gold mask)
+      if(enemy.trait==='captain_phase'&&enemy.hp<enemy.maxHp*.5){dmg*=2;addLog('⚓ 船長の二連撃！','danger');}
       if (stats.demeritDamage !== 0) {
         dmg = Math.round(dmg * (1 + stats.demeritDamage / 100));
       }
@@ -3315,7 +3351,7 @@
       if (enemy.trait === 'paralysis') { state.statusEffects.paralysis=1; addLog('⚡ 麻痺：次のスキル使用不可','danger'); }
       if (enemy.trait === 'ancient_growth') { enemy.atk=Math.round(enemy.atk*1.07);enemy.def+=2;addLog('🌳 捕食王が成長した','danger'); }
       if (enemy.trait === 'low_hp_frenzy' && enemy.hp<enemy.maxHp*.4) enemy.atk=Math.round(enemy.atk*1.08);
-      if (enemy.trait === 'captain_phase' && enemy.hp<enemy.maxHp*.5) { enemy.nextMult=(enemy.nextMult||1)*1.25;enemy.def+=1; }
+      if (enemy.trait === 'captain_phase' && enemy.hp<enemy.maxHp*.5 && !enemy.captainArmored) {enemy.captainArmored=true;enemy.def+=4;}
       if (enemy.trait === 'copy_buff' && state.playerAttackBuff>1) { enemy.atk=Math.round(enemy.atk*state.playerAttackBuff);addLog('👁️ 攻撃バフを模倣された！','danger'); }
       if (enemy.trait === 'rage_stack') {
         enemy.atk = Math.round(enemy.atk * 1.08);
@@ -3395,8 +3431,11 @@
     }
 
     function onEnemyKilled() {
+      if(!state.currentEnemy)return;
       const enemy = state.currentEnemy;
       playSound(enemy.isBoss ? 'boss_kill' : 'kill');
+      state.lastDefeatedEnemy={atk:enemy.atk,trait:enemy.trait};
+      if(enemy.trait==='death_pulse'){state.pendingEnemyPulse=3;addLog('🫀 肉塊の治癒脈動が次の敵へ伝わった（3T・毎ターン最大HP6%回復）','danger');}
       if(enemy.gearPoison&&equipmentEffects().poisonHeal){const heal=equipmentEffects().poisonHeal;state.hp=Math.min(getPlayerStats().maxHp,state.hp+heal);addLog(`☠️ 毒敵撃破回復 +${heal}HP`,'heal');}
       dropMonsterMaterials(enemy);
       state.runKills++;
@@ -3488,13 +3527,7 @@
           }
         });
 
-        if ([30,40,50,60].includes(state.floor)) {
-          const clearedFloor=state.floor;
-          state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,Math.min(60,clearedFloor+10));
-          saveState();
-          setTimeout(() => showDepthMilestoneModal(clearedFloor), 800);
-          return;
-        }
+        afterChapterBoss(state.floor);return;
       } else if (Math.random() < (enemy.isElite ? 0.08 : 0.03)) {
         // Elite or standard drop
         const item = generateItem(state.floor, enemy.isElite ? (Math.random()<0.3?'Epic':'Rare') : (Math.random()<0.2?'Rare':'Common'), 'monster');
@@ -4001,6 +4034,10 @@
        FIRST-TIME 3-POINT TUTORIAL (初回プレイ時の説明)
        ========================================================================== */
     function checkTutorial() {
+      if(state.chapter?.pending){resumeChapter();return;}
+      if(!state.chapter?.mode){showChapterWelcome();return;}
+      if(!state.chapter.contract){showFirstContract();return;}
+      return;
       if (!localStorage.getItem('ABYSS_TUTORIAL_SEEN')) {
         showTutorialModal();
       }
@@ -4462,7 +4499,7 @@
         5:{title:'🫧 水没都市の空気室',icon:'🌊',text:'住民が水位上昇から逃げた記録と、まだ乾いた宝箱が残されている。'},
         6:{title:'👁️ 記憶を読む眼',icon:'👁️',text:'眼球は「迷宮そのものが1000階の王を育てる胎盤だ」と、あなたの声で告げる。'}
       };
-      const ev = variants[areaId];
+      const ev = variants[areaId] || {title:'📖 '+getCurrentArea().tag+'の残響',icon:'📖',text:getCurrentArea().rule+' 遠くから聞こえる声は、自分たちしか知らない会話の続きを話している。'};
       state.screen='event';
       state.currentEvent={title:ev.title,icon:ev.icon,text:ev.text,choices:[
         {text:'危険を承知で深層結晶を採取する',action:()=>{const gain=Math.random()<.25?2:1;state.deepCrystals+=gain;state.hp=Math.max(1,state.hp-Math.round(state.maxHp*.12));addLog(`🔷 深層結晶+${gain} / HPを代償にした`,'gold');endEvent();}},
@@ -4718,7 +4755,7 @@
     }
 
     function selectStartFloor(floor) {
-      if(floor>state.maxUnlockedFloor)return;state.selectedStartFloor=floor;saveState();render();
+      if(floor>state.maxUnlockedFloor||floor>MAX_DUNGEON_FLOOR)return;state.selectedStartFloor=floor;saveState();render();
     }
 
     function getItemSellPrice(item) {
@@ -4901,7 +4938,7 @@
       const amount=(item.heal||0)+Math.round(stats.maxHp*(item.healPercent||0)/100);
       const healed = Math.min(stats.maxHp - state.hp, amount);
       state.hp += healed;
-      if(item.cureAll) state.statusEffects={poison:0,bleed:0,paralysis:0,bind:0,weakened:0};
+      if(item.cureAll) clearPlayerStatuses();
       playSound('heal');
       addLog(`${item.name} を服用。HP +${healed} 回復！`, 'heal');
       state.inventory.splice(index, 1);
@@ -4964,9 +5001,10 @@
       // Goal Nudge (短い目標の常時表示 & 次の安全帰還ポイントまでの階数)
       const nudge = document.getElementById('ui-goal-nudge');
       if (inDungeon) {
-        const nextSafe = Math.ceil(state.floor / 5) * 5;
-        const remain = nextSafe - state.floor;
-        if (isCriticalHp) {
+        const nextSafe = getNextSafeFloor();
+        const remain = nextSafe===null?null:nextSafe-state.floor;
+        if(nextSafe===null){nudge.textContent='現在の最深部：次の帰還門はありません';nudge.className='goal-nudge';}
+        else if (isCriticalHp) {
           nudge.innerHTML = `🚨 瀕死！ 5F帰還門まで: <b style="color:#fff; font-size:12px;">あと${remain}階</b> 耐え抜け！`;
           nudge.className = 'goal-nudge critical-nudge';
         } else if (isBossFloor(state.floor)) {
@@ -5002,7 +5040,7 @@
     }
 
     function getLabBossIntelHtml() {
-      const nextBossFloor = BOSS_FLOORS.find(f => !state.bossFirstKills?.[f]) || MAX_DUNGEON_FLOOR;
+      const nextBossFloor = getNextBossFloor() || MAX_DUNGEON_FLOOR;
       const area = AREAS.find(a => a.max === nextBossFloor) || AREAS[AREAS.length-1];
       const boss = area.boss;
       const gimmicks = {
@@ -5012,10 +5050,13 @@
         mother_tree: '守護根・自己再生',
         rising_water: '毎ターン水位上昇（排水可能）',
         three_phase_core: 'HPに応じた三段階変異・行動学習'
+        ,history_king:'反復行動を記録し、後半に対策',mirror_warden:'装備能力と構えを一部模倣',forget_librarian:'バフを奪いスキルを封印',boundary_gate:'装甲相と開放相が交互に切り替わる'
       };
       const shownHp = state.camp.lab >= 3 ? Math.round(boss.hp * 0.85) : boss.hp;
       return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
         📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shownHp} / 攻撃 ${boss.atk} / ${gimmicks[boss.gimmick]}
+        <div>次の安全帰還：${getNextSafeFloor(state.floor||state.selectedStartFloor||1)??'なし'}F</div>
+        ${state.camp.lab>=5?`<div>🔬 深層危険解析：${area.rule||'敵の予告・状態異常を確認して行動を選ぶ。'} / ${gimmicks[boss.gimmick]}</div>`:''}
         ${state.camp.lab >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
         ${state.camp.lab >= 4 && state.rarityProgress.mythicPity >= 100 ? '<div style="color:#f9a8d4;">💠 神話級の気配が強まっている…</div>' : ''}
         ${state.camp.lab >= 4 && state.rarityProgress.abyssalPity >= 800 ? '<div style="color:#67e8f9;">🌌 深淵の鼓動が近い…</div>' : ''}
@@ -5075,7 +5116,7 @@
                 ].map(p => `<button class="btn ${state.starterPerk === p[0] ? 'btn-gold' : 'btn-sub'} btn-xs" onclick="selectStarterPerk('${p[0]}')" title="${p[2]}">${p[1]}</button>`).join('')}
               </div>
             </div>
-            <div style="display:flex;gap:4px;margin-bottom:8px;align-items:center;font-size:10.5px;color:#94a3b8;"><span>開始地点:</span>${[1,31,41,51].filter(f=>f<=state.maxUnlockedFloor).map(f=>`<button class="btn ${state.selectedStartFloor===f?'btn-gold':'btn-sub'} btn-xs" onclick="selectStartFloor(${f})">B${f}F</button>`).join('')}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center;font-size:10.5px;color:#94a3b8;"><span>開始地点:</span>${[1,...BOSS_FLOORS.map(f=>f+1)].filter(f=>f<=state.maxUnlockedFloor&&f<=MAX_DUNGEON_FLOOR).map(f=>`<button class="btn ${state.selectedStartFloor===f?'btn-gold':'btn-sub'} btn-xs" onclick="selectStartFloor(${f})">B${f}F</button>`).join('')}</div>
 
             <button class="btn btn-gold" style="font-size:16px; padding:14px; width:100%;" ${state.starterPerk ? '' : 'disabled'} onclick="startDungeonRun()">
               ${state.starterPerk ? '🪜 地下迷宮へ潜る (探索開始)' : '支援を選ぶと探索開始できます'}
@@ -5219,7 +5260,7 @@
       // VIEW: SAFE POINT (5階ごとの安全帰還ポイント特別演出画面)
       else if (state.screen === 'safe_point') {
         const area = getCurrentArea();
-        const nextBossFloor = BOSS_FLOORS.find(f=>f>state.floor) || MAX_DUNGEON_FLOOR;
+        const nextBossFloor = getNextBossFloor() || MAX_DUNGEON_FLOOR;
         const bossRemain = nextBossFloor - state.floor;
         const nextAreaIdx = Math.min(AREAS.length-1, Math.floor(state.floor / 10));
         const nextArea = AREAS[nextAreaIdx];
@@ -5330,8 +5371,8 @@
         const eHpPct = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
         const skillInfo = getEquippedSkillInfo();
         const smokeCount = state.inventory.filter(i => i.type === 'escape_item').length;
-        const statusLabels={poison:'☠️ 毒',bleed:'🩸 出血',paralysis:'⚡ 麻痺',bind:'🕸️ 拘束',weakened:'⬇️ 弱体'};
-        const statuses=Object.entries(state.statusEffects).filter(([,v])=>v>0).map(([k,v])=>`${statusLabels[k]} ${v}T`).join(' / ');
+        const statusLabels={poison:'☠️ 毒',bleed:'🩸 出血',paralysis:'⚡ 麻痺',bind:'🕸️ 拘束',curse:'🔮 呪い',weakened:'⬇️ 弱体'};
+        const statuses=[...Object.entries(state.statusEffects).filter(([,v])=>v>0).map(([k,v])=>`${statusLabels[k]} ${v}T`),...(state.playerPoisonTurns>0?[`☣️ 呪毒 ${state.playerPoisonTurns}T`]:[]),...(state.effectSeal?.turns>0?[`📖 効果封印 ${state.effectSeal.turns}T`]:[])].join(' / ');
         vp.innerHTML = `
           ${getUnclaimedLootBarHtml()}
           <div class="scene-box">
@@ -5346,8 +5387,8 @@
                 <div class="hp-bar-fill" style="width:${eHpPct}%; background:linear-gradient(90deg,#991b1b,#ef4444);"></div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; margin-top:2px;">
-                <span>攻撃力: ${e.atk}</span>
-                <span>防御力: ${state.bossBarrier ? e.def * 3 + ' (障壁)' : e.def}</span>
+                <span>攻撃力: ${e.obscured?'記憶が曖昧':e.atk}</span>
+                <span>防御力: ${e.gimmick==='shield_barrier'&&state.bossBarrier ? e.def * 3 + ' (障壁)' : e.def}${e.gimmick==='mother_tree'&&state.bossAdds>0?' / 根：最終被ダメ-50%':''}</span>
               </div>
               ${state.camp.lab >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
               ${Object.values(state.equipped).some(i => i?.archetype === 'thunder') ? `<div style="font-size:10.5px;color:#facc15;">⚡ 雷チャージ ${state.thunderCharges}/3（3で追加30ダメージ＆スタン）</div>` : ''}
@@ -5362,7 +5403,7 @@
               <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 防御</button>
               <button class="btn btn-gold" ${state.skillCooldown > 0 || state.statusEffects.paralysis > 0 ? 'disabled' : ''} onclick="playerCombatAction('skill')">✨ ${skillInfo.name}${state.statusEffects.paralysis > 0 ? '（麻痺封印）' : state.skillCooldown > 0 ? `（あと${state.skillCooldown}T）` : ''}</button>
               ${e.gimmick==='mother_tree' && state.bossAdds>0 ? `<button class="btn btn-green" style="grid-column:1/-1;" onclick="playerCombatAction('attack_roots')">🌿 守護根を破壊（残り${state.bossAdds}）</button>`:''}
-              ${e.gimmick==='rising_water' ? `<button class="btn btn-blue" style="grid-column:1/-1;" onclick="playerCombatAction('drain_water')">🚰 排水する（水位${state.waterLevel}%）</button>`:''}
+              ${e.gimmick==='rising_water' ? `<button class="btn btn-blue" style="grid-column:1/-1;" onclick="playerCombatAction('drain_water')">🚰 排水する（水位${state.waterLevel}%）${state.waterLevel>=70?' 回避-20% / スキルCT+1':''}</button>`:''}
               ${smokeCount > 0 && !e.isBoss ? `<button class="btn btn-sub" style="grid-column:1 / -1;" onclick="escapeBattleWithSmoke()">💨 煙玉で逃走（残り${smokeCount}）</button>` : ''}
               ${e.isBoss && e.gimmick === 'shield_barrier' && state.bossBarrier ? `
                 <button class="btn btn-purple" style="grid-column:1 / -1;" onclick="playerCombatAction('disrupt_barrier')">
@@ -5397,6 +5438,7 @@
       }
 
       renderSubPanel();
+      if(state.chapter){const banner=state.screen==='town'?chapterTownHtml():tutorialBanner();if(banner)vp.insertAdjacentHTML('afterbegin',banner);}
     }
 
     function renderSubPanel() {
@@ -5725,7 +5767,11 @@
       initAudio();
     }, { once: true });
   </script>
+  <script src="chapter-data.js"></script>
   <script src="crafting.js"></script>
   <script src="equipment.js"></script>
+  <script src="depth-rules.js"></script>
+  <script src="chapter-story.js"></script>
+  <script src="chapter-system.js"></script>
 </body>
 </html>

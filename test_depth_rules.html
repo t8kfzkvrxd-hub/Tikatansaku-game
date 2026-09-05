@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=()=>setTimeout(()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[];
+const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS: '+n);};
+try{w.closeGenericModal();w.setTimeout=()=>0;w.Math.random=()=>.5;s.equipped={weapon:{name:'剣',baseAtk:100,type:'weapon'},armor:null,accessory:null};s.floor=40;s.hp=1000;s.mystery.eggHatched=false;
+ for(const action of ['attack','heavy','skill']){const hit=roots=>{w.clearPlayerStatuses();w.startBossBattle(w.__gameDebug.AREAS[3].boss);s.currentEnemy.hp=s.currentEnemy.maxHp=10000;s.bossAdds=roots;s.skillCooldown=0;s.guaranteedCrit=false;s.playerAttackBuff=1;w.playerCombatAction(action);return 10000-s.currentEnemy.hp;};const plain=hit(0),guarded=hit(2);check(Math.abs(guarded-plain*.5)<=1,'母樹最終軽減 '+action);}
+ s.equipped.accessory={key:'living_core_relic'};s.abyssGrowth=0;const atk=w.getPlayerStats().atk;s.abyssGrowth=5;check(w.getPlayerStats().atk===atk+5,'遺物成長を実攻撃力へ反映');
+ s.statusEffects={poison:3,bleed:2,paralysis:2,bind:2,curse:2,weakened:2};s.playerPoisonTurns=3;s.playerPoisonDmg=6;s.inventory=[{type:'potion',heal:10,cureAll:true}];w.usePotion(0);check(Object.values(s.statusEffects).every(v=>v===0)&&s.playerPoisonTurns===0,'万能薬で全戦闘状態異常・呪毒解除');
+ check(w.getNextSafeFloor(9)===15&&w.getNextSafeFloor(40)===45,'ボス階を安全帰還先に含めない');
+ s.floor=50;w.startBossBattle(w.__gameDebug.AREAS[4].boss);s.waterLevel=80;s.skillCooldown=0;w.playerCombatAction('skill');check(s.skillCooldown===3,'高水位スキルCT悪化');
+ s.currentEnemy={name:'船長',trait:'captain_phase',hp:100,maxHp:1000,atk:10,def:0,actionType:'normal'};s.hp=1000;
+ for(let i=0;i<6;i++){s.hp=1000;w.enemyTurn(false);}check(s.currentEnemy.summons===2&&s.currentEnemy.captainArmored,'船長召喚上限・瀕死強化');
+ s.floor=51;w.startNormalBattle();s.currentEnemy.trait='death_pulse';w.onEnemyKilled();check(s.pendingEnemyPulse===3,'脈動肉塊撃破で次敵へ回復効果');w.startNormalBattle();s.currentEnemy.hp-=50;const hp=s.currentEnemy.hp;s.hp=1000;w.enemyTurn(false);check(s.currentEnemy.hp>hp&&s.currentEnemy.pulseTurns===2,'肉塊の回復発動と有限ターン');
+ out.push('ALL TESTS PASSED');}catch(e){out.push('FAIL: '+e.stack);}document.getElementById('results').textContent=out.join('\n');},300);
+</script>

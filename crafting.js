@@ -12,7 +12,7 @@ const CRAFT_THEMES = [
  {prefix:'胎動',normal:'肉骨刃',rare:'神経剣',upper:'脈動剣',boss:'深淵胎動剣',hidden:'終焉の心剣'}
 ];
 AREAS.forEach((area, i) => {
- const theme=CRAFT_THEMES[i];
+ const theme=area.craftTheme||CRAFT_THEMES[i];
  [...area.enemies,area.elite,area.boss].forEach((enemy,j) => {
   const id=`area_${area.id}_enemy_${j}`;
   enemy.materialSource=id;

@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=()=>setTimeout(()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[];const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS: '+n);};
+try{
+ w.closeGenericModal();w.setTimeout=()=>0;w.Math.random=()=>.5;s.hp=10000;
+ let e={trait:'repeat_resist',hp:100,maxHp:100,def:0};for(let i=0;i<20;i++)w.recordDepthAction(e,'attack',{atk:100});check(e.def===20,'反復耐性の上限');
+ e={gimmick:'history_king',hp:40,maxHp:100,actionHistory:{attack:2}};let stats={atk:100};w.recordDepthAction(e,'attack',stats);check(stats.atk===70,'墓碑の王が反復行動を対策');
+ s.floor=80;w.startBossBattle(w.__gameDebug.AREAS[7].boss);check(s.currentEnemy.atk>w.__gameDebug.AREAS[7].boss.atk,'鏡界の番人が能力を複写');w.recordDepthAction(s.currentEnemy,'heavy',{atk:100});w.decideEnemyIntent();check(s.currentEnemy.nextMult===1.5,'鏡界の番人が戦い方を模倣');
+ s.floor=90;w.startBossBattle(w.__gameDebug.AREAS[8].boss);s.bossTurnCount=3;s.skillCooldown=0;s.playerAttackBuff=1.8;w.deepEnemyTurn(s.currentEnemy,false);check(s.playerAttackBuff===1&&s.skillCooldown===1&&s.statusEffects.paralysis===1,'忘却の司書がバフ・スキルを利用');
+ s.floor=100;w.startBossBattle(w.__gameDebug.AREAS[9].boss);const closed=s.currentEnemy.def;w.decideEnemyIntent();check(s.currentEnemy.def<closed&&s.currentEnemy.actionType==='heavy','境界門が装甲相→開放相');
+ s.equipped.arms={effects:{justAttack:80}};s.effectSeal=null;w.deepEnemyTurn({trait:'seal_effect',turnCount:0},false);check(s.effectSeal.turns===2&&!w.equipmentEffects().justAttack,'記憶喰らいの効果封印');w.recordDepthAction({hp:10,maxHp:10},'attack',{atk:10});w.recordDepthAction({hp:10,maxHp:10},'defend',{atk:10});check(w.equipmentEffects().justAttack===80,'効果封印が期限で解除');
+ s.lastDefeatedEnemy={atk:100};e={trait:'grave_inherit'};w.applyEnemyPulse(e);check(e.inheritTurns===3&&e.inheritedAtk===15,'墓守りが直前の敵能力を一時継承');
+ w.clearPlayerStatuses();w.deepEnemyTurn({trait:'false_friend'},false);check(s.statusEffects.curse&&s.statusEffects.weakened,'偽りの幼馴染が状態異常');
+ w.clearPlayerStatuses();e={trait:'warped_tree',hp:50,maxHp:100};w.deepEnemyTurn(e,false);check(e.hp>50&&s.statusEffects.bleed,'歪曲樹人の回復・出血');
+ const data=w.__equipmentDebug;s.screen='town';s.currentEnemy=null;s.camp.vaultSize=1000;s.vaultGold=100000;s.abyssCores=100;
+ for(const area of w.__gameDebug.AREAS.filter(a=>a.min>=61)){
+  const id='gear_'+area.enemies[0].materialSource+'_weapon',r=data.recipes[id];for(const [key,n]of Object.entries(r.materials))for(let i=0;i<n;i++)s.storage.push({...data.materials[key],key,type:'material',id:crypto.randomUUID()});
+  check(w.craftEquipment(id),'新素材クラフト '+area.tag);w.closeGenericModal();
+ }
+ s.camp.lab=5;s.floor=90;check(w.getLabBossIntelHtml().includes('忘却の司書')&&w.getLabBossIntelHtml().includes('危険解析'),'研究所Lv5と100F解析');
+ out.push('MATERIALS '+Object.keys(data.materials).length+' RECIPES '+Object.keys(data.recipes).length);
+ out.push('ALL TESTS PASSED');
+}catch(e){out.push('FAIL: '+e.stack);}document.getElementById('results').textContent=out.join('\n');},300);
+</script>

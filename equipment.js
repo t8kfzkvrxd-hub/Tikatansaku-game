@@ -49,6 +49,7 @@ function migrateEquipment() {
 function equippedAccessories() {return [state.equipped.accessory,state.equipped.accessory2].filter(Boolean);}
 function equipmentEffects() {
  const effects={};Object.values(state.equipped).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
+ if(state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
  return effects;
 }
 function equipmentSynergies() {

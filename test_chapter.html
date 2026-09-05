@@ -1,0 +1,55 @@
+<!doctype html><meta charset="utf-8"><title>Chapter integration tests</title><iframe src="index.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+const frame=document.querySelector('iframe'),out=[];
+const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS: '+n);};
+const reload=()=>new Promise(resolve=>{frame.onload=()=>resolve();frame.contentWindow.location.reload();});
+window.onload=async()=>{
+ let w=frame.contentWindow,s=w.__gameDebug.state;
+ const prepare=()=>{w.closeGenericModal();w.setTimeout=()=>0;w.confirm=()=>true;s.hp=10000;s.camp.vaultSize=5000;s.vaultGold=1000000;s.deepCrystals=500;s.abyssCores=100;};
+ try {
+  prepare();const modes=[];
+  for(const mode of ['full','brief','skip']){
+   w.resetGameSave(false);s=w.__gameDebug.state;w.chooseTutorialMode(mode);w.document.querySelector('button[onclick="registerFirstContract()"]')?.click();
+   check(s.chapter.contract&&s.chapter.owned.elna&&s.chapter.companion==='elna','初回エルナ確定 '+mode);
+   modes.push(JSON.stringify({gold:s.vaultGold,camp:s.camp,materials:s.storage.map(i=>i.key),prepared:s.preparedItems.map(i=>i.name),equipped:Object.values(s.equipped).filter(Boolean).map(i=>i.key)}));
+   const g=s.vaultGold;w.registerFirstContract();check(s.vaultGold===g,'初回契約の二重受取防止 '+mode);
+   s.camp.vaultSize=5000;w.selectStarterPerk('potion');w.startDungeonRun();
+   for(let f=1;f<=9;f++){s.floor=f;w.generateDoorsForFloor();check(w.getCurrentArea().id===1,'チュートリアルエリア '+mode+' '+f);if(mode!=='skip'&&f!==5)check(s.currentDoors.length===1,'実地案内の扉 '+mode+' '+f);}
+   s.floor=10;w.generateDoorsForFloor();w.onEnemyKilled();check(s.chapter.pending.floor===10,'10F物語へ '+mode);w.finishChapterStory();check(s.screen==='town'&&s.selectedStartFloor===11,'10F帰還 '+mode);
+   check(s.chapter.guideActive===(mode==='full'),'拠点案内モード '+mode);
+   if(mode==='full'){for(let n=0;n<6;n++){w.advanceTownGuide();w.closeGenericModal();}check(!s.chapter.guideActive,'鍛冶屋・倉庫・道具屋・酒場・書庫の案内');}
+  }
+  check(modes.every(m=>m===modes[0]),'3モードの初期装備・素材・施設・支援が同一');
+  prepare();s.screen='town';s.floor=0;
+  for(const fac of ['blacksmith','shop','tavern','lab']){
+   s.camp[fac]=1;
+   while(s.camp[fac]<5){w.render();const level=s.camp[fac],gold=s.vaultGold,cost=w.getFacilityUpgradeCost(fac);const button=w.document.querySelector(`button[onclick="upgradeCampFacility('${fac}')"]`);check(button&&!button.disabled,'施設実クリック可能 '+fac+' '+level);button.click();check(s.camp[fac]===level+1&&s.vaultGold===gold-cost&&w.document.getElementById('modal-layer').textContent.includes('解放'),'施設消費・解放UI '+fac+' '+level);w.closeGenericModal();}
+   w.render();check(w.document.querySelector(`button[onclick="upgradeCampFacility('${fac}')"]`).disabled,'施設MAX '+fac);
+  }
+  s.camp.vaultLevel=1;s.camp.vaultSize=20;for(let i=0;i<3;i++){w.render();const size=s.camp.vaultSize;w.document.querySelector('button[onclick="upgradeVault()"]')?.click();check(s.camp.vaultSize===size+10,'倉庫実クリック+10');w.closeGenericModal();}
+  w.saveState();await reload();w=frame.contentWindow;s=w.__gameDebug.state;prepare();check(['blacksmith','shop','tavern','lab'].every(f=>s.camp[f]===5)&&s.camp.vaultLevel===4,'実ページ再読み込みで施設維持');
+  s.screen='town';s.floor=0;s.camp.shop=1;s.vaultGold=0;w.render();check(w.document.querySelector('button[onclick="upgradeCampFacility(\'shop\')"]').textContent.includes('必要'),'資金不足理由');prepare();
+  for(const bossFloor of [10,20,30,40,50,60,70,80,90,100]){
+   s.floor=bossFloor-1;s.screen='door_select';w.generateDoorsForFloor();check(w.getCurrentArea().max===bossFloor,'正しいエリア '+(bossFloor-1));
+   w.startNormalBattle();check(s.currentEnemy.materialSource.startsWith('area_'+bossFloor/10+'_'),'正しい通常敵 '+(bossFloor-1));
+   w.onEnemyKilled();check(s.floor===bossFloor,'通常敵撃破→ボス階 '+bossFloor);w.generateDoorsForFloor();check(s.currentEnemy.isBoss&&s.currentEnemy.name===w.getCurrentArea().boss.name,'正しいボス '+bossFloor);
+   check(!w.isSafeReturnFloor(bossFloor)&&w.getNextSafeFloor(bossFloor)===(bossFloor===100?null:bossFloor+5),'安全帰還計算 '+bossFloor);
+   delete s.chapter.read[bossFloor];w.onEnemyKilled();check(s.bossFirstKills[bossFloor]&&s.chapter.unlocked[bossFloor]&&s.deepestFloorReached>=bossFloor,'撃破・物語・最高到達 '+bossFloor);
+   check(s.maxUnlockedFloor>=Math.min(100,bossFloor+10),'次エリア解放 '+bossFloor);
+   if(bossFloor===70){w.nextChapterPage();const page=s.chapter.pending.page;w.saveState();await reload();w=frame.contentWindow;s=w.__gameDebug.state;prepare();check(s.chapter.pending.floor===70&&s.chapter.pending.page===page,'ストーリー途中の実リロード復元');w.resumeChapter();}
+   if(bossFloor<100){w.finishChapterStory();if([10,50].includes(bossFloor)){check(s.screen==='town','節目帰還 '+bossFloor);s.floor=bossFloor+1;w.generateDoorsForFloor();}check(s.floor===bossFloor+1,'ボス後進行 '+bossFloor);}
+  }
+  check(s.chapter.pending.floor===100&&!s.chapter.complete,'100F通常ボス後、章クリアを先取りしない');
+  w.finishChapterStory();check(s.chapter.pending.kind==='lastStand','宿敵乱入→エルナ操作戦');
+  const inventory=s.inventory.map(i=>i.id).join(),cores=s.abyssCores;w.elnaAction('skill');w.elnaAction('defend');w.saveState();await reload();w=frame.contentWindow;s=w.__gameDebug.state;w.closeGenericModal();w.setTimeout=()=>0;s.camp.vaultSize=5000;check(s.chapter.lastStand.turn===2,'エルナ操作戦途中リロード');
+  while(s.chapter.pending.kind==='lastStand')w.elnaAction('defend');check(s.chapter.pending.kind==='farewell','段階的消耗→最後の一閃');
+  check(s.abyssCores===cores&&s.inventory.map(i=>i.id).join()===inventory,'物語戦で素材・核を喪失しない');
+  w.completeChapterOne();check(s.chapter.complete&&s.chapter.owned.elna&&s.chapter.elnaFate==='lost'&&s.screen==='town','第1章完・エルナ所有維持・帰還');
+  w.openMemoryArchive();check(w.document.querySelectorAll('button[onclick^="startChapterStory("]:not([disabled])').length===10,'書庫の解放済み10話');w.startChapterStory(100,true);w.finishChapterStory();check(w.document.getElementById('modal-layer').textContent.includes('最後の一閃'),'結末も書庫で再生');w.closeGenericModal();
+  w.localStorage.setItem('ABYSS_ROGUE_SAVED_V2',JSON.stringify({equipped:s.equipped,storage:s.storage,vaultGold:987,deepestFloorReached:60,bossFirstKills:{60:true},maxUnlockedFloor:60}));await reload();w=frame.contentWindow;s=w.__gameDebug.state;
+  check(s.maxUnlockedFloor>=70&&s.chapter.mode==='skip'&&s.chapter.owned.elna&&!s.chapter.complete&&!s.chapter.unlocked[100]&&s.vaultGold===987,'v0.8.1移行：61F解禁・説明非強制・100F未クリア');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

@@ -23,6 +23,19 @@ window.onload=async()=>{
     button.click();check(w.document.getElementById('modal-layer').style.display==='none',label+' 閉じて進行');
    }
   }
+  w.eval('state.chapter=initialChapterState();state.chapter.lastStand={hp:210,maxHp:210,enemyHp:360,enemyMaxHp:360,turn:5,reinforcements:1,cooldown:0,log:"表示確認"}');
+  for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await layout();
+   for(const render of [()=>w.showChapterWelcome(),()=>w.showChapterModal('長い物語','<p>エルナの物語</p>'.repeat(40),'<button class="btn">次へ</button>'),()=>w.renderElnaLastStand()]){
+    render();await layout();
+    const card=w.document.querySelector('.update-notes-card').getBoundingClientRect();
+    check(card.top>=0&&card.bottom<=height,width+'×'+height+' 物語モーダルが画面内');
+    for(const button of w.document.querySelectorAll('.update-notes-actions button')){
+     const b=button.getBoundingClientRect();
+     check(b.top>=0&&b.bottom<=height&&w.document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)===button,width+'×'+height+' 物語操作ボタンが押せる');
+    }
+   }
+  }
   lines.push('ALL TESTS PASSED');
  }catch(e){lines.push('FAIL: '+e.message);}
  document.getElementById('results').textContent=lines.join('\n');
