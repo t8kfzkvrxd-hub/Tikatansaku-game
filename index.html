@@ -2720,6 +2720,7 @@
     }
 
     function startDeepAreaEvent() {
+      if(state.floor>100){startExtendedResourceEvent();return;}
       const areaId = getCurrentArea().id;
       const variants = {
         4:{title:'🍄 喋る菌糸',icon:'🍄',text:'菌糸は研究施設が地上生物を地下へ移植した記憶を囁く。蜜を飲むか、胞子を採取するか？'},
@@ -3265,6 +3266,7 @@
   <script src="js/systems/inputSafety.js"></script>
   <script src="js/data/catalogRevision.js"></script>
   <script src="js/data/buildBalance.js"></script>
+  <script src="js/data/extendedAreas.js"></script>
   <script src="forge-ui.js"></script>
   <script src="js/ui/catalogTreeUI.js"></script>
   <script src="js/ui/materialUI.js"></script>

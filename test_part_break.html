@@ -1,7 +1,7 @@
 <!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px"></iframe><pre id="results">RUNNING</pre><script>
 window.onload=async()=>{const f=document.querySelector('iframe'),w=f.contentWindow,s=w.__gameDebug.state,out=[],check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},wait=ms=>new Promise(r=>setTimeout(r,ms));try{
  w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.mode='skip';s.floor=1;s.hp=1000;
- const defs=w.eval('ENEMY_PART_DEFINITIONS');check(Object.keys(defs).length===50,'50 enemy definitions');
+ const defs=w.eval('ENEMY_PART_DEFINITIONS');check(Object.keys(defs).length===100,'100 enemy definitions');
  for(const area of w.__gameDebug.AREAS)for(const [i,base]of [...area.enemies,area.elite,area.boss].entries()){const e={...base,maxHp:base.hp};const p=w.ensureEnemyParts(e);check(p.length===(i<3?2:3),base.name+' parts');check(new Set(p.map(x=>x.id)).size===p.length,'unique parts');}
  w.startNormalBattle(false);let e=s.currentEnemy;w.render();check(e.partTarget==='body','default body');w.selectEnemyPart(e.parts[0].id);check(e.partTarget===e.parts[0].id,'target selection');
  const plain={weapon:{weaponType:'dagger',tags:[]}},breaker={weapon:{weaponType:'greathammer',tags:['break'],effects:{breakPower:5}}};check(w.partBreakPower(100,breaker,'heavy')>w.partBreakPower(100,plain,'attack'),'weapon and break power');

@@ -32,5 +32,8 @@ body.at-exploration #game-container{display:none}
 .exploration-effects .effect-shimmer{animation:explore-shimmer 10s -4s alternate infinite}.exploration-effects .effect-rift{animation-duration:11s}
 @keyframes explore-drops{from{transform:translateY(-15%);opacity:0}35%{opacity:.65}to{transform:translateY(25%);opacity:0}}
 @keyframes explore-shimmer{from{transform:translateX(-1px);opacity:.25}to{transform:translateX(1px);opacity:.6}}
+.exploration-effects .effect-poison-mist{background:radial-gradient(ellipse at 40% 80%,#61a65755,transparent 50%),radial-gradient(ellipse at 70% 60%,#9743b555,transparent 50%);animation:explore-mist 14s -6s linear infinite}
+.exploration-effects .effect-teal-mist{background:radial-gradient(ellipse at 50% 85%,#5fc4ae66,transparent 55%);animation:explore-mist 13s -5s linear infinite}
+.exploration-effects .effect-blood-mist{background:radial-gradient(ellipse at 50% 85%,#8b233c66,transparent 55%);animation:explore-mist 15s -5s linear infinite}
 @media(max-height:500px) and (orientation:landscape){.exploration-line{position:absolute;top:82px;left:50%;transform:translateX(-50%);margin:0;white-space:nowrap;max-width:85%;overflow:hidden;text-overflow:ellipsis}.exploration-route strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exploration-route>span:not(.route-icon){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 @media(prefers-reduced-motion:reduce){.exploration-effects i{animation:none!important;opacity:.25}.exploration-route{transition:none}}

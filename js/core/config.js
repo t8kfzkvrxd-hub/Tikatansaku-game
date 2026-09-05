@@ -1,8 +1,9 @@
-    const MAX_DUNGEON_FLOOR = 100;
-    const BOSS_FLOORS = [10,20,30,40,50,60,70,80,90,100];
-    const SAFE_RETURN_FLOORS = [5,15,25,35,45,55,65,75,85,95];
-    const GAME_VERSION = '0.23.0';
+    const MAX_DUNGEON_FLOOR = 200;
+    const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
+    const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
+    const GAME_VERSION = '0.24.0';
     const UPDATE_NOTES = [
+      '探索を200Fまで拡張。101〜200Fの10エリア・敵・ボス・素材・製作レシピを追加。新規ストーリーは追加せず、既存チェックポイントとHUDを維持',
       '探索2.0を1〜100Fへ拡張。10エリアの専用仮背景・環境演出・探索文言・エルナ台詞を追加。状態差分HUDとボス・安全地点進行を維持',
       '探索HUDのエルナ瀕死画像を透過PNGへ差し替え。状態切替・HP閾値・表示枠は変更なし',
       '鍛冶屋の装備詳細からレシピをお気に入り登録・解除可能に。一覧・お気に入り絞り込みと保存状態を共有',

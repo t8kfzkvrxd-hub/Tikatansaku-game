@@ -70,7 +70,7 @@ function openCompanionRegister(){
 }
 function openMemoryArchive(){
  const c=state.chapter;
- const rows=BOSS_FLOORS.map(f=>`<button class="btn btn-sub" style="width:100%;text-align:left" ${c.unlocked[f]?'':'disabled'} onclick="startChapterStory(${f},true)">第1章 第${f/10}話「${c.unlocked[f]?CHAPTER_STORIES[f].title:'？？？'}」${c.read[f]?' ✓既読':''}</button>`).join('');
+ const rows=BOSS_FLOORS.filter(f=>CHAPTER_STORIES[f]).map(f=>`<button class="btn btn-sub" style="width:100%;text-align:left" ${c.unlocked[f]?'':'disabled'} onclick="startChapterStory(${f},true)">第1章 第${f/10}話「${c.unlocked[f]?CHAPTER_STORIES[f].title:'？？？'}」${c.read[f]?' ✓既読':''}</button>`).join('');
  showChapterModal('📖 記憶の書庫',rows+'<p>キャラストーリー / イベントストーリー / メモリアル：今後解放</p>','<button class="btn btn-gold" onclick="closeGenericModal()">閉じる</button>');
 }
 function startChapterStory(floor,replay=false){
@@ -107,7 +107,7 @@ function afterChapterBoss(floor) {
  const c=state.chapter;
  state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,Math.min(MAX_DUNGEON_FLOOR,floor+10));
  state.currentEnemy=null;c.unlocked[floor]=true;
- if(floor===100&&c.complete){saveState();returnToTown(true);return;}
+ if(floor>100||floor===100&&c.complete){saveState();if(floor>=MAX_DUNGEON_FLOOR){returnToTown(true);return;}state.floor=floor+1;generateDoorsForFloor();return;}
  if(floor<100&&c.read[floor]){state.floor=floor+1;generateDoorsForFloor();return;}
  startChapterStory(floor);
 }

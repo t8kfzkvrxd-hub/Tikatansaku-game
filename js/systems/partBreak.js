@@ -7,8 +7,8 @@ const ENEMY_PART_FAMILIES=[['beast','undead','humanoid','armored'],['armored','u
 const BOSS_PARTS=[['arm','leg','head'],['armor','arm','core'],['horn','arm','core'],['root','branch','core'],['arm','armor','core'],['armor','arm','core'],['mask','arm','core'],['mask','armor','core'],['mask','arm','core'],['armor','arm','core']];
 const ENEMY_PART_DEFINITIONS={};
 AREAS.forEach((area,i)=>[...area.enemies,area.elite,area.boss].forEach((enemy,j)=>{
- const family=ENEMY_PART_FAMILIES[i][Math.min(3,j)];
- ENEMY_PART_DEFINITIONS[enemy.materialSource]={family,parts:j===4?BOSS_PARTS[i]:PART_TEMPLATES[family].slice(0,j===3?3:2)};
+ const family=enemy.partFamily||ENEMY_PART_FAMILIES[i]?.[Math.min(3,j)]||'armored';
+ ENEMY_PART_DEFINITIONS[enemy.materialSource]={family,parts:j===4?(enemy.partIds||BOSS_PARTS[i]||['armor','arm','core']):PART_TEMPLATES[family].slice(0,j===3?3:2)};
 }));
 function ensureEnemyParts(enemy){
  if(!enemy||enemy.parts)return enemy?.parts||[];

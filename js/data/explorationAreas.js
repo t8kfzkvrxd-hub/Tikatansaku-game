@@ -25,3 +25,6 @@ const EXPLORATION_ROUTES={
  golden_stairs:{kind:'探索',reward:'特殊な階段',tone:'treasure'},sealed_vault:{kind:'宝物庫',reward:'封印された素材',tone:'treasure'},
  emergency_portal:{kind:'帰還',reward:'戦利品を選んで帰還',tone:'rest'}
 };
+EXTENDED_AREAS.forEach((area,i)=>{
+ const d=EXTENDED_AREA_DATA[i];explorationAreas.push({id:`area_${area.id}`,floorMin:area.min,floorMax:area.max,name:area.tag,enabled:true,backgrounds:[{src:`assets/images/exploration/explore-${area.id}-placeholder.png`,position:'center',label:'仮背景'}],effects:d[8].split(','),titles:{battle_normal:[d[9],d[10]],elite_battle:[d[9]+' ― 強大な気配'],chest_normal:[area.tag+'に残された資材箱'],cursed_chest:[area.tag+'の封じられた箱'],deep_area_event:[area.tag+'の素材採取地点'],heal_spring:[area.tag+'の休息地点']},lines:[d[11]]});
+});
