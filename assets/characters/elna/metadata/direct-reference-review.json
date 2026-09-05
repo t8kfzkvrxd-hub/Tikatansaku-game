@@ -1,0 +1,32 @@
+{
+  "sourceFile": "base/elna-reference.png",
+  "workingCopy": "/var/folders/sh/v4fssvt93tddq56gqvzsr0j00000gn/T/elna-reference-crop-5k7mtphp/elna-reference.png",
+  "sha256Before": "d0601d19fa0d57188d5efd63d6b568c5f19b9405dc13c5154706c341cc748cbb",
+  "sha256After": "d0601d19fa0d57188d5efd63d6b568c5f19b9405dc13c5154706c341cc748cbb",
+  "width": 1024,
+  "height": 1536,
+  "alphaMin": 0,
+  "alphaMax": 254,
+  "transparentPixels": 847640,
+  "backgroundRemoval": "not_performed: existing alpha preserved",
+  "sideConvention": "character-relative: Elna left is image right in this front-facing reference",
+  "acceptedParts": [],
+  "newPngCount": 0,
+  "assessmentScope": "Visible boundaries reviewed. No accurate part-specific contour masks were established; this does not prove manual masking impossible.",
+  "notExtracted": [
+    {"file":"bangs-reference.png","reason":"前髪と頭頂・横髪・額が連続し、矩形では顔や他の髪が入る。毛先に沿った選択マスクが未確定。"},
+    {"file":"side-hair-left-reference.png","reason":"本人左＝画面右。顔・編み込み・リボン・肩と重なり、独立した横髪の画素範囲が未確定。"},
+    {"file":"side-hair-right-reference.png","reason":"本人右＝画面左。顔・肩・腕・後ろ髪と重なり、矩形で横髪だけを残せない。"},
+    {"file":"ribbon-main-reference.png","reason":"髪の後ろに隠れた結び目と複数の布端がある。見えている布だけを分離する精密マスクが未確定。"},
+    {"file":"arm-left-reference.png","reason":"本人左＝画面右。肩と髪、袖とコートが重なる。腕全体の矩形は周囲の髪と布を含む。"},
+    {"file":"arm-right-reference.png","reason":"本人右＝画面左。肩と髪、袖・手と後ろ髪／コートが重なる。色による分離は白髪と白衣装を誤除去する恐れがある。"},
+    {"file":"coat-left-reference.png","reason":"本人左＝画面右。腰・腕・髪がコートの上部を隠す。見える輪郭に沿った分離マスクが未確定。"},
+    {"file":"coat-right-reference.png","reason":"本人右＝画面左。腰・手・髪と重なる。長い矩形は脚や別の布も含む。"},
+    {"file":"boot-left-reference.png","reason":"本人左＝画面右。履き口で素脚と接続するため矩形では脚も入る。履き口の曲線を壊さないマスクが未確定。"},
+    {"file":"boot-right-reference.png","reason":"本人右＝画面左。履き口で素脚と接続し、もう片方のブーツとも近接。矩形で輪郭保持と隣接部位の除外を両立できる範囲が未確定。"}
+  ],
+  "nextStep": "First establish accurate masks for visible pixels; do not generate missing pieces yet.",
+  "confirmedMinimumFillParts": [],
+  "conditionalOccludedRegions": ["肩の隠れた接続部", "髪に隠れるリボンの根元", "腰・腕に隠れるコート上端"],
+  "note": "Conditional regions are not a request to generate them. Actual supplementation need is not established without isolated visible-part masks. Existing sheet-derived PNGs are unchanged and not counted as direct-reference parts."
+}
