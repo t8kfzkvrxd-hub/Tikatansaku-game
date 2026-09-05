@@ -12,7 +12,7 @@ window.onload=()=>{
  check(weapons.every(([id])=>w.__equipmentDebug.recipes[id]),'no drop only weapons');
  s.screen='town';s.vaultGold=100000;s.camp.vaultSize=100;s.abyssCores=100;s.storage=[];
  const id='evolve_iron_sword_blood_legendary',r=w.__equipmentDebug.recipes[id];
- const parent={...w.__equipmentDebug.recipes.iron_sword,key:'iron_sword',id:'parent',refineCount:10,affix:'critical',locked:false};s.storage.push(parent);
+ const parent={...w.__equipmentDebug.recipes[r.parent],key:r.parent,id:'parent',refineCount:10,affix:'critical',locked:false};s.storage.push(parent);
  for(const [key,n]of Object.entries(r.materials))if(key!=='abyss_core')for(let i=0;i<n;i++)s.storage.push({...w.__equipmentDebug.materials[key],key,type:'material',id:crypto.randomUUID()});
  const confirm=w.confirm;w.confirm=()=>true;
  check(w.craftEquipment(id,'parent'),'evolution craft');const item=s.storage.find(i=>i.key===id);

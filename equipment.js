@@ -53,6 +53,7 @@ function equipmentEffects(slots=state.equipped) {
  const effects={};Object.values(slots).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
  if(typeof buildTags==='function')for(const tag of buildTags(slots)){const passive={skillHaste:{skillHaste:1},dodge:{dodge:8},farming:{materialChance:8},rareMaterial:{rareMaterial:8},chest:{chestQuality:10},justGuard:{justAttack:30},guard:{guardHeal:2}}[tag];for(const [key,n]of Object.entries(passive||{}))effects[key]=(effects[key]||0)+n;}
  if(slots===state.equipped&&state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
+ if(state.screen==='battle'&&state.currentEnemy?.buildStatuses?.bleed>0)effects.dodge=(effects.dodge||0)+(effects.bleedDodge||0);
  return effects;
 }
 function equipmentSynergies() {
