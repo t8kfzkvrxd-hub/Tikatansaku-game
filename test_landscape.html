@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="border:0"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),w=frame.contentWindow,out=[],s=w.__gameDebug.state;
+ const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS: '+label);};
+ const pause=()=>new Promise(r=>setTimeout(r,80));
+ const modalCheck=label=>{const c=w.document.querySelector('#modal-layer>.card'),r=c.getBoundingClientRect();check(r.top>=0&&r.bottom<=w.innerHeight&&r.left>=0&&r.right<=w.innerWidth,label+' モーダル画面内');for(const b of c.querySelectorAll('.update-notes-actions button')){const brect=b.getBoundingClientRect();check(brect.top>=0&&brect.bottom<=w.innerHeight&&w.document.elementFromPoint(brect.x+brect.width/2,brect.y+brect.height/2)===b,label+' 操作ボタン');}};
+ try{
+  w.closeGenericModal();s.screen='town';s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.contract=true;s.chapter.mode='skip';w.migrateCompanionEquipment();
+  const touch=w.matchMedia('(pointer:coarse) and (hover:none)').matches;out.push('TOUCH '+touch);
+  for(const [width,height]of [[1920,1080],[1366,768],[800,600],[844,390],[932,430],[740,360]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await pause();w.closeGenericModal();w.render();await pause();
+   check(w.getComputedStyle(w.document.getElementById('rotate-guide')).display==='none',width+' 横向き案内なし');
+   check(w.document.documentElement.scrollWidth<=width+1,width+' ページ横スクロールなし');
+   for(const id of ['viewport','sub-panel']){const e=w.document.getElementById(id);check(e.clientHeight>30&&e.scrollWidth<=e.clientWidth+1,width+' '+id+' 使用可能');}
+   for(const tab of ['equip','bag']){w.setTab(tab);await pause();const e=w.document.getElementById('sub-panel');check(e.scrollWidth<=e.clientWidth+1,width+' '+tab+' 横はみ出しなし');}
+   s.floor=1;w.startNormalBattle();await pause();check(w.document.getElementById('viewport').scrollWidth<=w.document.getElementById('viewport').clientWidth+1,width+' 戦闘表示');s.currentEnemy=null;s.floor=0;s.screen='town';w.render();
+   for(const render of [()=>w.showUpdateNotes(false),()=>w.openHomeSettings(),()=>w.showResetSaveConfirmation(),()=>w.openCrafting('create'),()=>w.openCharacterEquipment('elna'),()=>w.showChapterModal('物語','<p>長い物語</p>'.repeat(50),'<button class="btn">次へ</button>')]){render();await pause();modalCheck(width+'×'+height);}
+   w.closeGenericModal();w.showHomeScreen();await pause();for(const b of w.document.querySelectorAll('.home-button,.home-sub-actions button')){b.scrollIntoView({block:'center'});await pause();const r=b.getBoundingClientRect();check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height,width+' ホーム操作可能');if(touch)check(r.height>=44,width+' タップ44px');}
+   w.enterGameFromHome();w.closeGenericModal();
+  }
+  frame.style.width='390px';frame.style.height='844px';await pause();
+  check((w.getComputedStyle(w.document.getElementById('rotate-guide')).display!=='none')===touch,'縦向き案内はタッチ端末のみ');
+  const before=JSON.stringify(s);frame.style.width='844px';frame.style.height='390px';await pause();check(w.getComputedStyle(w.document.getElementById('rotate-guide')).display==='none'&&!w.document.getElementById('game-container').inert,'横向きで自動復帰');check(JSON.stringify(s)===before,'回転でstate不変');
+  w.document.documentElement.style.setProperty('--safe-left','44px');w.document.documentElement.style.setProperty('--safe-right','44px');w.document.documentElement.style.setProperty('--safe-top','10px');w.document.documentElement.style.setProperty('--safe-bottom','20px');
+  w.showResetSaveConfirmation();await pause();const rect=w.document.querySelector('#modal-layer>.card').getBoundingClientRect();check(rect.left>=44&&rect.right<=800&&rect.top>=10&&rect.bottom<=370,'ノッチ相当余白');modalCheck('セーフエリア');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack);}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

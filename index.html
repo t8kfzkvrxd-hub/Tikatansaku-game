@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>地下探索型・持ち帰りローグライト - ABYSS DELVER</title>
   <meta name="description" content="地下100階の迷宮に挑む持ち帰り型ローグライト。生還か、更なる深層か。緊張感あふれるリスクとリターン。" />
   <style>
@@ -874,15 +874,17 @@
   </style>
   <link rel="stylesheet" href="workshop.css">
   <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="landscape.css">
 </head>
 <body class="at-home">
+  <section id="rotate-guide" role="status" aria-hidden="true"><div class="rotate-phone" aria-hidden="true">▯ ↻</div><p>このゲームは横画面でのプレイを推奨しています</p><p>端末を横向きにしてください</p></section>
   <!-- Low HP Danger Vignette -->
   <div id="danger-vignette"></div>
 
   <!-- Item Get Popup Toast Container -->
   <div id="item-toast-container"></div>
 
-  <div id="game-container">
+  <div id="game-container" class="landscape-stage">
     <!-- Floating Combat FX Layer -->
     <div id="floating-fx-layer"></div>
 
@@ -1226,15 +1228,14 @@
       m.style.display = 'flex';
       m.className = 'legendary-modal';
       m.innerHTML = `
-        <div class="card" style="max-width:460px;width:100%;border:2px solid #ef4444;padding:22px;text-align:center;box-shadow:0 0 40px rgba(239,68,68,.3);">
-          <div style="font-size:38px;">⚠️</div>
-          <h2 style="font-size:19px;color:#fca5a5;margin-bottom:10px;">セーブデータを初期化</h2>
-          <p style="font-size:12px;line-height:1.7;color:#e2e8f0;margin-bottom:16px;">
+        <div class="card update-notes-card" style="max-width:460px;width:100%;border:2px solid #ef4444;text-align:center;box-shadow:0 0 40px rgba(239,68,68,.3);">
+          <h2 class="update-notes-header" style="font-size:19px;color:#fca5a5;">⚠️ セーブデータを初期化</h2>
+          <p class="update-notes-body" style="font-size:12px;line-height:1.7;color:#e2e8f0;">
             本当にセーブデータを初期化しますか？<br>
             装備、倉庫、ゴールド、施設、図鑑、永久強化、進行状況などがすべて失われます。<br>
             <b style="color:#f87171;">この操作は元に戻せません。</b>
           </p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="update-notes-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <button class="btn btn-sub" onclick="closeGenericModal()">キャンセル</button>
             <button class="btn btn-red" onclick="resetGameSave()">完全に初期化する</button>
           </div>
@@ -3462,5 +3463,6 @@
   <script src="companion-equipment.js"></script>
   <script src="forge-ui.js"></script>
   <script src="js/ui/homeUI.js"></script>
+  <script src="js/ui/orientationUI.js"></script>
 </body>
 </html>
