@@ -451,6 +451,7 @@
       if(typeof syncLobbyScreen==='function')syncLobbyScreen();
       if(typeof renderCombatReadout==='function')renderCombatReadout();
       if(typeof renderPartyStatus==='function')renderPartyStatus();
+      if(typeof syncExplorationScreen==='function')syncExplorationScreen();
       syncActionButtons();
     }
 

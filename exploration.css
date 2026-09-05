@@ -1,0 +1,24 @@
+html.at-exploration,body.at-exploration{height:100%;overflow:hidden}
+body.at-exploration #game-container{display:none}
+#exploration-screen[hidden]{display:none}
+#exploration-screen{position:fixed;inset:0;z-index:40;height:100vh;height:100dvh;overflow:hidden;isolation:isolate;color:#f1f5f9;font-size:14px;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));box-sizing:border-box;display:flex;flex-direction:column;gap:8px}
+.exploration-background{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3}
+.exploration-menu{min-height:44px;padding:4px 10px;background:#0f172acc;border:1px solid #64748b;color:inherit;border-radius:6px;cursor:pointer;font:inherit}
+#exploration-screen:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(#030712b0,transparent 40%,#030712c9)}
+.exploration-effects{position:absolute;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
+.exploration-effects i{position:absolute;inset:0}
+.effect-mist{background:radial-gradient(ellipse at 60% 90%,#c3d9e859,transparent 55%);animation:explore-mist 11s -3s infinite linear}
+.effect-dust{background:radial-gradient(circle at 55% 60%,#c6eaff 1px,transparent 3px),radial-gradient(circle at 70% 30%,#9ad8ff 2px,transparent 4px),radial-gradient(circle at 35% 45%,#d5edff 1px,transparent 3px);animation:explore-mist 15s -8s infinite linear}
+.effect-torch{background:radial-gradient(ellipse at 85% 70%,#f59e0b50,transparent 25%);animation:explore-glow 3s -1s infinite alternate}
+.effect-blue{background:radial-gradient(ellipse at 50% 70%,#38bdf850,transparent 35%);animation:explore-glow 7s infinite alternate}
+.effect-red{background:radial-gradient(ellipse at 50% 70%,#fb334430,transparent 35%);animation:explore-glow 10s infinite alternate}
+.exploration-heading{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;text-shadow:0 2px 4px #000}.exploration-heading strong{font-size:clamp(17px,2vw,26px)}
+.exploration-line{align-self:center;background:#0f172aab;border-radius:8px;padding:6px 12px;max-width:65%;pointer-events:none}
+.exploration-routes{margin-top:auto;align-self:center;width:min(850px,86%);display:grid;grid-template-columns:repeat(var(--routes),minmax(0,1fr));gap:10px}
+.exploration-route{min-width:0;min-height:44px;color:inherit;background:#121923c9;border:1px solid #94a3b866;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:5px;text-align:left;font:inherit;cursor:pointer;touch-action:manipulation;transition:opacity .14s,box-shadow .14s}
+.exploration-route strong{font-size:16px}.route-icon{font-size:24px}.exploration-route small{font-size:12px;line-height:1.4}.exploration-route.combat{border-color:#f8717180}.exploration-route.elite{border-color:#c084fcaa}.exploration-route.treasure{border-color:#fbbf2480}.exploration-route.rest{border-color:#86efac80}.exploration-route.chosen,.exploration-route:hover,.exploration-route:focus-visible{box-shadow:0 0 16px #7dd3fc88}.exploration-route.faded{opacity:.35}
+.exploration-party{display:flex;justify-content:space-between;gap:12px}.exploration-hud{background:#0f172acc;border:1px solid #64748b;color:inherit;border-radius:8px;padding:6px 10px;width:220px;max-width:42%;display:flex;flex-direction:column;text-align:left;gap:2px;font:inherit;min-height:44px;cursor:pointer}.exploration-hud progress{width:100%;height:7px}.exploration-hud progress[aria-label=EXP]{display:none}
+@media(max-height:500px){#exploration-screen{gap:5px;font-size:13px}.exploration-heading strong{font-size:18px}.exploration-heading .level-risk{font-size:12px}.exploration-routes{width:86%;gap:7px}.exploration-route{padding:6px;gap:3px}.exploration-route strong{font-size:14px}.exploration-route small{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.route-icon{font-size:18px}.exploration-hud{font-size:12px;padding:5px 8px}.exploration-line{font-size:12px;padding:4px 8px}}
+@keyframes explore-mist{from{transform:translateY(12%);opacity:.35}50%{opacity:.8}to{transform:translateY(-18%);opacity:.35}}
+@keyframes explore-glow{from{opacity:.35}to{opacity:.9}}
+@media(prefers-reduced-motion:reduce){.exploration-effects i{animation:none;opacity:.25}.exploration-route{transition:none}}

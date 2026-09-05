@@ -5,7 +5,7 @@
       const eliteChance=Math.min(.4,.1+Math.max(0,state.floor)*.0015+(state.greedLevel||0)*.04);
       const combat=pick(rng()<eliteChance&&elite.length?elite:normal.length?normal:elite);
       const selected=[combat,pick(pool.filter(d=>!battleTypes.includes(d.type)))].filter(Boolean);
-      while(selected.length<count){const available=pool.filter(d=>!selected.some(s=>s.type===d.type));if(!available.length)break;selected.push(pick(available));}
+      while(selected.length<count){const available=pool.filter(d=>!battleTypes.includes(d.type)&&!selected.some(s=>s.type===d.type));if(!available.length)break;selected.push(pick(available));}
       for(let i=selected.length-1;i>0;i--){const j=Math.min(i,Math.floor(rng()*(i+1)));[selected[i],selected[j]]=[selected[j],selected[i]];}
       return selected.map(d=>({...d,sign:battleTypes.includes(d.type)?'⚔️ 戦闘：'+d.sign:d.sign}));
     }
