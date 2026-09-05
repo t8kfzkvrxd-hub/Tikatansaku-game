@@ -14,5 +14,5 @@
 現段階では素材の読み込みやアニメーションは実装しません。
 
 `source/` は原本の無変更コピーです。`base/elna-reference.png` は正面全身の比較用コピーです。
-切り出し済み17パーツの寸法・出典座標・透明余白は `metadata/parts.json`、未採用箇所と注意事項は `metadata/review.md` と `metadata/phase-review.md` を参照してください。
+切り出し済み22パーツ（衣装相違の胴体候補1枚を含む）の寸法・出典座標・透明余白は `metadata/parts.json`、最新の不足と注意事項は `metadata/latest-review.md` を参照してください。過去の確認は `metadata/review.md` と `metadata/phase-review.md` に保持しています。
 `metadata/extract-parts.py` は標準Pythonのみで原画素を保持して再抽出する管理用ツールです。既存ファイルと内容が異なる場合は上書きせず停止します。

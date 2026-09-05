@@ -161,6 +161,19 @@
       "alphaMax": 253,
       "sha256": "f9e0aadae66ffae7c2929705503e3daa2763edd8a2a2462b0fd0d60ec97fdaf6",
       "isolatedBackground": false
+    },
+    {
+      "file": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "foundAt": "8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "category": "顔・髪・上半身・衣装・下半身・小物の追加シート",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 541060,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "c82846ef0d8aa990df8e8d5e5c8c3a310ef1b8f6dc489f82ccb06b6cdd927c6c"
     }
   ],
   "reference": {
@@ -610,6 +623,133 @@
       "z": null,
       "transformOriginX": null,
       "transformOriginY": null
+    },
+    {
+      "file": "face/face-base.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 20,
+        "y": 15,
+        "width": 185,
+        "height": 250
+      },
+      "sourceX": 20,
+      "sourceY": 15,
+      "sourceWidth": 185,
+      "sourceHeight": 250,
+      "width": 217,
+      "height": 282,
+      "padding": 16,
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null,
+      "sha256": "2a2bf82bc9c1a4b3318c17ec59ec53554e81545d2aeabfb479b4f5b15b4092b7",
+      "assemblyVerified": false
+    },
+    {
+      "file": "face/eye-left-half.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 418,
+        "y": 17,
+        "width": 95,
+        "height": 70
+      },
+      "sourceX": 418,
+      "sourceY": 17,
+      "sourceWidth": 95,
+      "sourceHeight": 70,
+      "width": 127,
+      "height": 102,
+      "padding": 16,
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null,
+      "sha256": "4a0be4e8bfc801be4df2339675f38beb4e0630b8e1065387814cd733a4369ff9",
+      "assemblyVerified": false
+    },
+    {
+      "file": "face/eye-right-half.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 513,
+        "y": 17,
+        "width": 95,
+        "height": 70
+      },
+      "sourceX": 513,
+      "sourceY": 17,
+      "sourceWidth": 95,
+      "sourceHeight": 70,
+      "width": 127,
+      "height": 102,
+      "padding": 16,
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null,
+      "sha256": "226294b8c100a8ba219e34adb2559276f55e9243705d0f2b7f58bd37d108709b",
+      "assemblyVerified": false
+    },
+    {
+      "file": "face/eye-left-closed.png",
+      "category": "face",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 418,
+        "y": 90,
+        "width": 95,
+        "height": 67
+      },
+      "sourceX": 418,
+      "sourceY": 90,
+      "sourceWidth": 95,
+      "sourceHeight": 67,
+      "width": 127,
+      "height": 99,
+      "padding": 16,
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null,
+      "sha256": "1437533ac616b5c27625a3994fb8f772aafc42e2c62fb5df424a303fa403131a",
+      "assemblyVerified": false
+    },
+    {
+      "file": "body/torso.png",
+      "category": "body",
+      "sourceFile": "source/8f628a48-7268-4610-9f6b-0a3beaebb0ac.png",
+      "sourceRect": {
+        "x": 4,
+        "y": 340,
+        "width": 257,
+        "height": 355
+      },
+      "sourceX": 4,
+      "sourceY": 340,
+      "sourceWidth": 257,
+      "sourceHeight": 355,
+      "width": 289,
+      "height": 387,
+      "padding": 16,
+      "x": null,
+      "y": null,
+      "z": null,
+      "transformOriginX": null,
+      "transformOriginY": null,
+      "sha256": "8adb127c9950cb1d32c182f01af39dac0881ee7afde59812465a326404e8aabd",
+      "assemblyVerified": false,
+      "candidateOnly": true,
+      "note": "基準画像と襟・胸元・ベルトの意匠が異なる。置換・復元用確定ではない。"
     }
   ],
   "animationReady": false,
@@ -660,17 +800,22 @@
       "edgeAlphaMax": 253
     }
   ],
-  "staticRestorationStatus": "blocked: isolated face/torso/joints and matched assembly still missing",
+  "staticRestorationStatus": "not_ready: missing isolated hair, dressed limbs and lower-body; torso design differs",
   "phaseStatus": {
     "sourceAudit": "complete",
     "safeExtraction": "partial",
     "metadata": "complete",
-    "staticRestoration": "blocked",
+    "staticRestoration": "not_started",
     "animation": "not_started"
   },
   "blockers": [
-    "新しい上半身・補完・追加表情・補助素材シートに不透明なパネル背景が残る。白い衣装と色が重なるため一括色抜き不可。",
-    "髪なし・目口なしの独立face-baseがない。目口なし頭部にも髪と首が焼き込まれている。",
-    "必要な胴体・関節・髪の独立PNGと基準全身への整合が未確認。静止復元を通過していないためアニメーションは開始しない。"
+    "前髪・後ろ髪・腕・下半身・コートの独立素材が不足。",
+    "新規torso.pngは基準全身の衣装と意匠が異なる候補。",
+    "静止復元は今回対象外。縮尺・装着位置と接合部は未検証。"
+  ],
+  "latestRejectedCandidates": [
+    "face/eye-right-closed.png",
+    "hair/bangs.png",
+    "hair/back-hair-center.png"
   ]
 }
