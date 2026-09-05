@@ -4,13 +4,11 @@ function fitHomeArtwork(home){
  const art=home.querySelector('.home-art'),image=art.querySelector('.home-background');
  const scene=document.createElement('div');scene.className='home-scene';
  while(art.firstChild)scene.append(art.firstChild);art.append(scene);
- const breath=document.createElement('div');breath.className='home-breath-patch';
- breath.style.backgroundImage=`url("${image.getAttribute('src')}")`;scene.append(breath);
- for(const region of ['hair','ribbon','coat','head']){
-  const patch=document.createElement('div');patch.className=`home-local-patch home-${region}-patch`;
-  patch.style.backgroundImage=breath.style.backgroundImage;scene.append(patch);
- }
- const distant=document.createElement('div');distant.className='home-distant-light';scene.append(distant);
+ const effects=document.createElement('div');effects.className='environment-effects';
+ effects.innerHTML='<div class="home-mist"></div><div class="home-mist home-mist-second"></div><div class="home-blue"></div><div class="home-red"></div><div class="home-lantern home-lantern-near"></div><div class="home-lantern home-lantern-far"></div><div class="home-distant-light"></div><div class="home-particles"></div>';
+ const positions=[[48,72],[55,63],[59,79],[47,49],[54,30],[40,15],[21,18],[18,24],[57,86],[45,36]];
+ positions.forEach(([x,y],i)=>{const p=document.createElement('i');p.style.cssText=`--x:${x}%;--y:${y}%;--delay:-${i*1.7}s;--duration:${12+i%4*2}s`;effects.querySelector('.home-particles').append(p);});
+ scene.append(effects);
  const fit=()=>{
   if(!image.naturalWidth||!art.clientWidth||!art.clientHeight)return;
   const scale=Math.max(art.clientWidth/image.naturalWidth,art.clientHeight/image.naturalHeight);
@@ -37,16 +35,8 @@ function showHomeScreen(){
  const save=homeSaveInfo();let home=document.getElementById('home-screen');
  if(!home){home=document.createElement('section');home.id='home-screen';document.body.append(home);}
  home.hidden=false;
- home.innerHTML=`<div class="home-art" aria-hidden="true"><img class="home-background" src="${getHomeBackgroundByStoryProgress()}" alt="" fetchpriority="high"><div class="home-blue"></div><div class="home-lantern home-lantern-near"></div><div class="home-lantern home-lantern-far"></div><div class="home-presence"></div></div><div class="home-shade" aria-hidden="true"></div><div class="home-mist" aria-hidden="true"></div><div class="home-mist home-mist-second" aria-hidden="true"></div><div class="home-particles" aria-hidden="true">${Array.from({length:10},(_,i)=>`<i style="--x:${8+i*9}%;--y:${20+(i*17)%65}%;--delay:-${i*2.7}s;--duration:${17+i%4*3}s"></i>`).join('')}</div><main class="home-menu"><p class="home-eyebrow">その手を離さず、奈落の先へ。</p><h1><span>ABYSS</span><span>DELVER</span></h1><p class="home-subtitle">地下探索型・持ち帰りローグライト</p><div class="home-rule"></div><div class="home-main-actions"><button id="home-continue" class="home-button ${save.valid?'home-primary':''}" ${save.valid?'':'disabled'} onclick="continueFromHome()"><span>つづきから</span><small>CONTINUE</small></button><button id="home-new" class="home-button ${!save.valid?'home-primary':''}" onclick="newGameFromHome()"><span>はじめから</span><small>NEW GAME</small></button></div>${save.exists&&!save.valid?'<p class="home-warning">セーブを読み取れません。データは削除していません。</p>':''}<nav class="home-sub-actions" aria-label="システムメニュー"><button onclick="showUpdateNotes(false)">お知らせ</button><span>／</span><button onclick="openHomeSettings()">設定</button></nav><p class="home-version">Version ${GAME_VERSION}</p></main>`;
- const art=home.querySelector('.home-art');
- for(const person of ['elna','hero']){
-  const layer=document.createElement('div');layer.className=`home-character-atmosphere home-character-${person}`;layer.dataset.character=person;
-  layer.innerHTML='<div class="home-character-rim"></div><div class="home-character-wind"></div><div class="home-character-cloth"></div><div class="home-character-dust"></div>';
-  art.append(layer);
- }
- const ambient=document.createElement('div');ambient.className='home-ambient';art.append(ambient);
+ home.innerHTML=`<div class="home-art" aria-hidden="true"><img class="home-background" src="${getHomeBackgroundByStoryProgress()}" alt="" fetchpriority="high"></div><div class="home-shade" aria-hidden="true"></div><main class="home-menu"><p class="home-eyebrow">その手を離さず、奈落の先へ。</p><h1><span>ABYSS</span><span>DELVER</span></h1><p class="home-subtitle">地下探索型・持ち帰りローグライト</p><div class="home-rule"></div><div class="home-main-actions"><button id="home-continue" class="home-button ${save.valid?'home-primary':''}" ${save.valid?'':'disabled'} onclick="continueFromHome()"><span>つづきから</span><small>CONTINUE</small></button><button id="home-new" class="home-button ${!save.valid?'home-primary':''}" onclick="newGameFromHome()"><span>はじめから</span><small>NEW GAME</small></button></div>${save.exists&&!save.valid?'<p class="home-warning">セーブを読み取れません。データは削除していません。</p>':''}<nav class="home-sub-actions" aria-label="システムメニュー"><button onclick="showUpdateNotes(false)">お知らせ</button><span>／</span><button onclick="openHomeSettings()">設定</button></nav><p class="home-version">Version ${GAME_VERSION}</p></main>`;
  fitHomeArtwork(home);
- for(const effect of home.querySelectorAll(':scope > .home-mist,:scope > .home-particles'))art.append(effect);
  if(localStorage.getItem('lastSeenVersion')!==GAME_VERSION)home.querySelector('.home-version').insertAdjacentHTML('beforebegin','<p class="home-update-hint">新しいお知らせがあります</p>');
  document.getElementById(save.valid?'home-continue':'home-new').focus({preventScroll:true});
 }

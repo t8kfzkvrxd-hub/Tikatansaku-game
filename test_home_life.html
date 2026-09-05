@@ -21,12 +21,15 @@ window.onload=async()=>{
     const r=d.querySelector('.home-version').getBoundingClientRect();check(r.bottom<=height,'version and warning fit '+width+'x'+height);warning.remove();
    }
   }
-  const selectors=['.home-breath-patch','.home-hair-patch','.home-ribbon-patch','.home-coat-patch','.home-head-patch','.home-mist','.home-blue'];
+  const selectors=['.home-mist','.home-mist-second','.home-particles i','.home-blue','.home-red','.home-lantern','.home-distant-light'];
+  check(!d.querySelector('.home-local-patch,.home-breath-patch,.home-character-atmosphere'),'no character animation layers');
+  check(d.querySelectorAll('#home-screen img').length===1,'single original image only');
   const reduced=w.matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced)check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'reduced also stops pseudo-elements');
   const samples=[];
   for(let i=0;i<=4;i++){
    samples.push(selectors.map(s=>{const c=w.getComputedStyle(d.querySelector(s));return c.transform+' '+c.opacity}));
+   for(const selector of ['.home-background','.home-scene']){const c=w.getComputedStyle(d.querySelector(selector));check(c.transform==='none'&&c.animationName==='none','fixed image '+selector);}
    if(i<4)await wait(1250);
   }
   for(let i=0;i<selectors.length;i++)check(reduced?new Set(samples.map(s=>s[i])).size===1:new Set(samples.map(s=>s[i])).size>1,'5 second motion / reduced '+selectors[i]);
@@ -35,7 +38,7 @@ window.onload=async()=>{
   check(d.querySelectorAll('.home-particles i').length===10,'bounded particles');
   check(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')===saved,'save untouched');
   d.body.classList.add('home-reduced');
-  check(w.getComputedStyle(d.querySelector('.home-breath-patch')).display==='none','manual reduced disables patch');
+  check(w.getComputedStyle(d.querySelector('.home-particles')).display==='none','manual reduced hides particles');
   check(d.getElementById('home-screen').getAnimations({subtree:true}).length===0,'manual reduced stops all animations');
   out.push('ALL TESTS PASSED');
  }catch(e){out.push('FAIL: '+e.stack)}

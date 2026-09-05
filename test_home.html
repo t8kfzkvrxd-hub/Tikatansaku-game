@@ -18,10 +18,10 @@ window.onload=async()=>{
   check(w.document.querySelectorAll('.home-particles i').length===10&&!w.document.querySelector('#home-screen canvas,#home-screen video'),'粒子10個・動画/Canvasなし');
   check(!w.document.body.classList.contains('home-reduced'),'通常起動で演出軽減を誤設定しない');
   const reduced=w.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const effects=['.home-mist','.home-particles i','.home-blue','.home-lantern','.home-character-elna .home-character-rim','.home-character-hero .home-character-rim','.home-ambient'];
+  const effects=['.home-mist','.home-particles i','.home-blue','.home-lantern','.home-red','.home-distant-light'];
   for(const selector of effects){const e=w.document.querySelector(selector),css=w.getComputedStyle(e);check(reduced?css.animationName==='none':css.animationIterationCount==='infinite',selector+' ループ／モーション軽減');}
   check(w.getComputedStyle(image).transform==='none','背景画像自体は揺らさない');
-  if(!reduced){const e=w.document.querySelector('.home-character-elna .home-character-rim'),h=w.document.querySelector('.home-character-hero .home-character-rim');check(w.getComputedStyle(e).animationDuration!==w.getComputedStyle(h).animationDuration,'人物周辺の周期をずらす');const a=e.getAnimations()[0];a.pause();a.currentTime=6500;check(w.getComputedStyle(e).transform!=='none','人物周辺の微小変化が実行される');a.play();}
+  check(!w.document.querySelector('.home-character-atmosphere,.home-local-patch,.home-breath-patch'),'人物アニメーションを削除');
   if(w.matchMedia('(prefers-reduced-motion: reduce)').matches)check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','端末のreduced-motion設定を反映');
   for(const [width,height]of [[1280,720],[375,667],[390,844],[320,480],[667,320]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();
