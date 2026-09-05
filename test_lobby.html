@@ -18,7 +18,22 @@ window.onload=async()=>{
   for(const b of d.querySelectorAll('.lobby-hotspot')){b.click();check(d.getElementById('modal-layer').style.display!=='none','open '+b.dataset.facility);w.closeGenericModal()}
   w.openLobbyFacility('warehouse');w.setStorageCategory('material');check(d.querySelector('#lobby-facility-content button[onclick="setStorageCategory(\'material\')"]').classList.contains('btn-gold'),'warehouse filter refresh');w.closeGenericModal();
   d.querySelector('.lobby-menu button').click();check(d.getElementById('modal-layer').textContent.includes('エルナ')&&d.getElementById('modal-layer').textContent.includes('アクセ2'),'equipment character switch + seven slots');w.closeGenericModal();
-  w.openLobbyManagement();check(!d.body.classList.contains('at-lobby'),'legacy management retained');w.returnToLobby();check(d.body.classList.contains('at-lobby'),'return map');
+  check(!d.querySelector('.lobby-menu').textContent.includes('拠点管理')&&typeof w.openLobbyManagement==='undefined','legacy management removed');
+  const s=w.__gameDebug.state;s.vaultGold=100000;s.abyssCores=100;s.deepCrystals=100;
+  for(const [id,key,action] of [['town-blacksmith','blacksmith',"upgradeCampFacility('blacksmith')"],['town-shop','shop',"upgradeCampFacility('shop')"],['town-tavern','tavern',"upgradeCampFacility('tavern')"],['town-lab','lab',"upgradeCampFacility('lab')"],['warehouse','vaultLevel','upgradeVault()']]){
+   s.camp[key]=1;w.render();w.openLobbyFacility(id);const before=s.camp[key],size=s.camp.vaultSize;
+   const button=[...d.querySelectorAll('#lobby-facility-content button')].find(b=>b.getAttribute('onclick')===action);
+   check(button&&!button.disabled,'upgrade accessible '+id);button.click();check(s.camp[key]===before+1,'upgrade applied '+id);
+   if(id==='warehouse')check(s.camp.vaultSize===size+10,'warehouse +10');
+   check(d.getElementById('modal-layer').textContent.includes('Lv.2'),'upgrade confirmation '+id);w.closeGenericModal();w.openLobbyFacility(id);
+   check(d.querySelector('#lobby-facility-content').textContent.includes('Lv.2'),'upgrade display refresh '+id);w.closeGenericModal();
+  }
+  w.openLobbyFacility('town-lab');check(d.querySelector('#lobby-facility-content [onclick^="upgradeTalent"]'),'permanent blessings reachable');
+  d.querySelector('#lobby-facility-content [onclick*="codex"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('図鑑'),'codex reachable');w.closeGenericModal();
+  w.openLobbyFacility('archive');check(d.querySelector('[onclick="openMemoryArchive()"]'),'story replays reachable');d.querySelector('[onclick="openLobbyFacility(\'log\')"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('冒険の軌跡'),'logs reachable');w.closeGenericModal();
+  w.saveState();const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'),camp=JSON.stringify(s.camp),unlocked=s.maxUnlockedFloor;
+  w.loadState();check(JSON.stringify(w.__gameDebug.state.camp)===camp&&w.__gameDebug.state.maxUnlockedFloor===unlocked,'save facility levels and unlocks preserved');
+  w.render();w.openLobbyFacility('warehouse');w.closeGenericModal();check(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')===saved,'navigation does not rewrite save');
   w.showHomeScreen();check(!d.body.classList.contains('at-lobby'),'home clears map');w.enterGameFromHome();w.closeGenericModal();check(d.body.classList.contains('at-lobby'),'home to map');
   w.openLobbyFacility('town-expedition');w.startDungeonRun();check(!d.body.classList.contains('at-lobby')&&d.getElementById('modal-layer').style.display==='none','exploration closes map and facility');
   lines.push('ALL TESTS PASSED');

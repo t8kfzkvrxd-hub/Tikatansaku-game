@@ -214,7 +214,7 @@
               </div>
 
               <!-- Vault -->
-              <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+              <div id="town-vault" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                   <div style="font-size:12px; font-weight:bold; color:#fff;">📦 倉庫 Lv.${state.camp.vaultLevel} (${state.camp.vaultSize}枠)</div>
                   <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('vault') ? 'disabled' : ''} onclick="upgradeVault()">${getFacilityButtonText('vault')}</button>
@@ -263,7 +263,7 @@
           </div>
 
           <!-- Permanent Upgrades (神殿) -->
-          <div class="card">
+          <div id="town-talents" class="card">
             <div class="card-title">⛩️ 神殿の永久加護 (死亡時も引き継がれる力)</div>
             <div style="display:flex; flex-direction:column; gap:6px;">
               ${Object.keys(TALENT_CONFIG).map(k => {

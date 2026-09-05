@@ -27,6 +27,7 @@ parts = {
 for path, spans in parts.items():
     current=(ROOT/path).read_text()
     if path=='js/ui/render.js':
+        current=current.replace(' id="town-vault"','').replace(' id="town-talents"','')
         current=current.replace(' id="town-blacksmith"','').replace("      if(typeof syncLobbyScreen==='function')syncLobbyScreen();\n",'').replace("      if(typeof refreshLobbyFacility==='function')refreshLobbyFacility();\n",'')
     assert current.rstrip() == ''.join(section(old, a, b) for a, b in spans).rstrip(), path
     print('PASS: unchanged extracted source', path)
