@@ -358,6 +358,17 @@
       padding: 20px;
       animation: fadeIn 0.3s ease;
     }
+    .update-notes-card {
+      max-width:460px; width:100%; max-height:85vh; max-height:85dvh;
+      display:flex; flex-direction:column; min-height:0; overflow:hidden;
+      border:2px solid #fbbf24; padding:clamp(8px,3vh,22px);
+    }
+    .update-notes-header, .update-notes-actions { flex-shrink:0; }
+    .update-notes-body {
+      min-height:0; overflow-y:auto; overscroll-behavior:contain;
+      margin:14px 0; display:flex; flex-direction:column; gap:7px;
+    }
+    .update-notes-body > div { flex-shrink:0; }
     .mythic-modal { background:radial-gradient(circle,rgba(88,28,135,.88),rgba(2,6,23,.97)); animation:fadeIn .55s ease; }
     .abyssal-modal { background:radial-gradient(circle,rgba(8,47,73,.94),#02030a 72%); animation:fadeIn 1s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1152,8 +1163,9 @@
     const MAX_DUNGEON_FLOOR = 60;
     const BOSS_FLOORS = [10, 20, 30, 40, 50, 60];
     const SAFE_RETURN_FLOORS = [5, 15, 25, 35, 45, 55];
-    const GAME_VERSION = '0.8.0';
+    const GAME_VERSION = '0.8.1';
     const UPDATE_NOTES = [
+      '更新通知の本文だけをスクロール可能にし、小さい画面でも操作ボタンを表示',
       '装備を7枠へ拡張。旧装備を保持して自動移行、アクセサリー2枠対応',
       '素材レシピ145種・タグ効果・毒／会心／ガード／回避などの混成ビルドを追加',
       '全7部位の装備・解除・+10強化、倉庫部位分類、効果と連携の表示を追加',
@@ -3997,11 +4009,13 @@
     function showUpdateNotes(markSeen = false) {
       const m = document.getElementById('modal-layer');
       m.style.display = 'flex'; m.className = 'legendary-modal';
-      m.innerHTML = `<div class="card" style="max-width:460px;width:100%;border:2px solid #fbbf24;padding:22px;">
-        <div style="font-size:34px;text-align:center;">🎉</div>
-        <h2 style="font-size:20px;color:#fbbf24;text-align:center;">UPDATE v${GAME_VERSION}</h2>
-        <div style="margin:14px 0;display:flex;flex-direction:column;gap:7px;">${UPDATE_NOTES.map(n => `<div style="font-size:12px;color:#e2e8f0;border-left:3px solid #fbbf24;padding-left:8px;">・${n}</div>`).join('')}</div>
-        <button class="btn btn-gold" style="width:100%;" onclick="dismissUpdateNotes(${markSeen})">確認してゲームを始める</button>
+      m.innerHTML = `<div class="card update-notes-card">
+        <div class="update-notes-header">
+          <div style="font-size:clamp(16px,5vh,34px);text-align:center;">🎉</div>
+          <h2 style="font-size:clamp(14px,3vh,20px);color:#fbbf24;text-align:center;">UPDATE v${GAME_VERSION}</h2>
+        </div>
+        <div class="update-notes-body" tabindex="0" aria-label="アップデート内容">${UPDATE_NOTES.map(n => `<div style="font-size:12px;color:#e2e8f0;border-left:3px solid #fbbf24;padding-left:8px;">・${n}</div>`).join('')}</div>
+        <div class="update-notes-actions"><button class="btn btn-gold" style="width:100%;" onclick="dismissUpdateNotes(${markSeen})">確認してゲームを始める</button></div>
       </div>`;
     }
 

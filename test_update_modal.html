@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><title>Update modal layout tests</title>
+<iframe src="index.html" style="border:0"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const frame=document.querySelector('iframe'),w=frame.contentWindow,lines=[];
+ const check=(ok,label)=>{if(!ok)throw Error(label);lines.push('PASS: '+label);};
+ const layout=()=>new Promise(resolve=>setTimeout(resolve,50));
+ try{
+  // Prevent this layout test from acknowledging a version or opening the tutorial.
+  w.dismissUpdateNotes=()=>w.closeGenericModal();
+  for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';await layout();
+   for(const short of [false,true]){
+    w.showUpdateNotes(false);await layout();
+    const body=w.document.querySelector('.update-notes-body'),card=w.document.querySelector('.update-notes-card'),header=w.document.querySelector('.update-notes-header'),button=w.document.querySelector('.update-notes-actions button');
+    if(short)body.innerHTML='<div>短い更新内容</div>';await layout();
+    const label=width+'×'+height+(short?' short':' long');
+    const c=card.getBoundingClientRect(),h=header.getBoundingClientRect(),b=button.getBoundingClientRect();
+    check(c.top>=0&&c.bottom<=height&&c.left>=0&&c.right<=width,label+' モーダルが画面内');
+    check(b.top>=0&&b.bottom<=height&&w.document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)===button,label+' ボタンを押せる');
+    if(!short){check(body.scrollHeight>body.clientHeight,label+' 本文がスクロール可能');body.scrollTop=body.scrollHeight;check(body.scrollTop>0,label+' 末尾へスクロール');}
+    check(header.getBoundingClientRect().top===h.top&&button.getBoundingClientRect().top===b.top,label+' ヘッダーと操作位置を維持');
+    button.click();check(w.document.getElementById('modal-layer').style.display==='none',label+' 閉じて進行');
+   }
+  }
+  lines.push('ALL TESTS PASSED');
+ }catch(e){lines.push('FAIL: '+e.message);}
+ document.getElementById('results').textContent=lines.join('\n');
+};
+</script>
