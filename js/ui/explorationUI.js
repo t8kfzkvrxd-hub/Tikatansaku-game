@@ -20,7 +20,8 @@ function syncExplorationScreen(){
  if(!root){root=document.createElement('section');root.id='exploration-screen';root.setAttribute('aria-label','探索');document.body.append(root);}
  root.hidden=false;
  const view=ExplorationScreen;
- if(view.doors!==state.currentDoors){
+ if(view.doors!==state.currentDoors||view.areaId!==area.id){
+  view.areaId=area.id;
   view.doors=state.currentDoors;view.pending=false;
   const sample=xs=>xs[Math.floor(Math.random()*xs.length)];
   view.visual={background:sample(area.backgrounds),titles:state.currentDoors.map(d=>area.titles[d.type]?sample(area.titles[d.type]):d.sign),line:Math.random()<.3?sample(area.lines):''};
