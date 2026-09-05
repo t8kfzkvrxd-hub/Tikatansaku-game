@@ -32,6 +32,7 @@ function openLobbyFacility(id){
  showChapterModal(LOBBY_FACILITIES.find(f=>f.id===id)?.name||{codex:'図鑑',log:'冒険の軌跡'}[id]||'所持品',`<div id="lobby-facility-content">${lobbyFacilityHtml(id)}</div>`,`<button class="btn btn-sub" onclick="closeGenericModal()">ロビーへ戻る</button>`);
 }
 function syncLobbyScreen(){
+ if(typeof syncLobbyAudio==='function')syncLobbyAudio();
  const town=state.screen==='town'&&!HomeScreen.active;
  const active=town;
  document.body.classList.toggle('at-lobby',active);document.documentElement.classList.toggle('at-lobby',active);

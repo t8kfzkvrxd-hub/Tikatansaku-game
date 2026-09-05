@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{const w=document.querySelector('iframe').contentWindow,out=[],check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},wait=ms=>new Promise(r=>setTimeout(r,ms));try{
+ w.enterGameFromHome();w.closeGenericModal();const s=w.__gameDebug.state,a=w.eval('lobbyBgm');s.screen='town';s.chapter.pending=null;w.syncLobbyAudio();await a.play();await wait(500);
+ check(!a.paused&&a.currentTime>0&&a.duration>0,'audio decodes and plays');check(a.loop,'loop enabled');const at=a.currentTime;w.syncLobbyScreen();check(a.currentTime>=at,'render does not restart music');
+ a.currentTime=a.duration-.15;await wait(900);check(!a.paused&&a.currentTime<2,'end loops to beginning');
+ w.toggleSound();check(a.paused,'sound OFF pauses');w.toggleSound();await wait(100);check(!a.paused,'sound ON resumes');
+ s.screen='door_select';w.syncLobbyScreen();check(a.paused,'exploration pauses');s.screen='town';w.syncLobbyScreen();await wait(100);check(!a.paused,'lobby resumes');w.showHomeScreen();check(a.paused,'home pauses');
+ out.push('ALL TESTS PASSED');}catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n')};
+</script>

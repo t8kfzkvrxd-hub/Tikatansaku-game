@@ -982,6 +982,7 @@
       const b = document.getElementById('sound-btn');
       b.textContent = soundEnabled ? '🔊 音 ON' : '🔇 音 OFF';
       if (soundEnabled) { initAudio(); playSound('click'); }
+      if(typeof syncLobbyAudio==='function')syncLobbyAudio();
     }
 
     function playSound(type) {
@@ -3273,6 +3274,7 @@
   <script src="js/ui/homeUI.js"></script>
   <script src="js/ui/orientationUI.js"></script>
   <script src="js/ui/lobbyUI.js"></script>
+  <script src="js/ui/lobbyAudio.js"></script>
   <link rel="stylesheet" href="exploration.css">
   <script src="js/data/explorationAreas.js"></script>
   <script src="js/ui/explorationUI.js"></script>
