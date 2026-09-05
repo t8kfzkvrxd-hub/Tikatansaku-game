@@ -12,6 +12,7 @@ function selectExplorationRoute(index){
  setTimeout(()=>{view.pending=false;if(state.screen==='door_select'&&state.currentDoors===doors)selectDoor(index);},matchMedia('(prefers-reduced-motion: reduce)').matches?0:140);
 }
 function syncExplorationScreen(){
+ observeCharacterVisuals();
  const area=explorationArea(),active=state.screen==='door_select'&&area?.enabled&&!HomeScreen.active&&!isBossFloor(state.floor);
  document.body.classList.toggle('at-exploration',!!active);document.documentElement.classList.toggle('at-exploration',!!active);
  let root=document.getElementById('exploration-screen');
@@ -25,7 +26,7 @@ function syncExplorationScreen(){
   view.visual={background:sample(area.backgrounds),titles:state.currentDoors.map(d=>area.titles[d.type]?sample(area.titles[d.type]):d.sign),line:Math.random()<.3?sample(area.lines):''};
  }
  const visual=view.visual,bg=visual.background;
- const hud=id=>{const m=partyMember(id);if(!m)return '';return `<button class="exploration-hud ${id}" onclick="openCharacterStatus('${id}')">${partyMiniHtml(m)}<small>${typeof combatStatuses==='function'?combatStatuses(m.unit):''}</small></button>`;};
+ const hud=explorationCharacterHud;
  const elna=activeParty().find(m=>m.id==='elna');
  root.innerHTML=`<img class="exploration-background" src="${bg.src}" style="object-position:${bg.position}" alt="${uiEscape(area.name)}（${bg.label||'探索背景'}）"><div class="exploration-effects" aria-hidden="true">${area.effects.map(effect=>`<i class="effect-${effect}"></i>`).join('')}</div><header class="exploration-heading"><button class="exploration-menu" onclick="openExplorationPanel()">所持品ほか</button><strong>B${state.floor}F　${uiEscape(area.name)}</strong><span>危険度 GREED ${state.greedLevel||0}</span>${recommendedLevelHtml()}</header>${elna?.unit.hp>0&&visual.line?`<aside class="exploration-line">エルナ「${uiEscape(visual.line)}」</aside>`:''}<nav class="exploration-routes" aria-label="探索ルート" style="--routes:${state.currentDoors.length}">${state.currentDoors.map((d,i)=>{const meta=EXPLORATION_ROUTES[d.type]||{kind:'探索',reward:'探索先で確認',tone:'event'};return `<button class="exploration-route ${meta.tone}" onclick="selectExplorationRoute(${i})"><span class="route-icon">${d.icon}</span><strong>${uiEscape(visual.titles[i])}</strong><span>【${meta.kind}】 ${uiEscape(d.riskText||'')}</span><small>${uiEscape(d.desc)}</small><span>${meta.reward}</span></button>`;}).join('')}</nav><footer class="exploration-party">${hud('player')}${elna?hud('elna'):''}</footer>`;
 }

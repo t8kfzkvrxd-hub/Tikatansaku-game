@@ -1,6 +1,7 @@
 const combatFeedback={events:[],floats:[],enemy:null,previous:{},frames:[],serial:0,logOpen:false};
 function combatName(id){return id==='player'?'主人公':id==='enemy'?'敵':id==='status'?'状態異常':CHARACTER_DATA[id]?.name||id;}
 function combatApplied(actor,target,delta,label,kind){
+ if(delta<0&&typeof markCharacterVisualHit==='function')markCharacterVisualHit(target,-delta);
  const frame=combatFeedback.frames.at(-1);if(!frame||!delta)return;
  if(target==='enemy'&&delta<0)delta=-Math.min(-delta,Math.max(0,(state.currentEnemy?.hp||0)-delta));
  frame.child[target]=(frame.child[target]||0)+delta;
@@ -32,6 +33,7 @@ function combatStatuses(unit,isEnemy=false){
  return Object.entries(data).filter(([,n])=>n>0).map(([k,n])=>`${names[k]||k} ×${n}`).join(' / ')||'状態異常なし';
 }
 function renderCombatReadout(){
+ if(typeof observeCharacterVisuals==='function')observeCharacterVisuals();
  let root=document.querySelector('.battle-readout');
  if(state.screen!=='battle'||!state.currentEnemy){root?.remove();if(state.screen==='town'||document.body.classList.contains('at-home')){combatFeedback.floats.forEach(n=>n.remove());combatFeedback.floats=[];}return;}
  const enemy=state.currentEnemy;
@@ -44,7 +46,7 @@ function renderCombatReadout(){
   if(!old||old.pct!==pct)combatFeedback.previous[id]={pct,from:old?.pct??pct,time:Date.now()};
   const history=combatFeedback.previous[id],prev=Date.now()-history.time<800?history.from:pct;
   const recent=combatFeedback.events.filter(e=>Date.now()-e.time<1300),hurt=recent.some(e=>e.target===id&&e.kind==='hurt'),acting=recent.some(e=>e.actor===id&&e.target==='enemy');
-  return `<div data-combat-unit="${id}" class="battle-unit ${hurt?'hit':''} ${acting?'acting':''}"><strong>${combatName(id)}${id!=='enemy'?' Lv'+characterProgress(id).level:''}${id==='enemy'?'：'+uiEscape(enemy.name):''}${u.hp<=0?(id==='player'?'（敗北）':id==='enemy'?'（討伐）':'（気絶）'):''}</strong><span>${Math.max(0,Math.round(u.hp))} / ${Math.round(max)} HP</span><div class="hp-track"><i class="hp-trail" style="--hp-before:${prev}%;--hp-after:${pct}%;width:${pct}%"></i><i class="hp-live" style="width:${pct}%"></i></div><div class="battle-status">${combatStatuses(u,id==='enemy')}${u.buildRuntime?.shield?' / 🛡 '+u.buildRuntime.shield:''}</div></div>`;
+  return `<div data-visual-state="${id!=='enemy'&&typeof characterVisualState==='function'?characterVisualState(id):'normal'}" data-combat-unit="${id}" class="battle-unit ${hurt?'hit':''} ${acting?'acting':''}"><strong>${combatName(id)}${id!=='enemy'?' Lv'+characterProgress(id).level:''}${id==='enemy'?'：'+uiEscape(enemy.name):''}${u.hp<=0?(id==='player'?'（敗北）':id==='enemy'?'（討伐）':'（気絶）'):''}</strong><span>${Math.max(0,Math.round(u.hp))} / ${Math.round(max)} HP</span><div class="hp-track"><i class="hp-trail" style="--hp-before:${prev}%;--hp-after:${pct}%;width:${pct}%"></i><i class="hp-live" style="width:${pct}%"></i></div><div class="battle-status">${combatStatuses(u,id==='enemy')}${u.buildRuntime?.shield?' / 🛡 '+u.buildRuntime.shield:''}</div></div>`;
  }).join('')+`<div class="combat-number-space" aria-hidden="true"></div><details class="battle-feed" ${combatFeedback.logOpen?'open':''}><summary>戦闘ログ（最新5件）</summary><ol>${combatFeedback.events.map(e=>`<li>${uiEscape(combatName(e.actor))} → ${uiEscape(combatName(e.target))}：${uiEscape(e.label)} ${e.kind==='heal'||e.kind==='shield'?'+':''}${e.value}${e.kind==='heal'?' HP回復':e.kind==='shield'?' シールド':e.kind==='buff'?'% 特効':e.kind==='part'?' 部位耐久ダメージ':'ダメージ'}</li>`).join('')||'<li>行動するとここに表示されます。</li>'}</ol></details>`;
  root.querySelector('details').addEventListener('toggle',e=>{combatFeedback.logOpen=e.currentTarget.open;});
  if(typeof enemyPartsHtml==='function')root.querySelector('.combat-number-space').insertAdjacentHTML('beforebegin',enemyPartsHtml(enemy));
