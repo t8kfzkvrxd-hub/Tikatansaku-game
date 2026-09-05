@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>エルナ 顔表現・開発確認</title>
+  <link rel="stylesheet" href="elna-face.css">
+  <script src="elna-face-config.js" defer></script>
+  <script src="elna-face.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="preview" aria-label="正式立ち絵の確認">
+      <div id="elna-stage">
+        <div id="elna-character">
+          <img id="elna-base" alt="正式基準のエルナ" draggable="false">
+          <div class="breath-light" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+    <aside>
+      <h1>エルナ 開発確認</h1>
+      <p>正式立ち絵は無加工。顔アニメーションは未完成です。本番ゲームとは接続していません。</p>
+      <label><input id="breathing" type="checkbox" checked> 微細な光の呼吸感</label>
+      <button id="normal" type="button">通常に戻す</button>
+      <button disabled title="右閉じ目と安全な目の消去領域が未確定">まばたき：利用不可</button>
+      <button disabled title="元の口を自然に隠す正式素材が未確定">口パク：利用不可</button>
+      <button disabled title="正式な差分と局所マスクが未確定">smile / surprised / sad：利用不可</button>
+      <button disabled title="正式な左右視線素材なし">目線：正面のみ</button>
+      <p id="status" role="status"></p>
+      <p id="motion-status"></p>
+      <details><summary>素材の制約</summary><p>顔ベース・半目・閉じ目は基準との適合未確認。右閉じ目は欠品。既存の口・眉は透明背景のため、重ねるだけでは元の線が残ります。未採用素材で上書きしません。</p></details>
+    </aside>
+  </main>
+</body>
+</html>

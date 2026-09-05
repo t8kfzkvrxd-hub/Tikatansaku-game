@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><iframe src="elna-face.html"></iframe><pre id="results">RUNNING</pre>
+<script>
+window.onload=async()=>{
+ const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,out=[];
+ const check=(ok,label)=>{if(!ok)throw Error(label);out.push('PASS '+label)};
+ const pause=()=>new Promise(resolve=>setTimeout(resolve,100));
+ try{
+  const image=d.getElementById('elna-base');
+  check(image.complete&&image.naturalWidth===1024&&image.naturalHeight===1536,'正式画像読込');
+  check(d.querySelectorAll('img').length===1,'未採用素材なし');
+  for(const [width,height] of [[1920,1080],[1366,768],[844,390],[932,430],[740,360],[390,844],[844,390]]){
+   f.style.width=width+'px';f.style.height=height+'px';await pause();
+   const a=d.getElementById('elna-stage').getBoundingClientRect(),b=d.getElementById('elna-character').getBoundingClientRect();
+   check(b.left>=a.left-.1&&b.right<=a.right+.1&&b.top>=a.top-.1&&b.bottom<=a.bottom+.1,width+'×'+height+' 全身表示 '+JSON.stringify({stage:[a.left,a.top,a.right,a.bottom],character:[b.left,b.top,b.right,b.bottom]}));
+   check(Math.abs(b.width/b.height-2/3)<.001,width+' 比率維持');
+   check(d.documentElement.scrollWidth<=width+1,width+' 横はみ出しなし');
+   const button=d.getElementById('normal');button.scrollIntoView();const r=button.getBoundingClientRect();
+   check(r.height>=44&&d.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===button,width+' 操作可能');
+  }
+  check(!w.blinkElna().supported,'未実装まばたきを成功扱いしない');
+  check(!w.setElnaTalking(true).supported,'未実装口パクを成功扱いしない');
+  for(const name of ['smile','surprised','sad'])check(!w.setElnaExpression(name).supported,name+' 制約明示');
+  check(w.setElnaExpression('normal').supported,'normal');
+  check(!w.setElnaGaze('left').supported&&w.setElnaGaze('front').supported,'視線制約');
+  const light=d.querySelector('.breath-light');
+  if(w.matchMedia('(prefers-reduced-motion:reduce)').matches)check(w.getComputedStyle(light).display==='none','reduced-motion停止');
+  else check(w.getComputedStyle(light).animationName==='breath-light','光の呼吸感');
+  d.getElementById('breathing').click();check(w.getComputedStyle(light).display==='none','手動停止');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL '+e.stack)}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>
