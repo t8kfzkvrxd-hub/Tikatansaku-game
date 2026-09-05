@@ -174,6 +174,66 @@
       "alphaMin": 0,
       "alphaMax": 254,
       "sha256": "c82846ef0d8aa990df8e8d5e5c8c3a310ef1b8f6dc489f82ccb06b6cdd927c6c"
+    },
+    {
+      "file": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "foundAt": "source/064b4d12-e79a-4b19-8557-d7c99cf5d124.png",
+      "category": "下半身セット",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 1137586,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "4894d4214eec2ecd05b63abb089db0737a7621dc48591423b05bf43f5c9e6054",
+      "adoptionStatus": "not_adopted",
+      "reason": "基準は素脚・茶黒ブーツ。追加は白い脚衣装・別形状のブーツと腰装飾。"
+    },
+    {
+      "file": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "foundAt": "source/080505a1-44bf-4da3-96de-7027fc3ec095.png",
+      "category": "髪セット",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 810376,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "1420d6345c4060b2a87b490f07feb4fc0a98df4942a151a63ea390e6ccf92dfa",
+      "adoptionStatus": "not_adopted",
+      "reason": "前髪・横髪・後ろ髪が矩形範囲で近接。独立した編み込みは頭沿いでなく垂れ下がる形状。リボンは基準にない宝石付き。"
+    },
+    {
+      "file": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "foundAt": "source/69572a14-6a05-4ee8-ba91-0d6cd50564f3.png",
+      "category": "胴体＋コートセット",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 863066,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "8a2a20dd54b492d35b30600dea51b8a7f8f0907099768f12bcb378a7c29dab89",
+      "adoptionStatus": "not_adopted",
+      "reason": "胸元のフリル・中央装飾・星形腰ベルト・懐中時計状装飾・コート金模様が基準と異なる。"
+    },
+    {
+      "file": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "foundAt": "source/ef1ec64a-c9a8-4054-a225-6d698f667f47.png",
+      "category": "腕セット",
+      "format": "PNG",
+      "width": 1536,
+      "height": 1024,
+      "hasAlpha": true,
+      "transparentPixels": 986014,
+      "alphaMin": 0,
+      "alphaMax": 254,
+      "sha256": "669713cda8e46990f9889089bf3709596d875803c3931ed4c3f78a0bd0de314b",
+      "adoptionStatus": "not_adopted",
+      "reason": "大きな青い袖リボン・星形装飾・袖裾の金模様が基準の段状袖と異なる。"
     }
   ],
   "reference": {
@@ -800,7 +860,7 @@
       "edgeAlphaMax": 253
     }
   ],
-  "staticRestorationStatus": "not_ready: missing isolated hair, dressed limbs and lower-body; torso design differs",
+  "staticRestorationStatus": "blocked: four new sheets do not provide a verified reference-matching part set",
   "phaseStatus": {
     "sourceAudit": "complete",
     "safeExtraction": "partial",
@@ -809,9 +869,9 @@
     "animation": "not_started"
   },
   "blockers": [
-    "前髪・後ろ髪・腕・下半身・コートの独立素材が不足。",
-    "新規torso.pngは基準全身の衣装と意匠が異なる候補。",
-    "静止復元は今回対象外。縮尺・装着位置と接合部は未検証。"
+    "追加胴体・腕・下半身・コートの意匠が基準と異なるため正式採用できない。",
+    "髪の矩形分離と基準の髪型への対応が未確定。",
+    "静止復元可能な素材が揃っていない。アニメーション・本番ホームは未変更。"
   ],
   "latestRejectedCandidates": [
     "face/eye-right-closed.png",
