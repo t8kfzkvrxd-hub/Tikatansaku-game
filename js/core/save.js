@@ -8,6 +8,7 @@
           storage: state.storage,
           equipped: state.equipped,
           characterLevelVersion: 1,
+          companionVitals: Object.fromEntries(Object.entries(state.companionBattle||{}).map(([id,u])=>[id,{id,hp:u.hp,poison:u.poison||0,cooldown:0,attackBuff:1}])),
           codex: state.codex,
           bounty: state.bounty,
           preparedItems: state.preparedItems || [],
@@ -43,6 +44,7 @@
           state.vaultGold = p.vaultGold || 0;
           state.abyssCores = p.abyssCores || 0;
           state.deepCrystals = Number(p.deepCrystals) || 0;
+          state.companionBattle=Object.fromEntries(Object.entries(p.companionVitals||{}).filter(([,u])=>u&&typeof u==='object').map(([id,u])=>[id,{id,hp:Number.isFinite(u.hp)?Math.max(0,u.hp):undefined,poison:Math.max(0,Number(u.poison)||0),cooldown:0,attackBuff:1}]));
           state.storage = p.storage || [];
           state.equipped = p.equipped || { weapon: null, armor: null, accessory: null };
           state.codex = Object.assign(state.codex, p.codex || { items: {}, enemies: {}, lore: {} });
@@ -82,6 +84,7 @@
       migrateChapter(savedChapter);
       let savedProgress=null;try{savedProgress=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){}
       migrateCharacterLevels(savedProgress);
+      for(const id of Object.keys(state.chapter.owned||{}))if(state.chapter.owned[id])partyMember(id);
       state.maxUnlockedFloor=Math.min(MAX_DUNGEON_FLOOR,Math.max(1,state.deepestFloorReached,...Object.keys(state.bossFirstKills).filter(f=>state.bossFirstKills[f]).map(f=>Number(f)+10)));
       if(!canWarpTo(state.selectedStartFloor))state.selectedStartFloor=1;
     }

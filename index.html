@@ -877,6 +877,7 @@
   <link rel="stylesheet" href="lobby.css">
   <link rel="stylesheet" href="landscape.css">
   <link rel="stylesheet" href="combat-equipment.css">
+  <link rel="stylesheet" href="party-status.css">
 </head>
 <body class="at-home">
   <section id="rotate-guide" role="status" aria-hidden="true"><div class="rotate-phone" aria-hidden="true">▯ ↻</div><p>このゲームは横画面でのプレイを推奨しています</p><p>端末を横向きにしてください</p></section>
@@ -1570,6 +1571,7 @@
       });
 
       state.greedLevel = 0;
+      restoreCompanionsAtTown();
       saveState();
       state.screen = 'town';
       state.floor = 0;
@@ -1613,6 +1615,7 @@
       });
 
       state.greedLevel = 0;
+      restoreCompanionsAtTown();
       saveState();
       state.screen = 'town';
       state.floor = 0;
@@ -1819,6 +1822,7 @@
       state.greedLevel = 0;
       state.inventory = [];
       state.pendingEmergencySelection = [];
+      restoreCompanionsAtTown();
       saveState();
       state.screen = 'town';
       state.floor = 0;
@@ -2537,9 +2541,10 @@
         text: '地下に湧き出る神秘の聖水。だが、その清水は貪欲な冒険者の欲気を洗い流してしまうという…',
         choices: [
           {
-            text: '泉の水を飲んでHP全回復 (代償: 欲気が消え次の宝箱レア率 -20%)',
+            text: '泉で2人を全回復（エルナ気絶時はHP25%で復帰 / 次の宝箱レア率 -20%）',
             action: () => {
               state.hp = state.maxHp;
+              healCompanionAtRest(1);
               state.modifiers.nextChestDebuff = 20;
               playSound('heal');
               spawnFloatingFx('✨ HP全回復！', 'heal');
@@ -2724,7 +2729,7 @@
       state.screen='event';
       state.currentEvent={title:ev.title,icon:ev.icon,text:ev.text,choices:[
         {text:'危険を承知で深層結晶を採取する',action:()=>{const gain=Math.random()<.25?2:1;state.deepCrystals+=gain;state.hp=Math.max(1,state.hp-Math.round(state.maxHp*.12));addLog(`🔷 深層結晶+${gain} / HPを代償にした`,'gold');endEvent();}},
-        {text:'安全な恩恵を受ける',action:()=>{const heal=Math.round(state.maxHp*(.12+Math.random()*.08));state.hp=Math.min(state.maxHp,state.hp+heal);addLog(`深層の残響からHP${heal}を回復した`,'heal');endEvent();}},
+        {text:'安全な恩恵を受ける',action:()=>{const heal=Math.round(state.maxHp*(.12+Math.random()*.08));state.hp=Math.min(state.maxHp,state.hp+heal);healCompanionAtRest(heal/state.maxHp);addLog(`深層の残響からHP${heal}を回復した`,'heal');endEvent();}},
         {text:'記録だけ持ち帰る',action:()=>{discoverLore();state.dungeonGold+=40+state.floor*2;addLog('深層記録と金貨を回収した','gold');endEvent();}}
       ]}; render();
     }
@@ -3110,22 +3115,7 @@
       render();
     }
 
-    function usePotion(index) {
-      initAudio();
-      const item = state.inventory[index];
-      if (!item || item.type !== 'potion') return;
-
-      const stats = getPlayerStats();
-      const amount=(item.heal||0)+Math.round(stats.maxHp*(item.healPercent||0)/100);
-      const healed = Math.min(stats.maxHp - state.hp, amount);
-      state.hp += healed;
-      if(item.cureAll) clearPlayerStatuses();
-      playSound('heal');
-      addLog(`${item.name} を服用。HP +${healed} 回復！`, 'heal');
-      state.inventory.splice(index, 1);
-      updateHeader();
-      render();
-    }
+    function usePotion(index) { openHealingTargets(index); }
 
     /* ==========================================================================
        UI RENDERING
@@ -3276,6 +3266,8 @@
   <script src="js/ui/materialUI.js"></script>
   <script src="js/ui/characterEquipmentUI.js"></script>
   <script src="js/ui/combatFeedback.js"></script>
+  <script src="js/systems/partyHealth.js"></script>
+  <script src="js/ui/characterStatusUI.js"></script>
   <script src="js/ui/homeUI.js"></script>
   <script src="js/ui/orientationUI.js"></script>
   <script src="js/ui/lobbyUI.js"></script>

@@ -536,7 +536,7 @@
       equipmentPoisonTick(enemy);
       if(enemy.hp<=0){onEnemyKilled();return;}
       const gearEffects=equipmentEffects();
-      const companion=companionCombatUnit(),targetsCompanion=companion?.hp>0&&Math.random()<0.35;
+      const companion=companionCombatUnit(),targetsCompanion=selectEnemyTarget(enemy)!=='player';
       if(!targetsCompanion&&Math.random()*100<Math.max(0,Math.min(45,gearEffects.dodge||0)-(enemy.gimmick==='rising_water'&&state.waterLevel>=70?20:0))) {
         state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.dodgeAttack||0)/100);
         addLog('💨 回避成功！'+(gearEffects.dodgeAttack?' 次の攻撃を強化':''),'gold');decideEnemyIntent();updateHeader();render();return;

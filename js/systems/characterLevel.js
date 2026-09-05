@@ -34,7 +34,7 @@ function grantCharacterExperience(id,amount,source='story'){
  p.exp+=Math.max(0,Math.floor(Number(amount)||0));
  while(p.level<limit&&p.exp>=characterExpRequired(p.level)){p.exp-=characterExpRequired(p.level);p.level++;}
  if(p.level>=limit)p.exp=0;
- if(p.level>before)addLog(`${id==='player'?'主人公':CHARACTER_DATA[id]?.name||id}がLv.${p.level}に成長！`,'gold');
+ if(p.level>before){addLog(`${id==='player'?'主人公':CHARACTER_DATA[id]?.name||id}がLv.${p.level}に成長！`,'gold');if(typeof showCharacterLevelUp==='function')showCharacterLevelUp(id,before,p.level);}
  return p.level-before;
 }
 function awardBattleExperience(enemy){
@@ -48,7 +48,7 @@ function awardBattleExperience(enemy){
 }
 function characterLevelHtml(id){
  const p=characterProgress(id),max=p.level>=characterLevelCap(),required=characterExpRequired(p.level);
- return `<div class="character-growth"><b>Lv.${p.level}${max?' MAX':''}</b><div>EXP ${max?'MAX':p.exp+' / '+required}</div><progress style="width:100%" max="${required}" value="${max?required:p.exp}"></progress>${p.level>=50&&characterLevelCap()===50?'<p>深淵解放後、さらなる成長が可能（1000FストーリークリアでLv100解放）</p>':''}</div>`;
+ return `<div class="character-growth ${p.level>50?'abyss-level':''} ${p.level===100?'max-level':''}"><b>Lv.${p.level}${max?' MAX':''}</b><div>EXP ${max?'MAX':p.exp+' / '+required}</div><progress style="width:100%" max="${required}" value="${max?required:p.exp}"></progress>${!max?'<div>次のLvまで '+Math.max(0,required-p.exp)+' EXP</div>':''}${p.level>=50&&characterLevelCap()===50?'<p>深淵解放後、さらなる成長が可能（1000FストーリークリアでLv100解放）</p>':''}</div>`;
 }
 function unlockedWarpFloors(){
  const reached=Math.max(0,state.deepestFloorReached||0);

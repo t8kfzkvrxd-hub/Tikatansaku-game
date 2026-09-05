@@ -74,7 +74,7 @@ function companionTurn(enemy){
  const poisonBefore=unit.hp;
  unit.hp=Math.max(0,unit.hp-(unit.poison>0?5:0));unit.poison=Math.max(0,unit.poison-1);
  combatApplied('status',id,unit.hp-poisonBefore,'POISON');
- if(unit.hp<=0){addLog(`${CHARACTER_DATA[id]?.name||id}は毒で戦闘不能！`,'danger');return false;}
+ if(unit.hp<=0){addLog(`${CHARACTER_DATA[id]?.name||id}は毒で気絶！`,'danger');return false;}
  let action=state.lastPlayerAction||'attack';
  if(!['attack','heavy','skill','defend'].includes(action))action='attack';
  unit.defending=action==='defend';
@@ -115,7 +115,7 @@ function companionReceiveAttack(enemy,attack){
  combatApplied('enemy',unit.id,unit.hp-hpBefore,'敵 → '+name);
  if(unit.hp>0&&guard){const beforeHeal=unit.hp;unit.hp=Math.min(stats.maxHp,unit.hp+(e.guardHeal||0));combatApplied(unit.id,unit.id,unit.hp-beforeHeal,'ガード回復');if(just)unit.attackBuff=1+Math.min(150,e.justAttack||0)/100;}
  if(['curse_poison','spore_poison'].includes(enemy.trait))unit.poison=2;
- addLog(`${enemy.name} → ${name}：${damage}ダメージ${unit.hp<=0?'・戦闘不能':''}`,'danger');
+ addLog(`${enemy.name} → ${name}：${damage}ダメージ${unit.hp<=0?'・気絶':''}`,'danger');
  return true;
 }
 

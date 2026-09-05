@@ -450,6 +450,7 @@
       if(state.chapter){const banner=state.screen==='town'?chapterTownHtml():tutorialBanner();if(banner)vp.insertAdjacentHTML('afterbegin',banner);}
       if(typeof syncLobbyScreen==='function')syncLobbyScreen();
       if(typeof renderCombatReadout==='function')renderCombatReadout();
+      if(typeof renderPartyStatus==='function')renderPartyStatus();
       syncActionButtons();
     }
 
