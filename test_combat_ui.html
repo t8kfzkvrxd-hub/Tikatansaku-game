@@ -1,0 +1,37 @@
+<!doctype html><meta charset="utf-8"><title>Equipment and combat feedback</title><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{
+ const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},events=()=>w.eval('combatFeedback.events'),clear=()=>w.eval('combatFeedback.events=[]');
+ try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';s.chapter.equipment.elna=w.emptyEquipmentSlots();s.screen='town';
+ s.storage=[{id:'ui-weapon',name:'比較剣',type:'weapon',slot:'weapon',baseAtk:60,baseDef:7,hp:20,rarity:'Rare',effects:{fireDamage:9},tags:['fire'],locked:true}];
+ s.equipped.weapon={id:'hero-only',name:'主人公専用中',type:'weapon',baseAtk:10,rarity:'Common'};
+ w.openCharacterEquipment('elna','weapon');check(d.querySelectorAll('.character-tab').length===2&&d.querySelectorAll('.equipment-slot').length===7,'2 tabs / 7 slots');
+ check(d.querySelector('[aria-pressed=true]').textContent.includes('エルナ'),'active Elna');
+ check(d.querySelector('.equipment-candidates').textContent.includes('主人公が装備中')&&d.querySelector('.equipment-candidates').textContent.includes('ロック中'),'owner / lock badges');
+ w.openEquipmentCandidate('hero-only');check([...d.querySelectorAll('.update-notes-actions button')].some(b=>b.disabled&&b.textContent.includes('主人公')),'owned item disabled');
+ check(!w.setCharacterEquipment('elna','weapon','hero-only'),'logic rejects double equip');
+ w.openCharacterEquipment('elna','weapon');d.querySelector('.equipment-candidates button').click();check(d.querySelector('.gear-compare')&&d.querySelector('.update-notes-body').textContent.includes('ビルド'),'candidate opens stats and build comparison');
+ [...d.querySelectorAll('.update-notes-actions button')].find(b=>b.textContent.includes('比較剣を装備')).click();check(s.chapter.equipment.elna.weapon?.id==='ui-weapon','equip through comparison UI');
+ for(const sort of ['atk','def','hp','rarity','build','recent','recommended']){w.eval(`equipmentCandidateSort='${sort}'`);w.openCharacterEquipment('elna','weapon');check(w.equipmentCandidates('elna','weapon').length===2,'sort '+sort);}
+ w.closeGenericModal();s.floor=2;s.hp=500;s.maxHp=500;s.screen='battle';s.currentEnemy={hp:100000,maxHp:100000,atk:30,def:0,name:'UI敵',icon:'👹',actionType:'attack',pendingAction:'攻撃',nextMult:1};s.companionBattle={};s.lastPlayerAction='attack';w.Math.random=()=>.99;w.render();
+ const enemy=s.currentEnemy,unit=w.companionCombatUnit();clear();const before=enemy.hp;w.companionTurn(enemy);await wait(30);
+ check(events().filter(e=>e.target==='enemy').every(e=>e.actor==='elna'),'Elna attribution including fire');check(events().filter(e=>e.target==='enemy').reduce((n,e)=>n+e.value,0)===before-enemy.hp,'damage values match HP loss');check(events().some(e=>e.label==='FIRE'&&e.value===9),'fire follow-up');check(d.querySelector('.combat-float')?.textContent.includes('エルナ'),'visible Elna float');
+ clear();unit.hp=150;const incoming=unit.hp;w.companionReceiveAttack(enemy,30);await wait(30);check(events().some(e=>e.target==='elna'&&e.kind==='hurt'&&e.value===incoming-unit.hp),'Elna incoming actual damage');
+ clear();unit.hp=100;w.healFromWeaponDamage(unit,{maxHp:210,vamp:25},enemy,100,w.characterEquipment('elna'));await wait(30);check(events().some(e=>e.label==='LIFESTEAL'&&e.kind==='heal'),'lifesteal feedback');
+ clear();enemy.buildStatuses={bleed:3,fire:2,freeze:1};w.equipmentPoisonTick(enemy);await wait(30);check(events().some(e=>e.label==='BLEED')&&events().some(e=>e.label==='BURN'),'individual DOT labels');check(d.querySelector('[data-combat-unit=enemy]').textContent.includes('出血 ×2'),'status counts');
+ clear();s.chapter.companion=null;s.currentEnemy.acting=false;s.currentEnemy.rewardClaimed=false;w.playerCombatAction('attack');await wait(30);check(events().some(e=>e.actor==='player'&&e.target==='enemy'),'player damage actor');await wait(400);check(events().some(e=>e.target==='player'&&e.kind==='hurt'),'player incoming');
+ clear();s.guaranteedCrit=true;w.playerCombatAction('attack');await wait(30);check(events().some(e=>e.label.includes('CRITICAL')),'critical label');await wait(400);
+ clear();s.chapter.companion='elna';s.chapter.equipment.elna.accessory={id:'shield-test',type:'accessory',tags:['shield']};delete unit.buildRuntime.shieldGranted;w.buildIncomingDamage(10,enemy,w.characterEquipment('elna'),unit,200);await wait(20);check(events().some(e=>e.kind==='shield'&&e.label==='SHIELD'),'shield amount');
+ const killed=w.onEnemyKilled;w.onEnemyKilled=()=>{enemy.hp=0};s.chapter.companion='elna';s.lastPlayerAction='attack';enemy.hp=1;clear();w.companionTurn(enemy);await wait(20);check(events().filter(e=>e.target==='enemy'&&e.kind==='damage').reduce((n,e)=>n+e.value,0)===1&&!events().some(e=>e.target==='enemy'&&e.kind==='heal'),'lethal hit does not invent enemy healing');w.onEnemyKilled=killed;enemy.hp=100000;
+ s.chapter.companion='elna';w.render();
+ for(const [width,height]of [[1920,1080],[1366,768],[740,360],[844,390],[932,430]]){
+ f.style.width=width+'px';f.style.height=height+'px';await wait(90);w.render();
+ const cards=[...d.querySelectorAll('.battle-unit')].map(e=>e.getBoundingClientRect());check(cards.length===3&&cards.every((r,i)=>r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height&&(i===0||r.left>=cards[i-1].right)),width+'x'+height+' HP / statuses visible, no overlap');
+ check([...d.querySelectorAll('.combat-actions button')].slice(0,4).every(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=height}),width+'x'+height+' four actions visible');
+ w.openCharacterEquipment('elna','weapon');const body=d.querySelector('.update-notes-body'),card=d.querySelector('.update-notes-card').getBoundingClientRect();check(body.scrollWidth<=body.clientWidth+1&&card.bottom<=height,width+'x'+height+' equipment modal fits');w.closeGenericModal();
+ }
+ clear();const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2');for(let i=0;i<20;i++)w.combatEmit('player','enemy',i+1);await wait(40);check(events().length===5&&d.querySelectorAll('.combat-float').length<=8,'bounded logs / floats');await wait(1400);check(!d.querySelector('.combat-float'),'floats expire');check(saved===w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'),'visual feedback does not write save');
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};</script>

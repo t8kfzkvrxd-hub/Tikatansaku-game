@@ -48,7 +48,7 @@ function migrateEquipment() {
  state.equipped=next;
  [...state.storage,...state.inventory].forEach(normalizeEquipment);
 }
-function equippedAccessories() {return [state.equipped.accessory,state.equipped.accessory2].filter(Boolean);}
+function equippedAccessories(slots=state.equipped) {return [slots.accessory,slots.accessory2].filter(Boolean);}
 function equipmentEffects(slots=state.equipped) {
  const effects={};Object.values(slots).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
  if(typeof buildTags==='function')for(const tag of buildTags(slots)){const passive={skillHaste:{skillHaste:1},dodge:{dodge:8},farming:{materialChance:8},rareMaterial:{rareMaterial:8},chest:{chestQuality:10},justGuard:{justAttack:30},guard:{guardHeal:2}}[tag];for(const [key,n]of Object.entries(passive||{}))effects[key]=(effects[key]||0)+n;}
@@ -79,6 +79,7 @@ function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.h
  const e=equipmentEffects(slots);
  const quarry=Object.values(slots).filter(i=>i?.quarrySource&&i.quarrySource===enemy.materialSource).reduce((sum,i)=>sum+(i.effects?.quarryPower||0),0);
  stats.atk*=1+Math.min(60,quarry)/100;
+ if(quarry&&typeof combatEmit==='function')combatEmit(slots===state.equipped?'player':state.chapter.companion,'enemy',Math.min(60,quarry),'WEAK 特定敵特効','buff');
  if(enemy.gearPoison>0) {stats.atk*=1+Math.min(200,e.poisonBonus||0)/100;stats.crit+=e.poisonCrit||0;}
  if(hp<=stats.maxHp*.35)stats.atk*=1+Math.min(150,e.lowHpPower||0)/100;
  if(action==='skill')stats.atk*=1+Math.min(100,e.skillPower||0)/100;

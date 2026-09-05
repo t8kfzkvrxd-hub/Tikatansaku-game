@@ -42,7 +42,7 @@ function buildStatusTick(enemy){
  const s=enemy.buildStatuses;if(!s)return;
  for(const tag of Object.keys(s)){
   if(s[tag]<=0)continue;
-  if(tag==='bleed'||tag==='fire'){const damage=Math.max(1,Math.min(40,Math.round(enemy.maxHp*.005*s[tag])));enemy.hp-=damage;addLog(`${BUILD_CATALOG[tag]} ${damage}ダメージ`,'danger');}
+  if(tag==='bleed'||tag==='fire'){const damage=Math.max(1,Math.min(40,Math.round(enemy.maxHp*.005*s[tag])));enemy.hp-=damage;combatApplied('status','enemy',-damage,tag==='bleed'?'BLEED':'BURN');addLog(`${BUILD_CATALOG[tag]} ${damage}ダメージ`,'danger');}
   if(tag==='freeze'&&Math.random()<(enemy.isBoss?.1:.25))enemy.stunned=true;
   s[tag]--;
  }
@@ -57,13 +57,13 @@ function healFromWeaponDamage(unit,stats,enemy,damage,slots,crit=false){
  const resistance=Math.max(0,1-(enemy.healingSuppression||0)-(enemy.isBoss?(enemy.turnCount||0)/30:0));
  const heal=Math.floor(Math.min(Math.max(0,damage)*rate/100,stats.maxHp*.08)*resistance);
  const applied=Math.min(Math.max(0,stats.maxHp-unit.hp),heal);unit.hp+=applied;
- if(tags.has('overheal'))runtime.shield=Math.min(Math.round(stats.maxHp*.15),runtime.shield+heal-applied);
+ if(tags.has('overheal')){const beforeShield=runtime.shield;runtime.shield=Math.min(Math.round(stats.maxHp*.15),runtime.shield+heal-applied);if(runtime.shield>beforeShield)combatEmit(unit===state?'player':unit.id,unit===state?'player':unit.id,runtime.shield-beforeShield,'SHIELD','shield');}
  if(applied)addLog(`吸血回復 +${applied}HP`,'heal');return applied;
 }
 function buildIncomingDamage(damage,enemy,slots,unit,maxHp,guard=false){
  const tags=buildTags(slots),r=buildRuntime(unit);
  if(enemy.buildStatuses?.curse>0)damage=Math.round(damage*(1-Math.min(.15,enemy.buildStatuses.curse*.03)));
- if(tags.has('shield')&&!r.shieldGranted){r.shieldGranted=true;r.shield=Math.max(r.shield,Math.round(maxHp*.05));}
+ if(tags.has('shield')&&!r.shieldGranted){r.shieldGranted=true;const beforeShield=r.shield;r.shield=Math.max(r.shield,Math.round(maxHp*.05));if(r.shield>beforeShield)combatEmit(unit===state?'player':unit.id,unit===state?'player':unit.id,r.shield-beforeShield,'SHIELD','shield');}
  const absorbed=Math.min(r.shield,damage);r.shield-=absorbed;damage-=absorbed;
  if(tags.has('safe'))damage=Math.round(damage*.95);
  if(tags.has('guard')&&guard)damage=Math.round(damage*.9);

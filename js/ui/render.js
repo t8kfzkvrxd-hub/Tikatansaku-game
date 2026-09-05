@@ -405,7 +405,7 @@
             </div>
 
             <!-- Combat Actions -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%; margin-top:6px;">
+            <div class="combat-actions" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%; margin-top:6px;">
               <button class="btn btn-red" onclick="playerCombatAction('attack')">⚔️ 通常攻撃</button>
               <button class="btn btn-purple" onclick="playerCombatAction('heavy')">💥 強攻撃</button>
               <button class="btn btn-blue" onclick="playerCombatAction('defend')">🛡️ 防御</button>
@@ -449,10 +449,7 @@
       renderSubPanel();
       if(state.chapter){const banner=state.screen==='town'?chapterTownHtml():tutorialBanner();if(banner)vp.insertAdjacentHTML('afterbegin',banner);}
       if(typeof syncLobbyScreen==='function')syncLobbyScreen();
-      if(state.screen==='battle'){
-        const unit=companionCombatUnit();
-        if(unit){const stats=companionStats(unit.id);vp.insertAdjacentHTML('beforeend',`<div class="card">${CHARACTER_DATA[unit.id]?.name||unit.id} HP ${unit.hp}/${stats.maxHp} / ATK ${stats.atk} / DEF ${stats.def}${unit.hp<=0?' — 戦闘不能':''}</div>`);}
-      }
+      if(typeof renderCombatReadout==='function')renderCombatReadout();
       syncActionButtons();
     }
 

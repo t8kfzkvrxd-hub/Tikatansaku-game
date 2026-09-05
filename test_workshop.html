@@ -15,7 +15,7 @@ window.onload=async()=>{
   for(const slot of w.__equipmentDebug.slots){
    const r=Object.values(w.__equipmentDebug.recipes).find(r=>r.slot===(slot.k==='accessory2'?'accessory':slot.k)&&!r.parent);
    const item={...r,id:'comp-'+slot.k,key:'comp-'+slot.k,refineCount:0};s.storage.push(item);ids.push(item.id);
-   w.openCharacterEquipment('elna',slot.k);click(item.name+'を装備');
+   w.openCharacterEquipment('elna',slot.k);w.openEquipmentCandidate(item.id);click(item.name+'を装備');
    check(s.chapter.equipment.elna[slot.k]?.id===item.id&&!s.storage.some(i=>i.id===item.id),'エルナ装備 '+slot.label);
   }
   check(JSON.stringify(s.equipped)===heroBefore,'主人公装備を変更しない');
@@ -62,7 +62,7 @@ window.onload=async()=>{
   w.resetForgeFilters();w.openRecipeDetail(rid);const goldBefore=s.vaultGold;check(!w.craftEquipment(rid)&&s.vaultGold===goldBefore,'素材不足で消費しない');
   for(const [k,n]of Object.entries(recipe.materials))for(let j=0;j<n;j++)s.storage.push({...w.__equipmentDebug.materials[k],id:crypto.randomUUID(),key:k,type:'material'});
   w.openRecipeDetail(rid);click('作成');check(s.storage.some(i=>i.key===rid)&&s.vaultGold===goldBefore-recipe.gold,'比較画面から作成・素材/G消費');
-  w.openCharacterEquipment('player','head');check(w.document.querySelector('.gear-compare'),'装備前に能力と特殊効果比較');
+  w.openCharacterEquipment('player','head');w.openEquipmentCandidate(s.storage.find(i=>i.key===rid).id);check(w.document.querySelector('.gear-compare'),'装備前に能力と特殊効果比較');
   for(const [width,height]of [[1280,720],[375,667],[320,480],[667,240],[740,360],[844,390],[932,430]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();
    if(width<height&&w.matchMedia('(pointer:coarse)').matches){out.push('SKIP: タッチ縦向きは回転案内のため製作操作を対象外');continue;}

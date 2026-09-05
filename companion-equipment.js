@@ -30,8 +30,8 @@ function characterEquipment(id='player'){
  if(!state.chapter?.owned[id])return null;
  state.chapter.equipment ||= {};return state.chapter.equipment[id] ||= emptyEquipmentSlots();
 }
-function companionStats(id='elna'){
- const slots=characterEquipment(id)||{},s={atk:36,def:0,maxHp:210,crit:5,vamp:0,effects:{}};
+function companionStats(id='elna',slots=characterEquipment(id)||{}){
+ const s={atk:36,def:0,maxHp:210,crit:5,vamp:0,effects:{}};
  const growth=characterGrowthStats(id);s.atk+=growth.atk;s.def+=growth.def;s.maxHp+=growth.hp;
  for(const it of Object.values(slots).filter(Boolean)){
   s.atk+=Number(it.baseAtk)||0;s.def+=Number(it.baseDef)||0;s.maxHp+=Number(it.hp)||0;s.crit+=Number(it.crit)||0;s.vamp+=Number(it.vamp)||0;
@@ -68,8 +68,12 @@ function companionTurn(enemy){
  if(!id||!state.chapter.owned[id]||state.chapter.pending||state.hp<=0||enemy.hp<=0)return;
  const unit=companionCombatUnit(),stats=companionStats(id),slots=characterEquipment(id),before=enemy.hp;
  if(!unit||unit.hp<=0)return false;
+ const regenBefore=unit.hp;
  unit.hp=Math.min(stats.maxHp,unit.hp+Object.values(slots).filter(Boolean).reduce((n,i)=>n+(i.turnRegen||0),0));
+ combatApplied(id,id,unit.hp-regenBefore,'再生');
+ const poisonBefore=unit.hp;
  unit.hp=Math.max(0,unit.hp-(unit.poison>0?5:0));unit.poison=Math.max(0,unit.poison-1);
+ combatApplied('status',id,unit.hp-poisonBefore,'POISON');
  if(unit.hp<=0){addLog(`${CHARACTER_DATA[id]?.name||id}は毒で戦闘不能！`,'danger');return false;}
  let action=state.lastPlayerAction||'attack';
  if(!['attack','heavy','skill','defend'].includes(action))action='attack';
@@ -107,8 +111,9 @@ function companionReceiveAttack(enemy,attack){
  let damage=Math.max(1,Math.round((attack-defense)*(guard?(just?.2:.45):1)));
  damage=Math.max(1,Math.round(damage*(1+stats.demeritDamage/100)));
  damage=buildIncomingDamage(damage,enemy,slots,unit,stats.maxHp,guard);
- unit.hp=Math.max(0,unit.hp-damage);
- if(unit.hp>0&&guard){unit.hp=Math.min(stats.maxHp,unit.hp+(e.guardHeal||0));if(just)unit.attackBuff=1+Math.min(150,e.justAttack||0)/100;}
+ const hpBefore=unit.hp;unit.hp=Math.max(0,unit.hp-damage);
+ combatApplied('enemy',unit.id,unit.hp-hpBefore,'敵 → '+name);
+ if(unit.hp>0&&guard){const beforeHeal=unit.hp;unit.hp=Math.min(stats.maxHp,unit.hp+(e.guardHeal||0));combatApplied(unit.id,unit.id,unit.hp-beforeHeal,'ガード回復');if(just)unit.attackBuff=1+Math.min(150,e.justAttack||0)/100;}
  if(['curse_poison','spore_poison'].includes(enemy.trait))unit.poison=2;
  addLog(`${enemy.name} → ${name}：${damage}ダメージ${unit.hp<=0?'・戦闘不能':''}`,'danger');
  return true;
@@ -138,16 +143,3 @@ function compareEquipmentHtml(current,next){
  return `<div class="gear-compare"><b>${uiEscape(old.name||'未装備')} → ${uiEscape(item.name||'未装備')}</b><div>${changes}</div><div>${uiEscape(effects)}</div><div>現在：${uiEscape(old.desc||'特殊効果なし')}</div><div>候補：${uiEscape(item.desc||effectDescription(item.effects)||'特殊効果なし')}</div></div>`;
 }
 let characterView={id:'player',slot:null,page:0};
-function openCharacterEquipment(id='player',slot=null,page=0){
- const slots=characterEquipment(id);if(!slots)return;
- characterView={id,slot,page};const stats=id==='player'?getPlayerStats():companionStats(id);
- const tabs=[['player','主人公'],...Object.keys(state.chapter.owned).filter(k=>state.chapter.owned[k]).map(k=>[k,CHARACTER_DATA[k]?.name||k])].map(([key,label])=>`<button class="btn btn-${key===id?'gold':'sub'} btn-xs" onclick="openCharacterEquipment('${key}')">${uiEscape(label)}</button>`).join('');
- const rows=EQUIPMENT_SLOTS.map(s=>`<div class="item-row"><div>${s.icon} ${s.label}：${uiEscape(slots[s.k]?.name||'未装備')}<div>${uiEscape(slots[s.k]?getItemStatSummary(slots[s.k]):'')}</div></div><div class="forge-actions"><button class="btn btn-sub btn-xs" onclick="openCharacterEquipment('${id}','${s.k}')">比較・変更</button>${slots[s.k]?`<button class="btn btn-sub btn-xs" onclick="removeCharacterEquipment('${id}','${s.k}');openCharacterEquipment('${id}')">解除</button>`:''}</div></div>`).join('');
- const candidates=slot?state.storage.filter(i=>equipmentSlot(i)===(slot==='accessory2'?'accessory':slot)&&!equipmentOwner(i)):[];
- const pageCount=Math.max(1,Math.ceil(candidates.length/8));page=Math.min(Math.max(0,page),pageCount-1);
- const selection=slot?`<h3>${EQUIPMENT_SLOTS.find(s=>s.k===slot)?.label}の候補（倉庫）</h3>${candidates.slice(page*8,page*8+8).map(i=>`<article class="forge-recipe">${compareEquipmentHtml(slots[slot],i)}<button class="btn btn-gold btn-xs" onclick="setCharacterEquipment('${id}','${slot}','${i.id}');openCharacterEquipment('${id}','${slot}',${page})">${uiEscape(i.name)}を装備</button></article>`).join('')||'<p>候補なし。他のキャラの装備は先に解除してください。</p>'}<div class="forge-actions"><button class="btn btn-sub btn-xs" ${page===0?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page-1})">前へ</button>${page+1}/${pageCount}<button class="btn btn-sub btn-xs" ${page+1===pageCount?'disabled':''} onclick="openCharacterEquipment('${id}','${slot}',${page+1})">次へ</button></div>`:'';
- showChapterModal('👥 キャラ／装備',`<div class="forge-actions">${tabs}</div>${characterLevelHtml(id)}<p>総能力 ATK ${stats.atk} / DEF ${stats.def} / HP ${stats.maxHp} / 会心 ${stats.crit}%</p>${id!=='player'?'<p>通常探索の主人公とは別装備。エルナの物語戦では基礎能力・炎追撃・会心・スキル威力/CT・ガード回復・回避を反映します。その他の特殊効果は物語戦では適用しません。</p>':''}${rows}${selection}`,`<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
- if(id!=='player'){
-  document.querySelector('.update-notes-body').insertAdjacentHTML('afterbegin',`<div><p>敵行動前に1回、主人公と同じ種類の行動を取ります（スキルCT中は通常攻撃）。独立HP・DEFで敵の攻撃対象となり、HP0で探索中は戦闘不能。出撃時に全回復。主人公が倒した敵には攻撃しません。討伐で経験値を獲得。</p>${id==='elna'&&state.chapter.complete?'<p>帰ってこなかったはずの声が、隣から聞こえる。契約札の名前は消えていない。</p>':''}<button class="btn btn-gold btn-xs" onclick="selectCompanion('${id}');openCharacterEquipment('${id}')">${state.chapter.companion===id?'同行中':'同行に選択'}</button><button class="btn btn-sub btn-xs" onclick="selectCompanion(null);openCharacterEquipment('${id}')">同行を外す</button></div>`);
- }
-}

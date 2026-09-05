@@ -876,6 +876,7 @@
   <link rel="stylesheet" href="home.css">
   <link rel="stylesheet" href="lobby.css">
   <link rel="stylesheet" href="landscape.css">
+  <link rel="stylesheet" href="combat-equipment.css">
 </head>
 <body class="at-home">
   <section id="rotate-guide" role="status" aria-hidden="true"><div class="rotate-phone" aria-hidden="true">▯ ↻</div><p>このゲームは横画面でのプレイを推奨しています</p><p>端末を横向きにしてください</p></section>
@@ -1289,7 +1290,7 @@
       return getSynergyBreakdown().filter(s => s.isActive);
     }
 
-    function getPlayerStats() {
+    function getPlayerStats(slots=state.equipped) {
       const growth = characterGrowthStats('player');
       let maxHp = 100 + growth.hp;
       let atk = 10 + growth.atk;
@@ -1302,8 +1303,8 @@
       let demeritDamage = 0;
 
       // Equipment stats
-      Object.keys(state.equipped).forEach(k => {
-        const item = state.equipped[k];
+      Object.keys(slots).forEach(k => {
+        const item = slots[k];
         if (item) {
           if (item.baseAtk) atk += item.baseAtk;
           if (item.baseDef) def += item.baseDef;
@@ -1323,7 +1324,7 @@
       });
 
       // Synergy effects
-      const synList = getSynergyBreakdown();
+      const synList = getSynergyBreakdown(slots);
       synList.forEach(s => {
         if (s.id === 'syn_curse' && s.count >= 2) {
           atk += 25; crit += 15; perFloorDrain += 2;
@@ -1365,8 +1366,8 @@
 
       // 3. 👁️ 呪王ビルド: 呪い装備1つごとに超攻撃補正
       let curseCount = 0;
-      Object.keys(state.equipped).forEach(k => {
-        if (state.equipped[k]?.isCurse) curseCount++;
+      Object.keys(slots).forEach(k => {
+        if (slots[k]?.isCurse) curseCount++;
       });
       if (curseCount > 0) {
         atk += curseCount * 14;
@@ -1374,10 +1375,10 @@
       }
 
       // Berserk item check (狂戦士の指輪: HP50%以下で攻撃2倍)
-      if (equippedAccessories().some(i=>i.isBerserk) && state.hp <= (maxHp * 0.5)) {
+      if (equippedAccessories(slots).some(i=>i.isBerserk) && state.hp <= (maxHp * 0.5)) {
         atk *= 2;
       }
-      if (state.equipped.weapon?.key === 'abyssal_devourer' || equippedAccessories().some(i=>i.key==='living_core_relic')) atk += (state.abyssGrowth || 0);
+      if (slots.weapon?.key === 'abyssal_devourer' || equippedAccessories(slots).some(i=>i.key==='living_core_relic')) atk += (state.abyssGrowth || 0);
       if(state.statusEffects.weakened>0)atk=Math.round(atk*.8);
 
       // GREED Modifiers (リスク＆リターン)
@@ -3273,6 +3274,8 @@
   <script src="js/systems/inputSafety.js"></script>
   <script src="forge-ui.js"></script>
   <script src="js/ui/materialUI.js"></script>
+  <script src="js/ui/characterEquipmentUI.js"></script>
+  <script src="js/ui/combatFeedback.js"></script>
   <script src="js/ui/homeUI.js"></script>
   <script src="js/ui/orientationUI.js"></script>
   <script src="js/ui/lobbyUI.js"></script>

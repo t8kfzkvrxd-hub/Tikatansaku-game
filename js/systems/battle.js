@@ -241,6 +241,7 @@
       if (hasDragon && state.hp < stats.maxHp) {
         const regen = Math.min(3, stats.maxHp - state.hp);
         state.hp += regen;
+        combatApplied('player','player',regen,'再生');
         addLog(`🐉 深淵の幼竜の加護でHPが${regen}回復した。`, 'heal');
         spawnFloatingFx(`🐉 +${regen}HP`, 'heal');
       }
@@ -248,6 +249,7 @@
       if (heartRegen > 0 && state.hp < stats.maxHp) {
         const regen = Math.min(heartRegen, stats.maxHp - state.hp);
         state.hp += regen;
+        combatApplied('player','player',regen,'再生');
         addLog(`🌱 母樹の心核がHPを${regen}回復した。`, 'heal');
         spawnFloatingFx(`🌱 +${regen}HP`, 'heal');
       }
@@ -291,6 +293,8 @@
           const dmg1 = Math.max(1, Math.round(dmg * 0.65));
           const dmg2 = Math.max(1, Math.round(dmg * 0.65));
           enemy.hp -= (dmg1 + dmg2);
+          combatApplied('player','enemy',-dmg1,isCrit?'CRITICAL 1 HIT':'1 HIT');
+          combatApplied('player','enemy',-dmg2,isCrit?'CRITICAL 2 HIT':'2 HIT');
           playSound('hit');
           spawnFloatingFx(`🗡️ 2連撃 -${dmg1} -${dmg2}`, isCrit ? 'crit' : 'damage');
           addLog(`ダガーの二刀連撃！ ${enemy.name} に ${dmg1} ＋ ${dmg2} の連続ダメージ！`, 'normal');
@@ -464,7 +468,9 @@
           skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - enemy.def));
           enemy.hp -= skillDmg;
           const drain = Math.round(skillDmg * 0.6);
+          const beforeDrain=state.hp;
           state.hp = Math.min(stats.maxHp, state.hp + drain);
+          combatApplied('player','player',state.hp-beforeDrain,'LIFESTEAL');
           spawnFloatingFx(`🩸 飢渇 -${skillDmg} / +${drain}HP`, 'heal');
           addLog(`【鮮血の飢渇】生命力を吸い取り ${skillDmg} ダメージ！ HPを ${drain} 回復！`, 'heal');
         } else {
@@ -585,8 +591,9 @@
 
       dmg=buildIncomingDamage(dmg,enemy,state.equipped,state,stats.maxHp,isPlayerDefending);
       state.hp -= dmg;
+      combatApplied('enemy','player',-dmg,'敵 → 主人公');
       if(state.hp>0&&isPlayerDefending&&!isGrab&&!state.guardBroken) {
-        if(gearEffects.guardHeal){const heal=Math.max(0,Math.min(stats.maxHp-state.hp,gearEffects.guardHeal));state.hp+=heal;addLog(`🛡️ ガード回復 +${heal}HP`,'heal');}
+        if(gearEffects.guardHeal){const heal=Math.max(0,Math.min(stats.maxHp-state.hp,gearEffects.guardHeal));state.hp+=heal;combatApplied('player','player',heal,'ガード回復');addLog(`🛡️ ガード回復 +${heal}HP`,'heal');}
         if(isJustGuard&&gearEffects.justAttack){state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.justAttack)/100);addLog('🛡️ JUST GUARD連携：次撃強化','gold');}
       }
       if (state.equipped.armor?.archetype === 'thunder') addThunderCharge(enemy, '被弾');
@@ -640,6 +647,7 @@
       }
       if (state.playerPoisonTurns > 0) {
         state.hp -= state.playerPoisonDmg;
+        combatApplied('status','player',-state.playerPoisonDmg,'POISON');
         state.playerPoisonTurns--;
         addLog(`☣️ 呪毒によりHP-${state.playerPoisonDmg}`, 'danger');
       }
@@ -653,6 +661,7 @@
         let counterDmg = Math.max(4, Math.round(stats.atk * 0.5 + enemy.atk * 0.15));
         if (isJustGuard && armor?.key === 'guardian_aegis') counterDmg = Math.round(counterDmg * 1.5);
         enemy.hp -= counterDmg;
+        combatApplied('player','enemy',-counterDmg,'COUNTER');
         playSound('parry');
         spawnFloatingFx(`🛡️ パリィ反撃 -${counterDmg}`, 'crit');
         addLog(`大盾で受け流してカウンター！ ${enemy.name} に ${counterDmg} の打撃を跳ね返した！`, 'gold');
