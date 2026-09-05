@@ -2,6 +2,7 @@
       try {
         const d = {
           camp: state.camp,
+          summonSystem: state.summonSystem || null,
           vaultGold: state.vaultGold,
           abyssCores: state.abyssCores,
           deepCrystals: state.deepCrystals,
@@ -26,7 +27,8 @@
           ,selectedStartFloor: state.selectedStartFloor
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(d));
-      } catch (e) {}
+        return true;
+      } catch (e) { return false; }
     }
 
     function loadState() {
@@ -34,6 +36,7 @@
         const s = localStorage.getItem(SAVE_KEY);
         if (s) {
           const p = JSON.parse(s);
+          state.summonSystem = p.summonSystem && typeof p.summonSystem==='object' ? p.summonSystem : null;
           state.camp = Object.assign(state.camp, p.camp || {});
           // Ensure vaultLevel and vaultSize separation
           if (state.camp.vaultLevel === undefined || isNaN(state.camp.vaultLevel)) {
