@@ -24,6 +24,27 @@ window.onload=async()=>{
   const before=JSON.stringify(s);frame.style.width='844px';frame.style.height='390px';await pause();check(w.getComputedStyle(w.document.getElementById('rotate-guide')).display==='none'&&!w.document.getElementById('game-container').inert,'横向きで自動復帰');check(JSON.stringify(s)===before,'回転でstate不変');
   w.document.documentElement.style.setProperty('--safe-left','44px');w.document.documentElement.style.setProperty('--safe-right','44px');w.document.documentElement.style.setProperty('--safe-top','10px');w.document.documentElement.style.setProperty('--safe-bottom','20px');
   w.showResetSaveConfirmation();await pause();const rect=w.document.querySelector('#modal-layer>.card').getBoundingClientRect();check(rect.left>=44&&rect.right<=800&&rect.top>=10&&rect.bottom<=370,'ノッチ相当余白');modalCheck('セーフエリア');
+  for(let i=0;i<3;i++){
+   frame.style.width='390px';frame.style.height='844px';await pause();
+   check((w.getComputedStyle(w.document.getElementById('rotate-guide')).display!=='none')===touch,'反復回転 縦 '+i);
+   frame.style.width='844px';frame.style.height='390px';await pause();
+   check(!w.document.getElementById('modal-layer').inert,'反復回転 横 '+i);
+  }
+  for(const height of [320,390,300,390]){
+   frame.style.height=height+'px';await pause();w.openCrafting('create');await pause();modalCheck('アドレスバー相当 '+height);
+   const body=w.document.querySelector('.update-notes-body');body.scrollTop=body.scrollHeight;
+   check(body.scrollTop>0,'長い作成一覧スクロール '+height);
+  }
+  if(touch){
+   const input=w.document.querySelector('.forge-filters input');input.focus();
+   check(parseFloat(w.getComputedStyle(input).fontSize)>=16,'入力時自動ズーム抑制 16px');
+   check(w.getComputedStyle(input).touchAction==='manipulation','ダブルタップズーム抑制／ピンチ維持');
+   w.document.documentElement.style.setProperty('--modal-viewport-height','220px');
+   w.document.documentElement.style.setProperty('--modal-viewport-top','10px');await pause();
+   const keyboardRect=w.document.querySelector('#modal-layer>.card').getBoundingClientRect();
+   check(keyboardRect.top>=10&&keyboardRect.bottom<=230,'キーボード相当の可視領域内');modalCheck('キーボード相当');
+   w.syncMobileViewport();input.blur();
+  }
   out.push('ALL TESTS PASSED');
  }catch(e){out.push('FAIL: '+e.stack);}
  document.getElementById('results').textContent=out.join('\n');

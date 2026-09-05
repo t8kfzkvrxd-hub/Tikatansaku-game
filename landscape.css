@@ -1,7 +1,9 @@
 :root{--game-max-width:1440px;--game-content-padding:clamp(8px,1.2vw,18px);--safe-top:env(safe-area-inset-top,0px);--safe-right:env(safe-area-inset-right,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--home-background-position:center center}
-html{overflow-x:clip}
+:root{--game-viewport-height:100vh;--modal-viewport-height:var(--game-viewport-height);--modal-viewport-top:0px}
+@supports(height:100dvh){:root{--game-viewport-height:100dvh}}
+html{overflow-x:hidden;overflow-x:clip}
 body{padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)}
-#game-container.landscape-stage{max-width:var(--game-max-width);min-width:0;min-height:calc(100dvh - var(--safe-top) - var(--safe-bottom))}
+#game-container.landscape-stage{max-width:var(--game-max-width);min-width:0;min-height:calc(var(--game-viewport-height) - var(--safe-top) - var(--safe-bottom))}
 #viewport,#sub-panel,#status-bar,#sub-tabs{min-width:0;overflow-wrap:anywhere}
 #status-bar .status-row-1,#status-bar .floor-badge,#status-bar .status-row-1>div:last-child{flex-wrap:wrap;gap:5px}
 #game-container .item-row{min-width:0;flex-wrap:wrap;gap:6px}
@@ -11,7 +13,7 @@ body{padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-lef
 #viewport{padding:var(--game-content-padding)}
 #sub-tabs{flex-wrap:wrap}#sub-tabs .sub-tab-btn{min-width:65px}
 #modal-layer{padding:max(8px,var(--safe-top)) max(8px,var(--safe-right)) max(8px,var(--safe-bottom)) max(8px,var(--safe-left))}
-#modal-layer>.card{max-height:calc(100dvh - max(8px,var(--safe-top)) - max(8px,var(--safe-bottom)));overflow-y:auto;min-width:0}
+#modal-layer>.card{max-height:calc(var(--game-viewport-height) - max(8px,var(--safe-top)) - max(8px,var(--safe-bottom)));overflow-y:auto;min-width:0}
 #modal-layer>.update-notes-card{overflow:hidden;padding:clamp(8px,2vh,18px)}
 .update-notes-body{min-height:0;margin:8px 0;overflow:auto}
 .update-notes-header,.update-notes-actions{flex-shrink:0}
@@ -25,13 +27,17 @@ body{padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-lef
 @media(orientation:portrait) and (hover:none) and (pointer:coarse){#rotate-guide{display:flex}body{overflow:hidden}}
 @media(prefers-reduced-motion:reduce){.rotate-phone{animation:none}}
 @media(orientation:landscape) and (min-width:740px){
- #game-container.landscape-stage{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);grid-template-rows:auto auto minmax(0,1fr);height:calc(100dvh - var(--safe-top) - var(--safe-bottom));min-height:0;overflow:hidden}
+ #game-container.landscape-stage{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);grid-template-rows:auto auto minmax(0,1fr);height:calc(var(--game-viewport-height) - var(--safe-top) - var(--safe-bottom));min-height:0;overflow:hidden}
  #status-bar{grid-column:1/-1;position:relative;top:auto}
  #viewport{grid-column:1;grid-row:2/4;overflow-y:auto}
  #sub-tabs{grid-column:2;grid-row:2;margin:0}
  #sub-panel{grid-column:2;grid-row:3;max-height:none;min-height:0;overflow-y:auto}
 }
 @media(pointer:coarse){
+ #modal-layer.legendary-modal{top:var(--modal-viewport-top);bottom:auto;height:var(--modal-viewport-height);box-sizing:border-box}
+ #modal-layer>.card,body.at-home #modal-layer>.card{max-height:calc(var(--modal-viewport-height) - max(8px,var(--safe-top)) - max(8px,var(--safe-bottom)))}
+ button,a,input,select,textarea,[role="button"]{touch-action:manipulation}
+ input,select,textarea,.forge-filters input,.forge-filters select,.forge-recipe select{font-size:16px!important}
  .btn,.btn-xs,.sub-tab-btn,.home-button,.home-sub-actions button{min-height:44px;min-width:44px;font-size:clamp(12px,1.7vw,15px)}
  .forge-filters input,.forge-filters select,.forge-recipe select{min-height:44px;font-size:14px}
  #game-container [style*="font-size:10"],#game-container [style*="font-size:11"],.forge-recipe,.gear-compare{font-size:12px!important}
