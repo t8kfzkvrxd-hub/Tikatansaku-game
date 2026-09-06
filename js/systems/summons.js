@@ -9,10 +9,15 @@ function summonState(){
  return d;
 }
 function summonsUnlocked(){return clearedMaterialMilestone(SUMMON_CONFIG.unlockBoss);}
-function summonTier(rng=Math.random){let r=rng();for(let i=0;i<SUMMON_CONFIG.rates.length;i++){r-=SUMMON_CONFIG.rates[i];if(r<0)return i;}return 5;}
+function summonTier(rng=Math.random){let r=rng();for(let i=0;i<SUMMON_CONFIG.rates.length;i++){r-=SUMMON_CONFIG.rates[i];if(r<0)return i;}return SUMMON_CONFIG.rates.length-1;}
 function summonDraw(d,rng=Math.random){
- let tier=summonTier(rng);for(const [k,cap]of Object.entries(SUMMON_CONFIG.pity)){d.pity[k]++;if(d.pity[k]>=cap)tier=Math.max(tier,Number(k));}
- for(const k of Object.keys(SUMMON_CONFIG.pity))if(tier>=Number(k))d.pity[k]=0;
+ let tier=summonTier(rng);d.pity??={};
+ for(const k of Object.keys(SUMMON_CONFIG.pity))d.pity[k]=(Number(d.pity[k])||0)+1;
+ if(d.pity[6]>=SUMMON_CONFIG.pity[6])tier=6;
+ else if(d.pity[5]>=SUMMON_CONFIG.pity[5])tier=5;
+ else for(const [k,cap]of Object.entries(SUMMON_CONFIG.pity))if(Number(k)<5&&d.pity[k]>=cap)tier=Math.max(tier,Number(k));
+ // Secret pity is independent; a simultaneous Abyssal guarantee remains due for the next pull.
+ for(const k of Object.keys(SUMMON_CONFIG.pity))if(tier===6?Number(k)===6:Number(k)<=tier)d.pity[k]=0;
  const pool=Object.values(SUMMONS).filter(s=>s.tier===tier),s=pool[Math.min(pool.length-1,Math.floor(rng()*pool.length))],duplicate=!!d.owned[s.id];
  if(duplicate)d.owned[s.id].stones=(Number(d.owned[s.id].stones)||0)+1;else d.owned[s.id]={stones:0,favorite:false,contractLevel:1};
  return {id:s.id,duplicate};
@@ -36,13 +41,13 @@ async function summonTransaction(change){
  finally{summonBusy=false;}
 }
 function summonContractLevel(id){return summonState().owned[id]?.contractLevel||1;}
-function summonTimeFactor(id){return summonContractLevel(id)>=3?.95:1;}
+function summonTimeFactor(id){if(SUMMONS[id]?.preserveNominalRewards)return 1/Math.min(1.5,Math.max(1,SUMMONS[id].dispatchSpeed));return summonContractLevel(id)>=3?.95:1;}
 function summonSpecialtyPoints(s){const level=summonContractLevel(s.id);return (SUMMON_SPECIALTY_OVERRIDES[s.id]??SUMMON_CONFIG.specialtyPoints)+(level>=2?.02:0)+(level>=4?.03:0);}
 function summonEff(s,kind,tags=[]){const matches=s.specialties.some(t=>tags.includes(t));return Math.min(SUMMON_CONFIG.caps[kind],SUMMON_CONFIG[kind][s.tier]+(matches?summonSpecialtyPoints(s):0));}
 function summonRanges(){return AREAS.filter(a=>a.min<=state.deepestFloorReached).map(a=>({id:a.id,min:a.min,max:Math.min(a.max,state.deepestFloorReached),name:a.tag}));}
 function summonPlans(s,range,minutes){
  const area=AREAS.find(a=>a.id===range.id),plans=[];
- const normal=materialDropPlan({source:'enemy',floor:range.min}),factor=summonTimeFactor(s.id),focus=summonContractLevel(s.id)>=5?summonState().owned[s.id]?.focus?.[area.id]:null;
+ const normal=materialDropPlan({source:'enemy',floor:range.min}),factor=s.preserveNominalRewards?1:summonTimeFactor(s.id),focus=summonContractLevel(s.id)>=5?summonState().owned[s.id]?.focus?.[area.id]:null;
  const focused=area.enemies.some(e=>e.materialSource===focus),eff=(kind,tags)=>Math.min(summonEff(s,kind,tags),SUMMON_CONFIG.caps[kind]*factor);
  area.enemies.forEach((enemy,j)=>{
   const perEnemy=minutes*SUMMON_CONFIG.manualBattlesPerMinute*(focused?(enemy.materialSource===focus ? .5 : .5/(area.enemies.length-1)):1/area.enemies.length);
@@ -96,7 +101,7 @@ async function claimSummonDispatch(id){
   const job=d.jobs.find(j=>j.id===id);if(!job)return false;const now=summonClock(d);
   if(now<job.end||job.end-job.start!==(job.durationMs??job.minutes*60000)||!SUMMON_CONFIG.durations.includes(job.minutes))return false;
   const rewards=Object.entries(job.rewards).filter(([k,n])=>MATERIALS[k]&&Number.isInteger(n)&&n>0&&n<=1000);
-  d.jobs=d.jobs.filter(j=>j!==job);for(const [key,n]of rewards){for(let i=0;i<n;i++)state.storage.push(materialInstance(key,'summon'));discoverMaterial(key);}d.lastRewards=Object.fromEntries(rewards);if(job.tutorial)d.tutorial='gachaIntro';return d.lastRewards;
+  d.jobs=d.jobs.filter(j=>j!==job);for(const [key,n]of rewards){for(let i=0;i<n;i++)state.storage.push(materialInstance(key,'summon'));discoverMaterial(key);}d.lastRewards=Object.fromEntries(rewards);d.lastRewardSummon=job.summon;if(job.tutorial)d.tutorial='gachaIntro';return d.lastRewards;
  });if(result)openSummonRewards(result);
 }
 async function summonTutorialNext(){const ok=await summonTransaction(d=>{if(!summonsUnlocked())return false;if(d.tutorial==='intro')d.tutorial='gift';else if(d.tutorial==='gachaIntro')d.tutorial='done';else return false;return true;});if(ok)openSummons('gacha');}

@@ -1,4 +1,4 @@
-const SUMMON_CONFIG={rates:[.55,.25,.12,.05,.02,.01],rarities:['Common','Rare','Epic','Legendary','Mythic','Abyssal'],singleCost:5000,tenCost:45000,pity:{2:50,3:100,4:200,5:300},normal:[.2,.3,.4,.5,.6,.7],rare:[.1,.15,.2,.3,.4,.5],boss:[.05,.08,.12,.18,.25,.35],caps:{normal:.7,rare:.5,boss:.35},manualBattlesPerMinute:1,bossMinutes:30,durations:[10,30,60,180,360],maxDispatch:1,unlockBoss:20,specialtyPoints:.1};
+const SUMMON_CONFIG={rates:[.545,.25,.12,.05,.02,.01,.005],rarities:['Common','Rare','Epic','Legendary','Mythic','Abyssal','???'],singleCost:5000,tenCost:45000,pity:{2:50,3:100,4:200,5:300,6:600},normal:[.2,.3,.4,.5,.6,.7,.7],rare:[.1,.15,.2,.3,.4,.5,.5],boss:[.05,.08,.12,.18,.25,.35,.35],caps:{normal:.7,rare:.5,boss:.35},manualBattlesPerMinute:1,bossMinutes:30,durations:[10,30,60,180,360],maxDispatch:1,unlockBoss:20,specialtyPoints:.1};
 const SUMMON_SPECIALTIES={normal:'通常',plant:'植物',ore:'鉱石・石',beast:'獣',fire:'炎',fungus:'菌類',undead:'アンデッド',aquatic:'水棲',bleed:'出血',memory:'記憶・霊体',machine:'機械',poison:'毒',shock:'感電',flying:'飛行',rare:'Rare以上',boss:'ボス',special:'Epic以上の特殊',crystal:'結晶',mirror:'鏡像',abyssal:'Abyssal'};
 const SUMMON_SPECIALTY_OVERRIDES={'mine-bat':.2};
 Object.assign(SUMMON_CONFIG,{contractCosts:[1,2,3,5],dispatchFees:{10:0,30:0,60:0,180:1000,360:3000},universalPerStone:2});
@@ -32,9 +32,12 @@ const SUMMON_ROWS=[
  ['star-whale','星喰らい鯨',4,'special,crystal','巨大','星空色','宙を泳ぐ幻想鯨。身体内部に星空'],
  ['mirror-twin','鏡界の双頭獣',4,'memory,mirror,rare','大型','銀・黒','双頭魔獣。片方は実体、片方は半透明の鏡像'],
  ['vol-negra','深淵竜ヴォル＝ネグラ',5,'abyssal,boss','巨大','黒紫・青紫','竜。身体が空間亀裂のように欠け、翼に黒い粒子'],
- ['faceless-observer','無貌の観測獣',5,'abyssal,rare','巨大','黒・青白','顔のない四足異形。頭部中央に観測核、身体から触手状の影']
+ ['faceless-observer','無貌の観測獣',5,'abyssal,rare','巨大','黒・青白','顔のない四足異形。頭部中央に観測核、身体から触手状の影'],
+ ['sakurazuki-tenko-mikoto','桜月天狐・ミコト',6,'rare,special,memory','九尾の神獣','白銀・桜色・薄紫','月光と桜色の狐火を纏う九尾の天狐。白銀の長髪と神域の衣装']
 ];
 const SUMMONS=Object.fromEntries(SUMMON_ROWS.map(([id,name,tier,specialties,size,colors,features])=>[id,{id,name,tier,rarity:SUMMON_CONFIG.rarities[tier],specialties:specialties.split(','),size,colors,features,appearance:`${size}、${colors}。${features}。背景なし、ゲームUI用立ち絵`,summonImage:null,plannedImage:`assets/summons/${id}.png`}]));
+for(const s of Object.values(SUMMONS)){s.summonImage=s.plannedImage;s.rarityId=s.tier===6?'secret':s.rarity.toLowerCase();}
+Object.assign(SUMMONS['sakurazuki-tenko-mikoto'],{dispatchSpeed:1.5,preserveNominalRewards:true});
 // Explicit source tags: they describe material specialties, not a replacement for enemy visual families.
 const SUMMON_SOURCE_TAGS=[
  ['beast','undead','ore','ore','ore'],['machine','undead,memory','ore,flying','machine','machine,shock'],['special','machine','beast,bleed','special','special'],['plant','plant,fungus,poison','plant,poison','plant','plant'],['aquatic','aquatic,shock','beast,aquatic','undead,aquatic','aquatic'],['special','special','beast,bleed','special','special,bleed'],['undead,memory','undead,memory','undead','memory','memory'],['mirror,memory','mirror,memory','mirror,memory','mirror,memory','mirror,memory'],['memory','memory','memory','memory','memory'],['plant,bleed','aquatic','memory','memory','machine,memory'],['beast,ore','ore','ore','ore','ore'],['machine,fire','machine','machine','machine,fire','machine,fire'],['plant,beast,poison','poison,aquatic','fungus,plant','plant,poison','plant,poison'],['ore','undead,memory','undead','undead','undead'],['crystal','crystal,beast','crystal','crystal','crystal'],['undead','undead,beast','undead','undead','undead'],['aquatic','aquatic','aquatic','aquatic','aquatic'],['beast,bleed','bleed','bleed','bleed','bleed'],['memory','beast,memory','memory','memory','memory'],['memory','beast','memory','memory','machine']

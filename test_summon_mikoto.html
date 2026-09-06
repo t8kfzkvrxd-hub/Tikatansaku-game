@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{
+ const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,s=w.__gameDebug.state,out=[];
+ const wait=ms=>new Promise(r=>setTimeout(r,ms)),check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},act=async fn=>{w.eval('summonLastAction=0');return await fn();};
+ try{
+ w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.screen='town';s.bossFirstKills[20]=true;s.bossFirstKills[10]=true;s.deepestFloorReached=20;s.vaultGold=100000;
+ const config=w.eval('SUMMON_CONFIG'),catalog=w.eval('Object.values(SUMMONS)'),mikoto=w.eval('SUMMONS["sakurazuki-tenko-mikoto"]'),abyssal=w.eval('SUMMONS["vol-negra"]');
+ const legacy={owned:{'mini-slime':{stones:12,favorite:true,contractLevel:4}},pity:{2:12,3:23,4:77,5:350},jobs:[],revision:0,history:[],tutorial:'done'};
+ s.summonSystem=JSON.parse(JSON.stringify(legacy));const gear=JSON.stringify([s.equipped,s.storage,s.craftProgress]);w.summonState();
+ check(JSON.stringify(s.summonSystem.owned)===JSON.stringify(legacy.owned)&&s.summonSystem.pity[5]===350&&s.summonSystem.pity[6]===0,'legacy ownership stones favorites pity preserved');
+ check(gear===JSON.stringify([s.equipped,s.storage,s.craftProgress]),'non summon save unchanged');
+ check(catalog.length===31&&JSON.stringify(config.rarities.map(r=>catalog.filter(v=>v.rarity===r).length))==='[8,7,6,4,3,2,1]','31 IDs rarity counts');
+ check(Math.abs(config.rates.reduce((a,b)=>a+b)-1)<1e-12&&config.rates[5]===.01&&config.rates[6]===.005,'100% probability and 1% / 0.5%');
+ let seed=84329;const rng=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const base=Array(7).fill(0),actual=Array(7).fill(0),data={owned:{},pity:{}};
+ for(let i=0;i<100000;i++){base[w.summonTier(rng)]++;actual[w.eval('SUMMONS')[w.summonDraw(data,rng).id].tier]++;}
+ base.forEach((n,i)=>check(Math.abs(n/100000-config.rates[i])<Math.max(.001,5*Math.sqrt(config.rates[i]*(1-config.rates[i])/100000)),'base '+config.rarities[i]+' '+n/1000+'%'));
+ check(base[6]/base[5]>.35&&base[6]/base[5]<.65,'secret roughly half Abyssal');out.push('PITY-INCLUSIVE '+actual.map(n=>n/1000+'%').join(' / '));
+ const draw=(pity,r=.0)=>{const data={owned:{},pity};return {id:w.summonDraw(data,()=>r).id,data};};
+ check(w.eval('SUMMONS')[draw({5:299},.999).id].tier===5,'300 guarantees Abyssal not secret');
+ check(draw({6:599}).id===mikoto.id,'600 secret guaranteed');
+ const natural=draw({5:12,6:123},.999);check(natural.id===mikoto.id&&natural.data.pity[6]===0&&natural.data.pity[5]===13,'natural secret independent reset');
+ const both=draw({5:299,6:599});check(both.id===mikoto.id&&both.data.pity[5]===300,'simultaneous pity carries Abyssal');check(w.eval('SUMMONS')[w.summonDraw(both.data,()=>0).id].tier===5,'carried Abyssal guaranteed next');
+ const dupe={owned:{},pity:{}};w.summonDraw(dupe,()=>.999);w.summonDraw(dupe,()=>.999);check(dupe.owned[mikoto.id].stones===1,'Mikoto duplicate contract stone');
+ w.eval('Object.assign(SummonView,{rarity:"???",specialty:"",name:"",sort:"rarity",page:0})');w.openSummons('codex');const hidden=d.querySelector('.summon-grid').innerHTML;check(!hidden.includes(mikoto.name)&&!hidden.includes(mikoto.id)&&!hidden.includes('<img')&&hidden.includes('能力：？？？'),'unowned secret hidden including image source');
+ s.summonSystem.owned[mikoto.id]={stones:11,contractLevel:1,favorite:false};s.summonSystem.owned[abyssal.id]={stones:0,contractLevel:1};w.saveState();w.openSummons('codex');check(d.querySelector('.summon-grid').textContent.includes(mikoto.name)&&d.querySelector('.summon-grid img'),'owned secret revealed');
+ for(let lv=1;lv<=5;lv++){
+  if(lv>1)await act(()=>w.summonUpgrade(mikoto.id));
+  check(w.summonContractLevel(mikoto.id)===lv&&w.summonTimeFactor(mikoto.id)===2/3,'contract Lv'+lv+' fixed speed');
+  for(const kind of ['normal','rare','boss'])check(w.summonEff(mikoto,kind,mikoto.specialties)===config.caps[kind],'Mikoto capped '+kind+' Lv'+lv);
+ }
+ check(s.summonSystem.owned[mikoto.id].stones===0,'contract costs total 11');
+ const speed=mikoto.dispatchSpeed;mikoto.dispatchSpeed=99;check(w.summonTimeFactor(mikoto.id)===2/3,'future speed clamped');mikoto.dispatchSpeed=speed;
+ const range=w.summonRanges()[0];
+ for(const minutes of [10,30,60,180,360]){
+  const mp=w.summonPlans(mikoto,range,minutes),ap=w.summonPlans(abyssal,range,minutes);check(JSON.stringify(mp)===JSON.stringify(ap),'nominal rewards identical to Abyssal Lv1 '+minutes);
+  await act(()=>w.startSummonDispatch(mikoto.id,1,minutes));const job=s.summonSystem.jobs[0];check(job&&job.end-job.start===Math.round(minutes*60000*2/3),'actual duration '+minutes);
+  const saved=JSON.stringify(job);w.loadState();check(JSON.stringify(s.summonSystem.jobs[0])===saved,'job reload exact '+minutes);
+  const j=s.summonSystem.jobs[0];j.start-=86400000;j.end-=86400000;const expected=Object.values(j.rewards).reduce((a,b)=>a+b,0),before=s.storage.length;w.saveState();
+  await act(()=>w.claimSummonDispatch(j.id));check(s.storage.length===before+expected&&s.summonSystem.jobs.length===0,'24h offline one reward no restart '+minutes);
+  await act(()=>w.claimSummonDispatch(j.id));check(s.storage.length===before+expected&&s.summonSystem.jobs.length===0,'cannot claim twice '+minutes);
+ }
+ // Existing jobs without durationMs retain their original completion time and reward.
+ s.summonSystem.jobs=[{id:'legacy-job',summon:'mini-slime',range,minutes:10,start:Date.now()-700000,end:Date.now()-100000,rewards:{area_1_enemy_0_common:2}}];w.saveState();await act(()=>w.claimSummonDispatch('legacy-job'));check(s.summonSystem.jobs.length===0,'legacy job without durationMs claimed');
+ for(const summon of catalog){const img=new Image();img.src=summon.summonImage;await img.decode();check(img.naturalWidth>0&&img.naturalHeight>0,'PNG decoded '+summon.id);s.summonSystem.owned[summon.id]??={stones:0,contractLevel:1};}
+ w.eval('Object.assign(SummonView,{selected:"sakurazuki-tenko-mikoto",range:1,minutes:60,name:"",rarity:"",specialty:"",page:0})');
+ for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+  for(let turn=0;turn<3;turn++){f.style.width='360px';f.style.height='740px';await wait(60);f.style.width=width+'px';f.style.height=height+'px';await wait(80);
+   w.showHomeScreen();w.enterGameFromHome();w.closeGenericModal();
+   for(const open of [()=>w.openSummons('codex'),()=>w.openSummons('dispatch'),()=>w.confirmSummonDispatch(mikoto.id,1,60),()=>w.openSummonContract(mikoto.id),()=>w.openSummonResults([{id:mikoto.id,duplicate:false}],true)]){
+    open();const body=d.querySelector('.update-notes-body'),footer=d.querySelector('.update-notes-actions').getBoundingClientRect();check(body.scrollWidth<=body.clientWidth+1&&footer.bottom<=height&&footer.top>=0,'layout '+width+' cycle '+turn);
+    check([...d.querySelectorAll('.update-notes-actions button')].every(b=>b.getBoundingClientRect().height>=44),'footer tap targets');
+    for(const img of d.querySelectorAll('.summon-picture')){const r=img.getBoundingClientRect();check(r.left>=0&&r.right<=width&&w.getComputedStyle(img).objectFit==='contain','image contain '+width);}
+    if(d.querySelector('.summon-secret-stage')){w.skipSummonReveal();check(!d.querySelector('.summon-secret-stage'),'skip works');}
+    w.closeGenericModal();
+   }
+  }out.push('SIZE PASSED '+width+'x'+height+' rotations/home 3');
+ }
+ await act(()=>w.startSummonDispatch(mikoto.id,1,60));w.saveState();const saved=JSON.stringify(s.summonSystem);
+ await new Promise(resolve=>{f.onload=resolve;f.contentWindow.location.reload()});f.contentWindow.enterGameFromHome();check(JSON.stringify(f.contentWindow.__gameDebug.state.summonSystem)===saved,'real page reload retains all data and active Mikoto end');
+ out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');
+};</script>
