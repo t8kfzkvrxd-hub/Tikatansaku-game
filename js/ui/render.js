@@ -488,6 +488,7 @@
                   <div>
                     <div class="item-name">${it.name}${it.type === 'material' ? ` ×${count}` : ''} <span style="font-size:9px; opacity:0.8;">[${it.rarity}]</span></div>
                     <div class="item-stats">${getItemStatSummary(it)}</div>
+                    ${isTown&&['weapon','armor','accessory'].includes(it.type)?equipmentOwnerSD(it):''}
                     ${diffHtml}
                     ${isTown&&it.type==='material'?materialSourceHtml(it.key):''}
                     ${isTown&&it.type==='material'&&MATERIALS[it.key]?`<button class="btn btn-sub btn-xs" onclick="openMaterialDetail('${it.key}')">入手先・用途</button>`:''}

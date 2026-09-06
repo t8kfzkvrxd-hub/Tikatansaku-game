@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=async()=>{const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms)),check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)},overlap=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;try{
+w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';s.screen='town';w.render();
+const saved=w.localStorage.getItem(w.eval('SAVE_KEY')),equipment=JSON.stringify([s.equipped,s.chapter.equipment]);
+for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+ for(let repeat=0;repeat<3;repeat++){
+ f.style.width='360px';f.style.height='740px';await wait(50);f.style.width=width+'px';f.style.height=height+'px';await wait(120);w.showHomeScreen();w.enterGameFromHome();w.closeGenericModal();w.render();await wait(80);
+ const buttons=[...d.querySelectorAll('.lobby-character-sds button')];check(buttons.length===2,'two lobby SDs '+width);
+ await Promise.all(buttons.map(b=>b.querySelector('img').decode()));
+ for(const b of buttons){const r=b.getBoundingClientRect();check(r.width>=44&&r.height>=44&&r.top>=0&&r.bottom<=height,'SD bounds/tap '+width);check([...d.querySelectorAll('.lobby-hotspot,.lobby-menu,.party-summary')].every(x=>!overlap(r,x.getBoundingClientRect())),'no facility/HUD/menu overlap '+width);b.click();check(w.eval('characterView.id')===b.dataset.characterSd,'correct target');check(d.querySelectorAll('.equipment-slot').length===7,'7 slots');w.closeGenericModal();}
+ check(d.documentElement.scrollWidth<=width&&d.documentElement.scrollHeight<=height,'no page scroll '+width);
+ }
+ for(const id of ['player','elna']){w.openCharacterEquipment(id);check(d.querySelector('.character-tabs .sd-selected').dataset.characterSd===id,'equipment selected');w.openCharacterStatus(id);check(d.querySelector('.character-tabs .sd-selected').dataset.characterSd===id,'status selected');w.closeGenericModal();}
+ for(const facility of ['town-blacksmith','warehouse','town-tavern','town-shop','town-lab','archive','town-expedition']){w.openLobbyFacility(facility);check(d.querySelector('.update-notes-actions'),'facility opens '+facility);w.closeGenericModal();}
+ out.push('SIZE PASSED '+width+'x'+height);
+}
+const recipe=w.eval('Object.keys(CRAFT_RECIPES).find(id=>!CRAFT_RECIPES[id].parent&&recipeVisible(id))');w.openRecipeDetail(recipe);const forgeButtons=d.querySelectorAll('.character-tabs button');check(forgeButtons.length===2,'forge switches');forgeButtons[1].click();check(w.eval('forgeFilters.character')==='elna'&&d.querySelector('.sd-selected').dataset.characterSd==='elna','forge comparison target');w.closeGenericModal();
+check(w.localStorage.getItem(w.eval('SAVE_KEY'))===saved,'UI navigation does not write save');check(JSON.stringify([s.equipped,s.chapter.equipment])===equipment,'equipment unchanged');
+out.push('ALL TESTS PASSED');
+}catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');};</script>

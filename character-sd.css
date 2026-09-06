@@ -1,0 +1,17 @@
+:root{--sd-small:28px;--sd-medium:60px;--sd-lobby:110px}
+.character-sd{display:inline-flex;align-items:center;justify-content:center;gap:6px;vertical-align:middle;color:inherit;--sd-height:var(--sd-medium)}
+.sd-small{--sd-height:var(--sd-small)}.sd-lobby{--sd-height:var(--sd-lobby);flex-direction:column;gap:2px}
+.sd-figure{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:calc(var(--sd-height)*.667);height:var(--sd-height)}
+.sd-figure img{position:relative;z-index:1;display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.sd-name{font-size:13px;line-height:1.25;white-space:nowrap}.sd-selected .sd-name{color:#f4d99a}.sd-selected .sd-figure{background:radial-gradient(ellipse at 50% 90%,#83d9e540,transparent 65%)}
+button.character-sd{min-width:44px;min-height:44px;border:1px solid #aabacc70;border-radius:8px;background:#101a26a8;padding:4px 8px;cursor:pointer;touch-action:manipulation;font:inherit}
+button.character-sd:focus-visible{outline:2px solid #aeeaff;outline-offset:3px}
+.sd-shadow .sd-figure:before{content:'';position:absolute;bottom:0;width:75%;height:7%;border-radius:50%;background:#0007}
+.sd-owner{display:inline-flex;align-items:center;gap:4px;font-size:12px}
+.lobby-character-sds{position:absolute;z-index:3;left:50%;bottom:19%;transform:translateX(-50%);display:flex;gap:clamp(24px,4vw,76px);pointer-events:none}
+.lobby-character-sds button{pointer-events:auto;background:transparent;border-color:transparent;padding:0 4px}
+.lobby-character-sds .sd-name{padding:2px 7px;background:#101a26bd;border-radius:5px}
+.lobby-character-sds .sd-figure img{animation:sd-idle 5s ease-in-out infinite}.lobby-character-sds button:nth-child(even) img{animation-delay:-2s;animation-duration:5.7s}
+@keyframes sd-idle{50%{transform:translateY(-1.5px)}}
+@media (orientation:landscape) and (max-height:540px) and (max-width:1100px){:root{--sd-medium:36px;--sd-lobby:64px}.character-tabs .character-sd{gap:4px}.character-tabs .sd-name{font-size:13px}.lobby-character-sds{gap:28px}.lobby-character-sds .sd-name{font-size:12px}}
+@media (prefers-reduced-motion:reduce){.lobby-character-sds .sd-figure img{animation:none}}
