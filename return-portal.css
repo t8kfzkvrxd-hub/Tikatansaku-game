@@ -1,0 +1,25 @@
+html.at-return-portal,body.at-return-portal{height:100%;min-height:0;overflow:hidden}
+body.at-return-portal #game-container{display:none}
+#return-portal-screen[hidden]{display:none}
+#return-portal-screen{position:fixed;inset:0;height:var(--game-viewport-height);overflow:hidden;z-index:45;isolation:isolate;color:#eefcff;font-size:14px}
+.return-portal-crop{position:absolute;inset:0;overflow:hidden;z-index:-1}
+.return-portal-art{position:absolute;left:50%;top:0;transform:translateX(-50%);width:max(100vw,calc(var(--game-viewport-height)*16/9));height:max(var(--game-viewport-height),calc(100vw*9/16));pointer-events:none;z-index:-1}
+.return-portal-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.return-portal-art>div{position:absolute;pointer-events:none}
+.return-portal-glow{inset:12% 30% 35%;background:radial-gradient(ellipse,#65dbff99,transparent 68%);animation:portal-pulse 4.6s -1s ease-in-out infinite alternate}
+.return-portal-rune{inset:65% 29% 15%;background:radial-gradient(ellipse,#80e9ff9c,transparent 68%);animation:portal-pulse 3.8s -2s ease-in-out infinite alternate}
+.return-portal-fog{inset:25% 10% 0;background:radial-gradient(ellipse at 45% 90%,#e1faff55,transparent 60%);animation:portal-rise 8s -3s linear infinite}
+.return-portal-lamps{inset:0;background:radial-gradient(ellipse at 14% 37%,#fff1ac9c,transparent 4%),radial-gradient(ellipse at 75% 42%,#fff1ac7c,transparent 4%);animation:portal-pulse 2.7s -.7s ease-in-out infinite alternate}
+.return-portal-particles{inset:0}.return-portal-particles i{position:absolute;left:calc(24% + var(--i)*9%);top:69%;width:5px;height:9px;border-radius:50%;background:#e3ffff;box-shadow:0 0 7px #b6edff;animation:portal-particle 4.5s linear infinite;animation-delay:calc(var(--i)*-.73s)}
+.return-portal-panel{position:absolute;right:max(2%,var(--safe-right));top:50%;transform:translateY(-50%);box-sizing:border-box;width:clamp(230px,27vw,320px);max-height:calc(var(--game-viewport-height) - var(--safe-top) - var(--safe-bottom) - 16px);padding:16px;background:#122c40dd;border:1px solid #b6edff;border-radius:12px;box-shadow:0 0 18px #9bdcff33;display:flex;flex-direction:column;gap:8px}
+.return-portal-panel h1{font-size:24px;margin:0;color:#eaffff}.return-portal-panel p{margin:0;line-height:1.45}.return-portal-panel small{font-size:12px;color:#d4e9ee}
+.return-portal-panel button{min-height:44px;min-width:44px;border:1px solid #96c9d9;border-radius:6px;color:#eaffff;background:#25435b;cursor:pointer;font:inherit;padding:6px 10px;touch-action:manipulation}
+.return-portal-panel .portal-primary{background:#d5f7ff;color:#102f41;font-weight:700;border-color:#f6e5af}.return-portal-panel .portal-detail{background:transparent}
+.return-portal-fade{position:absolute;inset:0;pointer-events:none;background:#edffff;opacity:0}
+.departing .return-portal-fade{animation:portal-depart .7s ease-in forwards}.departing .return-portal-glow{opacity:1;animation:none;background:radial-gradient(ellipse,#fff,transparent 70%)}
+@keyframes portal-pulse{from{opacity:.28}to{opacity:.9}}
+@keyframes portal-rise{from{transform:translateY(35px);opacity:.25}50%{opacity:.75}to{transform:translateY(-65px);opacity:0}}
+@keyframes portal-particle{from{transform:translate(0,0);opacity:0}20%,65%{opacity:.95}to{transform:translate(14px,-170px);opacity:0}}
+@keyframes portal-depart{0%{opacity:0}35%{opacity:.12}100%{opacity:1}}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1100px){.return-portal-panel{width:230px;right:max(8px,var(--safe-right));padding:8px;gap:4px;top:calc((var(--game-viewport-height) + var(--safe-top) - var(--safe-bottom))/2)}.return-portal-panel h1{font-size:20px}.return-portal-panel p{font-size:13px;line-height:1.25}.return-portal-panel button{font-size:14px;padding:4px 8px}}
+@media(prefers-reduced-motion:reduce){.return-portal-art>div,.return-portal-particles i{animation:none}.return-portal-particles{display:none}.return-portal-glow,.return-portal-rune,.return-portal-lamps{opacity:.3}.return-portal-fog{opacity:.15}.departing .return-portal-fade{animation:none}}

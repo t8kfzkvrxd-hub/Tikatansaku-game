@@ -267,77 +267,7 @@
 
       // VIEW: SAFE POINT (5階ごとの安全帰還ポイント特別演出画面)
       else if (state.screen === 'safe_point') {
-        const area = getCurrentArea();
-        const nextBossFloor = getNextBossFloor() || MAX_DUNGEON_FLOOR;
-        const bossRemain = nextBossFloor - state.floor;
-        const nextAreaIdx = Math.min(AREAS.length-1, Math.floor(state.floor / 10));
-        const nextArea = AREAS[nextAreaIdx];
-
-        const lootCount = state.inventory.length;
-        const lootGold = state.dungeonGold;
-        const valuableItems = state.inventory.filter(i => ['Rare', 'Epic', 'Legendary'].includes(i.rarity));
-
-        vp.innerHTML = `
-          <div class="safe-point-banner">
-            <div style="font-size:40px; filter:drop-shadow(0 0 16px #fbbf24);">🏰✨</div>
-            <div class="safe-point-title">✨ SAFE POINT REACHED ✨</div>
-            <div style="font-size:14px; font-weight:900; color:#fff;">【地下 ${state.floor} 階 古代の安全転移門】</div>
-            <div style="font-size:12px; color:#cbd5e1; max-width:92%; margin:0 auto; line-height:1.4;">
-              この結界空間は深淵の呪力を遮断している。<b style="color:#fbbf24;">全戦利品を完全回収できる安全な帰還地点</b>です。<br>
-              ここで生還するか、更なる富と栄光を求めて深淵へ挑むか？
-            </div>
-
-            <!-- Current Loot Summary -->
-            <div class="safe-point-stat-grid">
-              <div class="safe-stat-box">
-                <span class="safe-stat-val">🎒 ${lootCount}個</span>
-                <span class="safe-stat-lbl">未保管の戦利品</span>
-              </div>
-              <div class="safe-stat-box">
-                <span class="safe-stat-val" style="color:#fbbf24;">🪙 +${lootGold}G</span>
-                <span class="safe-stat-lbl">獲得ゴールド</span>
-              </div>
-              <div class="safe-stat-box">
-                <span class="safe-stat-val" style="color:#c084fc;">💎 ${valuableItems.length}個</span>
-                <span class="safe-stat-lbl">貴重品 (Rare以上)</span>
-              </div>
-            </div>
-
-            ${valuableItems.length > 0 ? `
-              <div style="background:rgba(0,0,0,0.45); border-radius:6px; padding:6px 10px; font-size:11px; color:#fef08a; display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
-                <span style="font-weight:bold;">所持中の貴重品:</span>
-                ${valuableItems.map(v => `<span style="border-bottom:1px solid rgba(254,240,138,0.4);">${v.icon} ${v.name}</span>`).join(', ')}
-              </div>
-            ` : ''}
-
-            <!-- 2 Huge Decision Buttons -->
-            <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:6px;">
-              <!-- Choice 1: Return safely -->
-              <div class="choice-card-safe" onclick="returnToTown(true)">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:15px; font-weight:900; color:#fff;">🏰 安全に帰還する (確実な勝利)</span>
-                  <span style="font-size:11px; background:#10b981; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">全アイテム回収</span>
-                </div>
-                <div style="font-size:11.5px; color:#a7f3d0; line-height:1.4; margin-top:2px;">
-                  未保管の戦利品<b>${lootCount}個</b>と<b>${lootGold}G</b>を全て地上倉庫へ持ち帰り、拠点を恒久強化！
-                </div>
-              </div>
-
-              <!-- Choice 2: Dive deeper (Temptation) -->
-              <div class="choice-card-deep" onclick="diveDeeperFromSafePoint()">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:15px; font-weight:900; color:#fff;">🔻 さらに地下へ潜る (欲望と挑戦)</span>
-                  <span style="font-size:11px; background:#f59e0b; color:#111; padding:2px 8px; border-radius:4px; font-weight:900;">深層ボーナス</span>
-                </div>
-                <div style="font-size:11.5px; color:#fde68a; line-height:1.4; margin-top:2px;">
-                  ✨ <b>深層ボーナス:</b> 宝箱の激レア出現率 <b>+15% UP</b> & 獲得ゴールドUP！<br>
-                  💀 <b>階層ボスまで:</b> あと<b>${bossRemain}階</b> (深層エリア: ${nextArea.name})<br>
-                  <span style="color:#f87171; font-weight:bold;">⚠️ 途中で力尽きると、今ある未保管品は全て失われます。</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+        vp.innerHTML = '<p>安全帰還門に到達しました。</p>';
       }
 
       // VIEW: DOOR SELECT (毎階2〜3個の扉・部屋の選択肢)
@@ -452,6 +382,7 @@
       if(typeof renderCombatReadout==='function')renderCombatReadout();
       if(typeof renderPartyStatus==='function')renderPartyStatus();
       if(typeof syncExplorationScreen==='function')syncExplorationScreen();
+      if(typeof syncReturnPortal==='function')syncReturnPortal();
       syncActionButtons();
     }
 
