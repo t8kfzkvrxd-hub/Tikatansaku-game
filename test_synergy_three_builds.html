@@ -1,0 +1,47 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[],ok=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)};try{
+w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';w.partyMember('elna');s.screen='battle';s.floor=100;s.hp=100;
+const builds=w.eval('COMPLETED_BUILDS'),baseline=[["bloodPact","血の契約",["lifesteal","bleed","lowHp"],[["leech","low","leech",3],["attack","bleedRecent","power",10]]],["bastion","不落の反攻",["guard","justGuard","counter"],[["incoming","just","nextPower",20],["incoming","firstIncoming","shield",5]]],["corrosion","腐蝕連鎖",["poison","longFight","statusHunter"],[["attack","poisonLong","power",15],["hit","poison","poisonExtend",1]]],["dismantler","解体屋",["break","heavyAttack","farming"],[["part","heavy","partPower",20],["attack","broken","power",10]]],["thunderChain","雷迅連鎖",["shock","extraAttack","speed"],[["hit","shockRemembered","extra",12],["hit","third","statusAdvance",1]]],["shadowArmy","影軍",["summon","skillPower","followUp"],[["hit","third","summon",20],["hit","skill","follow",10]]],["untouched","絶対無傷",["unhurt","dodge","highHp"],[["attack","unhurt","power",12],["dodge","always","nextPower",15]]],["bloodFury","狂血",["lowHp","lifesteal","crit"],[["attack","low","crit",10],["leech","low","leech",2]]],["deepHunter","深層狩人",["deep","boss","break"],[["part","deepBoss","partPower",20],["attack","deepBoss","power",10]]],["embers","熾火の舞",["fire","multiHit","status"],[["hit","third","fire",1],["attack","status","power",8]]],["shelter","慈愛の障壁",["overheal","shield","lifesteal"],[["heal","full","nextPower",12],["incoming","high","reduction",6],["incoming","firstIncoming","shield",3]]],["avenger","鏡盾の報復",["reflect","guard","onHurt"],[["reflect","always","reflect",8],["attack","hurt","power",10]]],["execution","一刀断罪",["singleStrike","heavyAttack","pierce"],[["attack","heavyThird","power",18],["attack","armored","pierce",10]]],["spellCycle","詠唱循環",["skillPower","skillHaste","normalAttack"],[["hit","skill","nextPower",15],["attack","normal","power",8]]],["chainHunter","連戦狩人",["mob","onKill","normalAttack"],[["kill","mob","heal",2],["kill","always","nextPower",15]]],["alchemist","双相錬成",["conversion","fire","shock"],[["hit","shock","fire",1],["hit","third","extra",8]]],["plague","万象疫禍",["hybrid","status","curse"],[["attack","multipleStatuses","power",12],["hit","third","missingStatus",1]]],["caravan","帰還の旅団",["safe","chest","farming"],[["incoming","always","reduction",4],["effects","always","chestQuality",8]]],["prospector","星鉱の鑑定士",["rareMaterial","farming","break"],[["effects","always","rareMaterial",2],["part","always","partPower",10]]],["endurance","不屈の歩み",["longFight","onHurt","shield"],[["attack","long","power",12],["incoming","firstIncoming","shield",3]]],["windChase","風追い",["dodge","speed","extraAttack"],[["dodge","always","nextPower",18],["hit","second","extra",8]]],["abyssCovenant","奈落の盟約",["abyssal","deep","statusHunter"],[["attack","abyssal","power",15],["attack","multipleStatuses","crit",10]]]];
+baseline.push(['iceTomb','氷葬',[],[['attack','iceCritical','crit',12],['attack','iceHeavy','iceHeavy',15],['hit','iceMarkCrit','follow',15]]],['hexJudge','呪刻の裁き',[],[['attack','curseMark','power',12],['attack','curseMark','curseDefense',10],['attack','curseThree','curseDamage',8],['hit','third','defDown',2]]]);
+for(const [id,name,tags,rules]of baseline)ok(JSON.stringify(builds.find(b=>b.id===id).rules.map(r=>[r.trigger,r.condition,r.stat,r.value]))===JSON.stringify(rules),'unchanged '+id);
+function equip(id,actor='player'){const b=builds.find(b=>b.id===id),eq=w.emptyEquipmentSlots();['weapon','armor','accessory'].forEach((slot,i)=>eq[slot]={id:actor+slot,key:'fixture',type:slot,primaryBuildTag:b.requiredTags[i]});if(actor==='player')s.equipped=eq;else s.chapter.equipment[actor]=eq;return eq;}
+const enemy=()=>({hp:100000,maxHp:100000,def:100,atk:30,turnCount:0,synergyRound:0,buildStatuses:{},gearPoison:0});
+const stats=()=>({atk:100,crit:0,maxHp:100,effects:{}});let e=enemy(),eq=equip('iceTomb');s.currentEnemy=e;s.buildRuntime={hits:0,hurt:0};
+const apply=(tag)=>{e.buildStatuses[tag]=1;w.rememberSynergyStatuses(e,eq,{});e.buildStatuses[tag]=0;};
+const prepare=action=>{const st=stats();w.buildAttack(st,e,action,eq,100);return st;};
+for(const action of ['attack','skill','heavy']){
+ apply('freeze');const st=prepare(action),t=w.temporarySynergy(e,s,eq);
+ ok(t.iceBurialMark,'mark retained until direct hit '+action);
+ ok(action==='heavy'?st.iceHeavy===15:st.crit===27,'marked '+action);
+ if(action==='skill')ok(st.synergySkillCrit,'skill crit connected');
+ w.consumeTemporarySynergyMarks(e,eq);ok(!t.iceBurialMark,'mark consumed '+action);
+ e.pendingBuildFollowUps=[];w.synergyHit(e,action,true,eq,s,stats(),{});
+ ok(e.pendingBuildFollowUps.length===1&&e.pendingBuildFollowUps[0].damage===15,'marked crit 15% follow');
+ w.buildStatusTick(e);ok(e.pendingBuildFollowUps.length===0,'follow no recursion');
+}
+apply('freeze');apply('freeze');ok(w.temporarySynergy(e,s,eq).iceBurialMark===true,'one mark maximum');
+prepare('defend');ok(w.temporarySynergy(e,s,eq).iceBurialMark,'guard retains next direct mark');
+eq=equip('hexJudge');apply('curse');for(let i=0;i<10;i++)w.equipmentPoisonTick(e);
+ok(w.temporarySynergy(e,s,eq).curseJudgmentMark,'curse gone but mark retained');
+let st=prepare('attack');ok(st.curseDefense===10&&w.synergyTargetDefense(e,st)===90,'marked DEF10');ok(st.atk===112,'marked power12');
+w.consumeTemporarySynergyMarks(e,eq);st=prepare('attack');ok(!st.curseDefense&&st.atk===100,'next attack not boosted twice');
+e.buildStatuses.curse=3;st=prepare('attack');ok(st.curseDamage===8,'actual curse3 bonus8');e.def=-10;ok(w.synergyTargetDefense(e,st)===0,'DEF lower bound');
+e=enemy();s.currentEnemy=e;apply('curse');const elna=w.partyMember('elna').unit,elnaEq=equip('hexJudge','elna');
+ok(!w.temporarySynergy(e,elna,elnaEq).curseJudgmentMark,'actor independent');
+const other=enemy();ok(!w.temporarySynergy(other,s,eq).curseJudgmentMark,'enemy B cannot use A mark');ok(!w.temporarySynergy(e,s,eq).curseJudgmentMark,'returning A cannot resurrect mark');
+apply('curse');eq.weapon.id='changed';ok(!w.temporarySynergy(e,s,eq).curseJudgmentMark,'equipment invalidates');eq.weapon.id='playerweapon';ok(!w.temporarySynergy(e,s,eq).curseJudgmentMark,'old equipment cannot restore mark');
+apply('curse');w.resetBattleBuilds();ok(!w.temporarySynergy(e,s,eq).curseJudgmentMark,'battle reset clears');
+eq=equip('firstLight');e=enemy();s.currentEnemy=e;
+st=prepare('heavy');ok(st.crit===35&&st.dawnPierce===20&&st.dawnDamage===50,'first action opening');
+ok(w.synergyHeavyDamage(100,st,e,s)===210,'final 1.50 times 1.40');ok(w.synergyHeavyDamage(100,st,e,s)===150,'heavy once');
+st=prepare('defend');ok(st.dawnDamage===50,'second action counts guard');
+st=prepare('heavy');ok(!st.dawnDamage&&!st.dawnHeavy&&!st.dawnPierce&&st.crit===15,'third action all opening ends');
+for(let i=3;i<60;i++){st=prepare('heavy');ok(!st.dawnDamage&&!st.dawnHeavy&&!st.dawnPierce&&w.synergyHeavyDamage(100,st,e,s)===100,'no opening multiplier after action '+(i+1));}
+eq.weapon.id='replacement';st=prepare('heavy');ok(!st.dawnDamage,'equipment change cannot restart opening');
+const fresh=enemy();s.currentEnemy=fresh;const es=stats();w.buildAttack(es,fresh,'heavy',elnaEq,100);ok(!es.dawnHeavy,'non dawn companion no opening');
+const iceElna=equip('iceTomb','elna');fresh.buildStatuses.freeze=1;w.rememberSynergyStatuses(fresh,iceElna,{});fresh.buildStatuses.freeze=0;
+const iceStats=stats();w.buildAttack(iceStats,fresh,'heavy',iceElna,100);ok(iceStats.iceHeavy===15,'Elna own mark powers heavy');ok(!w.temporarySynergy(fresh,s,s.equipped).iceBurialMark,'Elna mark not player mark');w.consumeTemporarySynergyMarks(fresh,iceElna);ok(!w.temporarySynergy(fresh,elna,iceElna).iceBurialMark,'Elna consumes independently');
+const dawnElna=equip('firstLight','elna'),dawnEnemy=enemy();s.currentEnemy=dawnEnemy;const dawnStats=stats();w.buildAttack(dawnStats,dawnEnemy,'heavy',dawnElna,100);ok(w.synergyHeavyDamage(100,dawnStats,dawnEnemy,elna)===210,'Elna first heavy multiplier');ok(w.synergyHeavyDamage(100,dawnStats,dawnEnemy,s)===210,'player heavy not consumed by Elna');
+ok(!JSON.stringify(s.equipped).includes('Mark'),'marks not on saved equipment');
+out.push('ALL TESTS PASSED');
+}catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');};</script>

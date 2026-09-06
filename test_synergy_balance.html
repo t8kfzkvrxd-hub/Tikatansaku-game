@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+window.onload=()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[],check=(ok,n)=>{if(!ok)throw Error(n);out.push('PASS '+n)};try{
+w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';w.partyMember('elna');
+const rows=Object.entries(w.eval('EQUIPMENT_CATALOG')),recipes=w.eval('CRAFT_RECIPES'),builds=w.eval('COMPLETED_BUILDS'),cache=new Map();
+const accessible=(id,seen=new Set())=>{if(cache.has(id))return cache.get(id);if(seen.has(id))return false;seen.add(id);const r=recipes[id];const ok=!!r&&['Common','Rare','Epic'].includes(r.rarity)&&(r.unlockFloor||0)<=100&&(!r.parent||accessible(r.parent,seen))&&[...Object.keys(r.materials||{}),...(r.hiddenMaterial?[r.hiddenMaterial]:[])].every(k=>k==='abyss_core'||(['Common','Rare','Epic'].includes(w.eval('MATERIALS')[k]?.rarity)&&w.materialSources(k).some(row=>row.area.min<=100)));cache.set(id,ok);return ok;};
+const eligible=rows.filter(([id])=>accessible(id));
+function witness(b){let dp=new Map([['0:0',{mask:0,roles:0,slots:{},cost:0}]]);for(const slot of ['weapon','head','armor','arms','legs','accessory','accessory2']){const options=new Map([[0,null]]);for(const [id,r]of eligible.filter(([,r])=>w.equipmentSlot(r)===(slot==='accessory2'?'accessory':slot))){const tags=w.buildTags({r}),mask=b.requiredTags.reduce((n,t,i)=>n|(tags.has(t)?1<<i:0),0);if(!mask)continue;const old=options.get(mask);if(!old||(r.gold||0)<(old[1].gold||0))options.set(mask,[id,r]);}const next=new Map();for(const prev of dp.values())for(const [mask,pair]of options){const role=pair?(pair[1].type==='weapon'?1:pair[1].type==='armor'?2:4):0,n={mask:prev.mask|mask,roles:prev.roles|role,slots:{...prev.slots,...(pair?{[slot]:pair[0]}:{})},cost:prev.cost+(pair?pair[1].gold||0:0)},key=n.mask+':'+n.roles;if(!next.has(key)||n.cost<next.get(key).cost)next.set(key,n);}dp=next;}return dp.get('7:7')?.slots||null;}
+const witnesses=Object.fromEntries(builds.map(b=>[b.id,witness(b)]));const early=builds.filter(b=>witnesses[b.id]&&b.id!=='abyssCovenant');check(early.length>=10,'10+ early builds');
+const item=(id,i)=>({...recipes[id],key:id,id:'balance-'+i});
+const balances=[];
+for(const b of early){s.equipped=w.emptyEquipmentSlots();for(const [slot,id]of Object.entries(witnesses[b.id]))s.equipped[slot]=item(id,slot);check(w.completedBuildState(s.equipped).find(x=>x.id===b.id).active,'real early witness '+b.name);
+for(const kind of ['normal','elite','boss']){
+ s.floor=80;s.screen='battle';s.hp=400;s.buildRuntime={hits:0,hurt:0,kills:0,charge:0,shield:0};s.chapter.equipment.elna=w.emptyEquipmentSlots();
+ const area=w.getCurrentArea(),template=kind==='boss'?area.boss:kind==='elite'?area.elite:area.enemies[0],scaled=w.scaledEnemyStats(template,area,80,kind,{enemyAtkMult:1,greed:0,labLevel:0});
+ const enemy={hp:scaled.hp,maxHp:scaled.hp,atk:scaled.atk,def:scaled.def,turnCount:0,isElite:kind==='elite',isBoss:kind==='boss',actionType:'heavy',buildStatuses:{},gearPoison:0};s.currentEnemy=enemy;
+ let maxHeal=0,maxReflect=0,maxShield=0,totalDamage=0,enemyActions=0,maxLoss=0,stunned=0,seed=9127;w.Math.random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+ for(let turn=0;turn<60;turn++){
+  enemy.hp=enemy.maxHp;enemy.turnCount=turn;s.hp=Math.min(400,Math.max(80,s.hp));const stats={atk:100,crit:5,maxHp:400,vamp:5};const action=turn%3===0?'heavy':turn%3===1?'attack':'skill';
+  const before=enemy.hp;w.buildAttack(stats,enemy,action,s.equipped,s.hp);enemy.hp-=Math.max(1,stats.atk-enemy.def);w.buildHit(enemy,action,turn%4===0,s.equipped);const damage=before-enemy.hp;totalDamage+=damage;maxLoss=Math.max(maxLoss,damage);
+  maxHeal=Math.max(maxHeal,w.healFromWeaponDamage(s,stats,enemy,damage,s.equipped,turn%4===0));
+  w.buildStatusTick(enemy);stunned+=enemy.stunned?1:0;
+  const reflectBefore=enemy.hp;if(!enemy.stunned){const incoming=w.buildIncomingDamage(Math.max(1,enemy.atk-30),enemy,s.equipped,s,400,turn%3===0);s.hp-=incoming;enemyActions++;}maxReflect=Math.max(maxReflect,reflectBefore-enemy.hp);enemy.stunned=false;maxShield=Math.max(maxShield,s.buildRuntime.shield);
+  check(Number.isFinite(enemy.hp)&&Number.isFinite(s.hp),'finite '+b.id);check(Object.values(enemy.buildStatuses).every(n=>n<=12),'bounded statuses');check((enemy.pendingBuildFollowUps||[]).length===0,'follow-ups consumed');
+ }
+ check(maxHeal<=32&&maxReflect<=20&&maxShield<=60,'safety caps '+b.name+' '+kind);check(enemyActions>30&&stunned<30,'enemy actions retained');check(maxLoss<enemy.maxHp,'no one shot '+b.name);
+ balances.push({build:b.name,kind,enemyStats:scaled,totalDamage,maxLoss,maxHeal,maxReflect,maxShield,enemyActions});
+}}
+// End-game synthetic conditions verify behavior, not unlock new floors.
+const mythic=rows.find(([,r])=>r.rarity==='Mythic'&&r.primaryBuildTag==='poison');s.equipped=w.emptyEquipmentSlots();s.equipped.weapon=item(mythic[0],'mythic');check(w.synergyStatusCap(s.equipped,'poison')>0,'Mythic poison duration capacity');
+const abyssal=rows.find(([,r])=>r.rarity==='Abyssal'&&r.primaryBuildTag==='lifesteal');s.equipped=w.emptyEquipmentSlots();s.equipped.weapon=item(abyssal[0],'abyssal');s.hp=100;s.buildRuntime={hits:0,hurt:0,kills:0,charge:0,shield:0};const e={hp:9999,maxHp:9999,turnCount:0};s.currentEnemy=e;w.healFromWeaponDamage(s,{maxHp:100,vamp:20},e,100,s.equipped);check(s.buildRuntime.shield>0&&s.buildRuntime.shield<=15,'Abyssal overflow without overheal tag');
+const distribution=Object.fromEntries(Object.keys(w.eval('BUILD_CATALOG')).map(t=>[t,rows.filter(([,r])=>r.primaryBuildTag===t).length]));
+w.Math.random=Math.random;out.length=0;out.push('ALL TESTS PASSED');out.push(JSON.stringify({total:rows.length,early:early.length,earlyNames:early.map(b=>b.name),witnesses,balances,distribution}));
+}catch(e){out.push('FAIL: '+e.stack)}document.getElementById('results').textContent=out.join('\n');};</script>

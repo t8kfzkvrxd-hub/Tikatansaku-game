@@ -22,13 +22,15 @@ function selectEnemyPart(id){
 }
 function partBreakPower(damage,slots,action){
  const type=slots.weapon?.weaponType||'sword',factor={greathammer:1.8,greatsword:1.4,greataxe:1.5,spear:1.2,pike:1.2,bow:1.2,crossbow:1.2,dagger:.7,claw:.8}[type]||1;
- return Math.max(1,Math.round(damage*.55*factor*(action==='heavy'?1.3:1)*(buildTags(slots).has('break')?1.3:1)+(equipmentEffects(slots).breakPower||0)));
+ const result=evaluateSynergies(slots,'part',{action});
+ return Math.max(1,Math.round((damage*.55*factor*(action==='heavy'?1.3:1)*(buildTags(slots).has('break')?1.3:1)+(equipmentEffects(slots).breakPower||0))*(1+(result.values.partPower||0)/100)));
 }
 function hitEnemyPart(enemy,action,slots){
  const part=ensureEnemyParts(enemy).find(p=>p.id===enemy.partTarget);if(!part||part.broken||action==='defend')return;
  const before=enemy.partHitStart?.[slots===state.equipped?'player':'companion'];if(before==null)return;
  const damage=Math.max(0,before-enemy.hp);if(!damage)return;
  const power=partBreakPower(damage,slots,action),lost=Math.min(part.hp,power);part.hp=Math.max(0,part.hp-power);
+ if(lost)synergyNotice(evaluateSynergies(slots,'part',{action,enemy}),`部位耐久 ${lost}`);
  if(typeof combatEmit==='function')combatEmit(slots===state.equipped?'player':state.chapter.companion,'enemy',lost,`${PART_TYPES[part.id].name}${part.hp===0?'を破壊！':'耐久'}`,'part');
  if(part.hp===0){
   part.broken=true;enemy.buildBroken=true;const def=PART_TYPES[part.id];

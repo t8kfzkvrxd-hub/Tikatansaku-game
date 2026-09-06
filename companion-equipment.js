@@ -61,6 +61,7 @@ function characterProgress(id){
 }
 function selectCompanion(id){
  if(state.screen!=='town'||id!==null&&!state.chapter.owned[id])return false;
+ clearTemporarySynergies();
  state.chapter.companion=id;saveState();render();return true;
 }
 function companionTurn(enemy){
@@ -89,7 +90,8 @@ function companionTurn(enemy){
  if(action==='heavy'&&weapon?.affix==='boss_slayer'&&enemy.isBoss)stats.atk*=1.25;
  if(action==='heavy'&&weapon?.affix==='elite_slayer'&&enemy.isElite)stats.atk*=1.3;
  const crit=Math.random()*100<Math.min(85,stats.crit);
- const damage=Math.max(1,Math.round(stats.atk*(action==='heavy'?1.5:action==='skill'?1.8:1)*(unit.attackBuff||1)*(crit?1.5+(stats.effects.critDamage||0)/100:1)-enemy.def));
+ let damage=Math.max(1,Math.round(stats.atk*(action==='heavy'?1.5:action==='skill'?1.8:1)*(unit.attackBuff||1)*(crit?1.5+(stats.effects.critDamage||0)/100:1)-synergyTargetDefense(enemy,stats)));
+ if(action==='heavy')damage=synergyHeavyDamage(damage,stats,enemy,unit);else damage=synergyDirectDamage(damage,stats);
  unit.attackBuff=1;enemy.hp-=damage;equipmentHit(enemy,action,crit,slots);applyRootProtection(enemy,before);
  healFromWeaponDamage(unit,stats,enemy,Math.max(0,before-Math.max(0,enemy.hp)),slots,crit);
  addLog(`${CHARACTER_DATA[id]?.name||id}の${action==='skill'?'スキル':action==='heavy'?'強攻撃':'通常攻撃'}！ ${Math.max(0,before-enemy.hp)}ダメージ。`,'gold');
@@ -105,7 +107,7 @@ function companionCombatUnit(){
 function companionReceiveAttack(enemy,attack){
  const unit=companionCombatUnit();if(!unit||unit.hp<=0)return false;
  const stats=companionStats(unit.id),e=stats.effects,slots=characterEquipment(unit.id),name=CHARACTER_DATA[unit.id]?.name||unit.id;
- if(Math.random()*100<Math.min(45,e.dodge||0)){unit.attackBuff=1+Math.min(150,e.dodgeAttack||0)/100;addLog(`${name}が回避！`,'gold');return true;}
+ if(Math.random()*100<Math.min(45,e.dodge||0)){synergyDodge(slots,unit,stats,enemy);unit.attackBuff=1+Math.min(150,e.dodgeAttack||0)/100;addLog(`${name}が回避！`,'gold');return true;}
  const just=unit.defending&&['heavy','critical_smash'].includes(enemy.actionType),guard=unit.defending&&enemy.actionType!=='grab_prep';
  const defense=stats.def;
  let damage=Math.max(1,Math.round((attack-defense)*(guard?(just?.2:.45):1)));
@@ -125,13 +127,13 @@ function setCharacterEquipment(id,slot,itemId){
  const index=state.storage.findIndex(i=>i.id===itemId),item=state.storage[index];
  if(!item||equipmentOwner(item)||equipmentSlot(item)!==(slot==='accessory2'?'accessory':slot))return false;
  if(id==='player'){equipItem(index,true,slot);return true;}
- normalizeEquipment(item);const old=slots[slot];state.storage.splice(index,1);slots[slot]=item;if(old)state.storage.push(old);
+ normalizeEquipment(item);const old=slots[slot];state.storage.splice(index,1);slots[slot]=item;if(old)state.storage.push(old);invalidateTemporaryMarks(id==='player'?state:state.companionBattle?.[id]);
  saveState();render();return true;
 }
 function removeCharacterEquipment(id,slot){
  const slots=characterEquipment(id);if(state.screen!=='town'||!slots?.[slot])return false;
  if(vaultUsed()>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return false;}
- if(id==='player')unequipItem(slot);else{state.storage.push(slots[slot]);slots[slot]=null;saveState();render();}
+ if(id==='player')unequipItem(slot);else{state.storage.push(slots[slot]);slots[slot]=null;invalidateTemporaryMarks(state.companionBattle?.[id]);saveState();render();}
  return true;
 }
 function compareEquipmentHtml(current,next){

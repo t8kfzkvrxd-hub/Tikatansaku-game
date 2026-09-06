@@ -1505,6 +1505,7 @@
     }
 
     function returnToTown(safeReturn = true) {
+      clearTemporarySynergies();
       if (safeReturn) {
         const freeSlots = vaultFree();
         if (vaultUsed(state.inventory) > freeSlots) {
@@ -3117,6 +3118,7 @@
       const oldEquip = state.equipped[slot];
 
       state.equipped[slot] = item;
+      invalidateTemporaryMarks(state);
       list.splice(index, 1);
       if (oldEquip) list.push(oldEquip);
 
@@ -3278,6 +3280,10 @@
   <script src="js/data/buildBalance.js"></script>
   <script src="js/ui/buildDetails.js"></script>
   <script src="js/data/extendedAreas.js"></script>
+  <script src="js/data/synergies.js"></script>
+  <script src="js/systems/synergies.js"></script>
+  <script src="js/ui/synergyUI.js"></script>
+  <link rel="stylesheet" href="synergy-ui.css">
   <script src="forge-ui.js"></script>
   <script src="js/ui/catalogTreeUI.js"></script>
   <script src="js/ui/materialUI.js"></script>

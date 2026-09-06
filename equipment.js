@@ -52,6 +52,7 @@ function equippedAccessories(slots=state.equipped) {return [slots.accessory,slot
 function equipmentEffects(slots=state.equipped) {
  const effects={};Object.values(slots).filter(Boolean).forEach(item=>Object.entries(item.effects||{}).forEach(([key,n])=>effects[key]=(effects[key]||0)+n));
  if(typeof buildTags==='function')for(const tag of buildTags(slots)){const passive={skillHaste:{skillHaste:1},dodge:{dodge:8},farming:{materialChance:8},rareMaterial:{rareMaterial:8},chest:{chestQuality:10},justGuard:{justAttack:30},guard:{guardHeal:2}}[tag];for(const [key,n]of Object.entries(passive||{}))effects[key]=(effects[key]||0)+n;}
+ if(typeof evaluateSynergies==='function')for(const [key,n]of Object.entries(evaluateSynergies(slots,'effects').values))if(key!=='statusCap')effects[key]=(effects[key]||0)+n;
  if(slots===state.equipped&&state.effectSeal?.turns>0)delete effects[state.effectSeal.key];
  if(state.screen==='battle'&&state.currentEnemy?.buildStatuses?.bleed>0)effects.dodge=(effects.dodge||0)+(effects.bleedDodge||0);
  return effects;
@@ -74,7 +75,7 @@ function unequipItem(slot) {
  const item=state.equipped[slot];if(!item)return;
  const list=state.screen==='town'?state.storage:state.inventory;
  if(state.screen==='town'&&vaultUsed()>=state.camp.vaultSize){addLog('倉庫容量不足：解除前に整理してください。','danger');return;}
- list.push(item);state.equipped[slot]=null;saveState();render();
+ list.push(item);state.equipped[slot]=null;invalidateTemporaryMarks(state);saveState();render();
 }
 function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.hp) {
  if(typeof ensureEnemyParts==='function'){ensureEnemyParts(enemy);enemy.partHitStart ||= {};enemy.partHitStart[slots===state.equipped?'player':'companion']=enemy.hp;}
@@ -89,6 +90,7 @@ function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.h
  buildAttack(stats,enemy,action,slots,hp);
 }
 function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
+ consumeTemporarySynergyMarks(enemy,slots);
  if(typeof hitEnemyPart==='function')hitEnemyPart(enemy,action,slots);
  buildHit(enemy,action,isCrit,slots);
  const e=equipmentEffects(slots);
@@ -97,8 +99,9 @@ function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
  if(action==='heavy'&&e.breakPower){enemy.def=Math.max(0,enemy.def-e.breakPower);addLog(`🔨 防御破壊 -${e.breakPower}`,'gold');}
 }
 function equipmentPoisonTick(enemy) {
+ enemy.synergyRound=(enemy.synergyRound||0)+1;
  buildStatusTick(enemy);
- if(enemy.gearPoison>0){const damage=Math.max(3,Math.round(enemy.maxHp*.015));enemy.gearPoison--;enemy.hp-=damage;addLog(`☠️ 毒 ${damage}ダメージ`,'gold');}
+ if(enemy.gearPoison>0){const damage=enemy.isBoss?Math.min(40,Math.max(1,Math.round(enemy.maxHp*.005))):Math.max(3,Math.round(enemy.maxHp*.015));enemy.gearPoison--;enemy.hp-=damage;addLog(`☠️ 毒 ${damage}ダメージ`,'gold');}
 }
 
 AREAS.forEach((area,areaIndex)=>{

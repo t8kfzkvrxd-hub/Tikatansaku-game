@@ -287,9 +287,10 @@
         if (state.guaranteedCrit) { isCrit = true; state.guaranteedCrit = false; }
 
         let baseDmg = stats.atk * (isCrit ? 1.8 + Math.min(150,equipmentEffects().critDamage||0)/100 : 1.0) * (state.playerAttackBuff || 1.0);
-        let targetDef = (enemy.gimmick==='shield_barrier' && state.bossBarrier) ? enemy.def * 3 : enemy.def;
+        let targetDef = synergyTargetDefense(enemy,stats) * ((enemy.gimmick==='shield_barrier' && state.bossBarrier) ? 3 : 1);
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 4 - 2)));
 
+        dmg = synergyDirectDamage(dmg,stats);
         state.playerAttackBuff = 1.0; // Consumed
 
         // Dagger Dual Strike archetype check
@@ -372,13 +373,14 @@
         let mult = (archetype === 'greatsword') ? 2.5 : 1.9;
         if (enemy.actionType === 'falter') mult *= 1.4; // Falter bonus: +40% more damage!
         let baseDmg = stats.atk * mult * (state.playerAttackBuff || 1.0);
-        let targetDef = (enemy.gimmick==='shield_barrier' && state.bossBarrier) ? enemy.def * 3 : enemy.def;
+        let targetDef = synergyTargetDefense(enemy,stats) * ((enemy.gimmick==='shield_barrier' && state.bossBarrier) ? 3 : 1);
         let dmg = Math.max(1, Math.round(baseDmg - targetDef + (Math.random() * 6 - 3)));
         if (weapon?.affix === 'boss_slayer' && enemy.isBoss) dmg = Math.round(dmg * 1.25);
         if (weapon?.affix === 'elite_slayer' && enemy.isElite) dmg = Math.round(dmg * 1.30);
 
         state.playerAttackBuff = 1.0;
         state.playerExposed = true; // Demerit: +35% damage next enemy turn!
+        dmg = synergyHeavyDamage(dmg,stats,enemy,state);
 
         enemy.hp -= dmg;
         addThunderCharge(enemy, '強攻撃');
@@ -430,17 +432,21 @@
 
         playSound('weapon_skill');
         let skillDmg = 0;
+        const skillCrit=!!stats.synergySkillCrit&&Math.random()*100<Math.min(100,stats.crit);
+        const skillCriticalDamage=damage=>skillCrit?Math.max(1,Math.round(damage*(1.8+Math.min(150,equipmentEffects().critDamage||0)/100))):damage;
 
         if (archetype === 'dagger') {
           // 影縫い連撃
-          skillDmg = Math.max(1, Math.round(stats.atk * 2.0 - enemy.def));
+          skillDmg = Math.max(1, Math.round(stats.atk * 2.0 - synergyTargetDefense(enemy,stats)));
           enemy.def = Math.max(0, enemy.def - 4);
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           spawnFloatingFx(`🗡️ 影縫い連撃 -${skillDmg} (敵DEF-4)`, 'crit');
           addLog(`【影縫い連撃】急所を刺突して ${skillDmg} ダメージ！ 敵の防御力を4削り取った！`, 'gold');
         } else if (archetype === 'greatsword') {
           // 天輪巨絶断
-          skillDmg = Math.max(1, Math.round(stats.atk * 2.5 - (enemy.def * 0.5)));
+          skillDmg = Math.max(1, Math.round(stats.atk * 2.5 - (synergyTargetDefense(enemy,stats) * 0.5)));
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           spawnFloatingFx(`⚔️ 天輪巨絶断 -${skillDmg} (防50%無視)`, 'crit');
           addLog(`【天輪巨絶断】装甲ごと叩き割る一撃！ ${skillDmg} の大ダメージ！`, 'gold');
@@ -453,23 +459,26 @@
           state.hp -= 10;
           const bloodAwakened = weapon?.key === 'mythic_blood_scythe' && state.hp <= stats.maxHp * 0.25;
           skillDmg = Math.max(1, Math.round(stats.atk * (bloodAwakened ? 4.2 : 3.2)));
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           spawnFloatingFx(`🩸 深淵血脈解放 -${skillDmg} (HP-10)`, 'crit');
           addLog(`【深淵血脈解放】HP10を捧げて深淵の黒炎を召喚！ ${skillDmg} の致命打！`, 'gold');
         } else if (archetype === 'thunder') {
           // 天雷招来
-          skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - enemy.def)) + 22;
+          skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - synergyTargetDefense(enemy,stats))) + 22;
           if (weapon?.key === 'mythic_thunder_blade' && state.thunderCharges > 0) {
             skillDmg += state.thunderCharges * 15;
             addLog(`⚡ 神雷剣が雷印${state.thunderCharges}個を一斉起爆！`, 'gold');
             state.thunderCharges = 0;
           }
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           spawnFloatingFx(`⚡ 天雷招来 -${skillDmg}`, 'crit');
           addLog(`【天雷招来】稲妻が直撃！ ${skillDmg} の雷電ダメージ！`, 'gold');
         } else if (archetype === 'blood') {
           // 鮮血の飢渇
-          skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - enemy.def));
+          skillDmg = Math.max(1, Math.round(stats.atk * 1.5 - synergyTargetDefense(enemy,stats)));
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           const drain = Math.round(skillDmg * 0.6);
           const beforeDrain=state.hp;
@@ -479,14 +488,16 @@
           addLog(`【鮮血の飢渇】生命力を吸い取り ${skillDmg} ダメージ！ HPを ${drain} 回復！`, 'heal');
         } else {
           // Sword Focus
-          skillDmg = Math.max(1, Math.round(stats.atk * 1.4 - enemy.def));
+          skillDmg = Math.max(1, Math.round(stats.atk * 1.4 - synergyTargetDefense(enemy,stats)));
+          skillDmg=synergyDirectDamage(skillCriticalDamage(skillDmg),stats);
           enemy.hp -= skillDmg;
           state.guaranteedCrit = true;
           spawnFloatingFx(`⚔️ 気勢斬り -${skillDmg} (次回会心確定)`, 'crit');
           addLog(`【集中気勢斬り】研ぎ澄まされた刃で ${skillDmg} ダメージ！ 次の攻撃は会心確定！`, 'gold');
         }
 
-        equipmentHit(enemy,action);
+        if(skillCrit)addLog(`完成ビルド：スキル CRITICAL ${skillDmg}`,'gold');
+        equipmentHit(enemy,action,skillCrit);
         state.skillCooldown = Math.max(1,2-(equipmentEffects().skillHaste||0))+(enemy.gimmick==='rising_water'&&state.waterLevel>=70?1:0);
         addThunderCharge(enemy, '武器スキル');
 
@@ -542,6 +553,7 @@
       const gearEffects=equipmentEffects();
       const companion=companionCombatUnit(),targetsCompanion=selectEnemyTarget(enemy)!=='player';
       if(!targetsCompanion&&Math.random()*100<Math.max(0,Math.min(45,gearEffects.dodge||0)-(enemy.gimmick==='rising_water'&&state.waterLevel>=70?20:0))) {
+        synergyDodge(state.equipped,state,stats,enemy);
         state.playerAttackBuff=Math.max(state.playerAttackBuff||1,1+Math.min(150,gearEffects.dodgeAttack||0)/100);
         addLog('💨 回避成功！'+(gearEffects.dodgeAttack?' 次の攻撃を強化':''),'gold');decideEnemyIntent();updateHeader();render();return;
       }
@@ -713,6 +725,7 @@
 
     function onEnemyKilled() {
       if(!state.currentEnemy||state.currentEnemy.rewardClaimed)return;
+      clearTemporarySynergies();
       state.currentEnemy.rewardClaimed=true;
       syncActionButtons();
       const enemy = state.currentEnemy;

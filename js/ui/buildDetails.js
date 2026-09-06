@@ -1,7 +1,7 @@
 const BUILD_AUDIT_RULES={
  lifesteal:['有効与ダメージ時','基本4%。装備値加算→背水HP50%未満+5pt→会心×1.2→出血×1.25＋装備出血吸血→上限25%→ボス半減。回復は最大HP8%まで。ボス経過ターン等で抑制','healFromWeaponDamage'],
  bleed:['命中時30%（status併用55%）','出血+1、上限5（装備で増加）。毎ターン最大HP×0.5%×蓄積、上限40ダメージ。蓄積-1','buildHit / buildStatusTick'],
- poison:['命中時30%（status併用55%）','毒3T。毎ターンmax(3,敵最大HP1.5%)。毒特効倍率は装備effects側','buildHit / equipmentPoisonTick'],
+ poison:['命中時30%（status併用55%）','毒3T。通常・エリートは毎ターンmax(3,敵最大HP1.5%)。ボスは最大HP0.5%・最低1／上限40。毒特効倍率は装備effects側','buildHit / equipmentPoisonTick'],
  fire:['命中時30%（status併用55%）','炎上+1、上限5。継続ダメージ式は出血と同じ','buildHit / buildStatusTick'],
  freeze:['命中時30%（status併用55%）','凍結+1、上限5。継続中、敵行動前25%でスタン（ボス10%）。毎ターン蓄積-1','buildHit / buildStatusTick'],
  shock:['命中時30%（status併用55%）','感電+1。感電対象へ攻撃補正+10%、追加攻撃率25%→45%','buildHit / buildAttack'],
@@ -14,7 +14,7 @@ const BUILD_AUDIT_RULES={
  reflect:['被弾時','障壁等の処理後ダメージ15%を反射、最大20。敵HPは最低1残る','buildIncomingDamage'],dodge:['被弾の回避判定','回避率+8pt。装備値合算後45%上限','equipmentEffects / enemyTurn / companionReceiveAttack'],
  break:['部位を狙って命中','部位破壊力×1.3。武器種・強攻撃倍率・装備固定値を別途適用。統合前の部位素材寄与8%→22%（補正後はレア度順で上限調整）、特定部位は敵ATK/DEF低下。強攻撃では敵DEF-3も適用','partBreakPower / hitEnemyPart / materialDropPlan'],
  boss:['ボスを攻撃','ATK補正+20%','buildAttack'],mob:['ボス以外を攻撃','ATK補正+20%','buildAttack'],status:['状態異常付与判定','タグ付与率30%→55%。毒も付与。装備の独立した毒抽選とは別','buildHit'],statusHunter:['毒またはタグ状態異常中の敵を攻撃','ATK補正+20%。呪い対象は蓄積×5%、最大30%追加','buildAttack'],
- conversion:['炎上蓄積がある敵への命中','炎上を同量の感電へ変換（上限5）。炎上なしでは変換しない','buildHit'],hybrid:['命中時','ATK×5%×min(3,1＋タグ状態異常種類数)の独立した追加ダメージ','buildHit'],
+ conversion:['炎上蓄積がある敵への命中','炎上を同量の感電へ変換（上限5）。双相錬成の完成時は炎上1だけを感電1へ変換。炎上なしでは変換しない','buildHit'],hybrid:['命中時','ATK×5%×min(3,1＋タグ状態異常種類数)の独立した追加ダメージ','buildHit'],
  normalAttack:['通常攻撃時のみ','ATK補正+30%','buildAttack'],heavyAttack:['強攻撃時のみ','ATK補正+30%','buildAttack'],skillPower:['スキル攻撃時のみ','ATK補正+20%。装備スキル威力補正は別乗算。summon併用時は分身威力+20%','buildAttack / buildHit'],skillHaste:['スキル使用後','CT短縮+1T。主人公基礎2T／エルナ基礎3T、最短1T','equipmentEffects / playerCombatAction / companionTurn'],
  onKill:['生存参加中に敵を撃破','最大HP3%回復。探索中1体以上撃破後はATK補正+20%','buildKill / buildAttack'],longFight:['敵の経過ターン数4以上','ATK補正+20%。poison併用＋毒対象では経過×4%、最大40%追加','buildAttack'],burst:['敵の経過ターン数0〜1','ATK補正+20%','buildAttack'],overheal:['吸血が最大HPを超える時','余剰回復を障壁へ。最大HP15%上限','healFromWeaponDamage'],onHurt:['当該戦闘で実HPダメージを受けた後','ATK補正+20%','buildIncomingDamage / buildAttack'],unhurt:['当該戦闘で未被弾','ATK補正+20%','buildAttack'],
  pierce:['攻撃計算時','敵DEF35%（四捨五入）をATKへ加算。完全防御無視ではない','buildAttack'],defDown:['命中時','敵DEF-1、最低0','buildHit'],speed:['2命中ごと','ATK10%の速撃。行動間隔は変わらない','buildHit'],extraAttack:['命中時25%（感電対象45%）','ATK20%の追加ヒット。装備extraChance加算後65%上限','buildHit'],followUp:['状態異常中の敵への命中','ATK20%を予約し、敵行動前に追撃','buildHit / buildStatusTick'],summon:['4命中ごと','影の分身がATK35%で攻撃。装備summonPowerとskillPowerタグ20%を合算、倍率補正上限100%','buildHit'],
@@ -23,7 +23,7 @@ const BUILD_AUDIT_RULES={
 const BUILD_OLD_DESCRIPTIONS={...BUILD_RULE_TEXT};
 for(const [tag,row]of Object.entries(BUILD_AUDIT_RULES))BUILD_RULE_TEXT[tag]=row[0]+'：'+row[1];
 BUILD_CATALOG.safe='被ダメージ軽減';BUILD_CATALOG.chest='素材報酬品質';
-function buildItemDetails(item){return `<details class="build-detail"><summary>ビルド効果・発動条件</summary><p>主＝主要用途、副＝シナジー分類。固定効果の倍率差はありません。同タグは1回、装備effectsの数値は加算（各上限あり）。</p>${[...buildTags({item})].map(t=>`<p><b>${BUILD_CATALOG[t]}</b>：${uiEscape(BUILD_RULE_TEXT[t])}</p>`).join('')}</details>`;}
+function buildItemDetails(item){return `<details class="build-detail"><summary>ビルド効果・発動条件</summary><p>主＝主要用途、副＝シナジー分類。固定効果の倍率差はありません。同タグは1回、装備effectsの数値は加算（各上限あり）。</p>${[...buildTags({item})].map(t=>`<p><b>${BUILD_CATALOG[t]}</b>：${uiEscape(BUILD_RULE_TEXT[t])}</p>`).join('')}</details>${synergyItemHtml(item)}`;}
 function buildView(id,action='attack'){
  const m=partyMember(id);if(!m)return null;
  const slots=characterEquipment(id),tags=buildTags(slots),runtime=m.unit.buildRuntime||{hits:0,hurt:0,kills:0,charge:0,shield:0},enemy=state.screen==='battle'&&state.currentEnemy?state.currentEnemy:{def:0,turnCount:0};
