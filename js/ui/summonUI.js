@@ -64,4 +64,4 @@ function openSummonResults(results,animate=false){
 }
 function openSummonRewards(rewards){const s=SUMMONS[summonState().lastRewardSummon];showChapterModal('召喚獣が帰還しました',`${s?summonPicture(s)+'<b>'+s.name+'</b>':''}<p>倉庫へ保管済み</p>${Object.entries(rewards).map(([k,n])=>`<p>${uiEscape(MATERIALS[k]?.name||k)} ×${n} / ${MATERIALS[k]?.rarity||''}</p>`).join('')||'<p>今回は素材を発見できませんでした。</p>'}`,'<button class="btn" onclick="openSummons(\'dispatch\')">派遣画面へ</button>');}
 const summonLobbyBase=syncLobbyScreen;
-syncLobbyScreen=function(){summonLobbyBase();const menu=document.querySelector('#lobby-screen .lobby-menu');if(menu&&!menu.querySelector('[data-summons]'))menu.insertAdjacentHTML('beforeend','<button data-summons onclick="openSummons()">召喚・周回</button>');};
+syncLobbyScreen=function(){summonLobbyBase();const menu=document.querySelector('#lobby-screen .lobby-menu');if(menu&&!document.querySelector('#lobby-screen [data-facility="summons"]')&&!menu.querySelector('[data-summons]'))menu.insertAdjacentHTML('beforeend','<button data-summons onclick="openSummons()">召喚・周回</button>');};

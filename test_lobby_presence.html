@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Lobby presence regression</title>
+<pre id="results">RUNNING</pre><iframe src="index.html"></iframe>
+<script>
+window.onload=async()=>{
+ const w=document.querySelector('iframe').contentWindow;
+ try{
+ const results=await w.eval(`(async()=>{
+  enterGameFromHome();closeGenericModal();state.chapter.contract=true;state.screen='town';render();
+  const results=[],check=(name,pass)=>results.push({name,pass:!!pass}),wait=()=>new Promise(r=>setTimeout(r,300));
+  const original=openLobbyFacility,originalSummons=openSummons,unlock=pendingFacilityUnlock;
+  let calls=[];pendingFacilityUnlock=null;openLobbyFacility=id=>calls.push(id);openSummons=()=>calls.push('summons');
+  try{
+   for(const f of LOBBY_FACILITIES){calls=[];for(let i=0;i<20;i++)selectLobbyFacility(f.id);await wait();check(f.id+' 20連打で1遷移',calls.length===1&&calls[0]===f.id);}
+   calls=[];selectLobbyFacility('warehouse');HomeScreen.active=true;await wait();check('ホーム移動後に遅延遷移しない',calls.length===0);HomeScreen.active=false;
+   check('8施設・補助メニュー4個',document.querySelectorAll('.lobby-hotspot').length===8&&document.querySelectorAll('.lobby-menu button').length===4);
+   check('上部次目標パネルなし',!document.querySelector('.lobby-next'));
+   check('背景固定',getComputedStyle(document.querySelector('.lobby-background')).animationName==='none');
+  }finally{openLobbyFacility=original;openSummons=originalSummons;pendingFacilityUnlock=unlock;}
+  return results;
+ })()`);
+ document.getElementById('results').textContent=JSON.stringify({pass:results.every(r=>r.pass),results},null,2);
+ }catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}
+};
+</script>

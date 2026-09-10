@@ -14,3 +14,24 @@ body.at-home #lobby-screen{display:none}
 @keyframes lobby-glow{0%,100%{opacity:.25}50%{opacity:.8}}@keyframes lobby-fog{0%{opacity:0;translate:0 10px}30%,70%{opacity:.5}100%{opacity:0;translate:0 -20px}}
 @media(max-height:500px){.lobby-hotspot span{padding:4px 7px}.lobby-hotspot b{font-size:14px}.lobby-hotspot small{font-size:10px}.lobby-menu{gap:4px}.lobby-menu button{padding:4px 9px;font-size:12px}}
 @media(prefers-reduced-motion:reduce){#lobby-screen *{animation:none!important;transition:none!important}}
+
+#lobby-screen .lobby-hotspot span{padding:3px 7px;min-height:0;background:#0c172780;border:0;border-bottom:1px solid #bbd5e355;border-radius:2px;box-shadow:none;position:relative;z-index:2}
+#lobby-screen .lobby-hotspot b{font-size:clamp(13px,1vw,17px);font-weight:500}
+#lobby-screen .lobby-hotspot small{font-size:12px;color:#c7eaff;margin-top:3px}
+#lobby-screen .lobby-hotspot small[hidden]{display:none}
+.lobby-hotspot:before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:40%;background:radial-gradient(ellipse,#a9dbff50,transparent 70%);opacity:0;transition:opacity .2s}
+.lobby-hotspot:hover:before,.lobby-hotspot:focus-visible:before,.lobby-hotspot.is-selected:before{opacity:1}
+.lobby-hotspot.is-selected{z-index:5}.lobby-hotspot.is-selected span{scale:1.06}
+.lobby-scene:after{content:'';position:absolute;inset:0;background:#020916;opacity:0;pointer-events:none;transition:opacity .2s}
+.is-selecting .lobby-scene:after{opacity:.24}
+#lobby-screen.is-selecting button{pointer-events:none}
+#lobby-screen .lobby-hotspot[data-facility="town-expedition"] b{color:#e2f6ff;font-size:clamp(15px,1.2vw,21px);text-shadow:0 0 9px #67baff}
+.lobby-tavern-glow,.lobby-summon-glow,.lobby-embers,.lobby-magic{position:absolute;pointer-events:none}
+.lobby-tavern-glow{left:72%;top:35%;width:23%;height:22%;background:radial-gradient(ellipse,#ffbc6350,transparent 70%);animation:lobby-glow 3.7s ease-in-out -1.8s infinite}
+.lobby-summon-glow{left:44%;top:62%;width:16%;height:10%;border-radius:50%;background:radial-gradient(ellipse,transparent 30%,#9fdcff60 48%,transparent 65%);animation:lobby-glow 6.3s ease-in-out -3s infinite}
+.lobby-embers{left:10%;top:34%;width:10%;height:15%;background:radial-gradient(circle at 20% 75%,#ffcb74 0 1px,transparent 2px),radial-gradient(circle at 60% 45%,#ffd794 0 1px,transparent 2px),radial-gradient(circle at 80% 90%,#ffb45d 0 1px,transparent 2px);animation:lobby-fog 4.5s linear -2s infinite}
+.lobby-magic{left:24%;top:17%;width:32%;height:40%;background:radial-gradient(circle at 8% 12%,#bcecff 0 1px,transparent 2px),radial-gradient(circle at 80% 80%,#c4bcff 0 1px,transparent 2px),radial-gradient(circle at 95% 55%,#9fdaff 0 1.5px,transparent 3px);animation:lobby-fog 8s linear -5s infinite}
+.lobby-character-sds .sd-shadow .sd-figure:before{animation:lobby-shadow 5.3s ease-in-out infinite}
+@keyframes lobby-shadow{50%{opacity:.65;scale:.94 1}}
+#lobby-screen[hidden] *{animation-play-state:paused}
+#lobby-screen .lobby-character-sds{gap:clamp(150px,24vw,460px)}

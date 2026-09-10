@@ -1,8 +1,9 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.34.0';
+    const GAME_VERSION = '0.34.1';
     const UPDATE_NOTES = [
+      'ロビーを施設直接タップ型へ整理。施設別の光・霧、短い選択反応、施設付近の通知を追加。既存施設機能・セーブ仕様は維持',
       'v0.34.0：鍛冶屋はキャラ別おすすめ最大5件から。完成ビルド・基礎能力差・不足素材と入手先を確認でき、全1531装備は「すべて」から検索可能',
       '施設Lv購入を廃止。10・30・50・100Fクリアで機能解禁、召喚・派遣は既存どおり20Fクリア。旧施設情報を読め、既存倉庫容量は縮小しません',
       '探索中限定の強化24種を追加。3撃破ごとに3候補から1つ選択し二人へ適用。帰還・敗北・再読込で消失し、装備と共通の効果上限を維持',
