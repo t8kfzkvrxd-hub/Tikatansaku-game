@@ -287,6 +287,8 @@
       if(typeof syncExplorationScreen==='function')syncExplorationScreen();
       if(typeof syncReturnPortal==='function')syncReturnPortal();
       syncActionButtons();
+      setTimeout(syncExpeditionPerkChoice,0);
+      if(typeof syncBuildDiscoveries==='function')syncBuildDiscoveries();
     }
 
     function renderSubPanel() {

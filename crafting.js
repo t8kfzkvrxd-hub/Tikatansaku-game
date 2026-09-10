@@ -73,7 +73,7 @@ function craftEquipment(id,parentId) {
  normalizeEquipment(item);
  if(replacement)replacement.slots[replacement.slot]=item;else state.storage.push(item);
  state.craftProgress.crafted[id]=(state.craftProgress.crafted[id]||0)+1;
- recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し${replacement?'装備を更新':'倉庫へ保管'}しました。`,'gold');render();openCrafting(forgeTab);return true;
+ recordCodex('item',item);saveState();addLog(`🔨 【${item.name}】を作成し${replacement?'装備を更新':'倉庫へ保管'}しました。`,'gold');render();showCraftSuccess(item,forgeFilters.character);return true;
 }
 let forgeTab='create';
 function openCrafting(tab='create') {

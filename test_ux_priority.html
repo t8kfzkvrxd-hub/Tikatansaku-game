@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>UX priority regression</title><pre id="results">RUNNING</pre><iframe src="index.html"></iframe><script>
+const backup=localStorage.getItem("ABYSS_ROGUE_SAVED_V2");
+const run=async()=>{
+ const checks=[],check=(name,pass)=>checks.push({name,pass:!!pass});
+ enterGameFromHome();closeGenericModal();state.chapter.pending=null;state.chapter.mode='skip';state.chapter.contract=true;state.chapter.owned.elna=true;state.screen='town';state.deepestFloorReached=20;state.vaultGold=100000;render();
+ const row=FORGE_INDEX.find(n=>n.r.type==='weapon'&&!n.r.parent&&Object.keys(n.r.materials).length&&forgeRecipeRevealed(n.id)),key=Object.keys(row.r.materials)[0];
+ state.storage=[];state.craftProgress.materials[key]=true;for(const s of materialSources(key))state.codex.enemies[s.enemy.name]={};
+ openRecipeDetail(row.id);check('次派生・不足・入手先を同画面',!!document.querySelector('.forge-next-preview')&&document.querySelector('.forge-missing-sources').innerText.includes('不足：')&&document.querySelector('.forge-missing-sources').innerText.includes('入手：'));
+ check('出撃準備の文言',document.querySelector('.forge-missing-sources').innerText.includes('出撃準備へ'));
+ const markup=forgeQuickCompare('player','weapon',characterEquipment('player').weapon);check('同能力差は表示しない',!markup.includes('<span'));
+ openCompletedBuilds('player');check('25件一覧の星・必要タグは非表示',!document.querySelector('.completed-build-list').innerText.includes('扱いやすさ')&&!document.querySelector('.completed-build-list').innerText.includes('不足タグ'));
+ openCompletedBuilds('player','iceTomb');check('選択後は詳細がある',document.querySelector('.completed-build-list').innerText.includes('扱いやすさ'));
+ openWeaponTree(row.id);check('現在ノードの自己遷移なし',![...document.querySelectorAll('.forge-tree-node.current button')].some(b=>b.textContent==='この先を見る'));
+ closeGenericModal();state.floor=1;resetExpeditionPerks(true);startNormalBattle();render();check('次行動独立',!!document.querySelector('.battle-intent small'));
+ const disclosure=document.querySelector('.battle-parts-disclosure');if(disclosure){check('部位初期折畳',!disclosure.open);disclosure.open=true;await new Promise(r=>setTimeout(r,30));renderCombatReadout();check('部位表示状態維持',document.querySelector('.battle-parts-disclosure').open);}
+ openBattleMenu();check('スキル正式名確認',document.getElementById('modal-layer').innerText.includes('スキル：'));closeGenericModal();
+ state.screen='door_select';for(let n=0;n<3;n++)expeditionKillReward();syncExpeditionPerkChoice();check('報酬予告',!![...document.querySelectorAll('.level-up-toast')].find(e=>e.textContent.includes('3体撃破')));await new Promise(r=>setTimeout(r,600));check('あとでなし',!document.getElementById('modal-layer').innerText.includes('あとで'));check('報酬選択表示',!!document.querySelector('button[onclick^="chooseExpeditionPerk"]'));
+ return checks;
+};
+window.onload=async()=>{try{const rows=await document.querySelector('iframe').contentWindow.eval('('+run.toString()+')()');document.getElementById('results').textContent=JSON.stringify(rows,null,2)+'\n'+(rows.every(r=>r.pass)?'ALL TESTS PASSED':'FAIL');}catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}finally{backup===null?localStorage.removeItem('ABYSS_ROGUE_SAVED_V2'):localStorage.setItem('ABYSS_ROGUE_SAVED_V2',backup);}};
+</script>

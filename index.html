@@ -2395,6 +2395,7 @@
     }
 
     function diveDeeperFromSafePoint() {
+      if(expeditionPerksPending()){openExpeditionPerks();return;}
       if(state.screen!=='safe_point'||!lockTransition())return;
       initAudio();
       playSound('click');
@@ -2837,6 +2838,7 @@
 
     function closeGenericModal() {
       document.getElementById('modal-layer').style.display = 'none';
+      if(typeof syncExpeditionPerkChoice==='function')setTimeout(syncExpeditionPerkChoice,0);
     }
 
     function buyExpeditionSupply(type) {
@@ -3230,6 +3232,7 @@
   <script src="js/systems/facilityProgression.js"></script>
   <script src="js/systems/expeditionPerks.js"></script>
   <script src="js/ui/catalogTreeUI.js"></script>
+  <script src="js/ui/forgeLearningUI.js"></script>
   <script src="js/ui/materialUI.js"></script>
   <script src="js/ui/characterEquipmentUI.js"></script>
   <script src="js/ui/combatFeedback.js"></script>
@@ -3256,5 +3259,6 @@
   <script src="js/ui/summonUI.js"></script>
   <link rel="stylesheet" href="return-portal.css">
   <script src="js/ui/returnPortalUI.js"></script>
+  <script src="js/systems/expeditionBuilds.js"></script>
 </body>
 </html>

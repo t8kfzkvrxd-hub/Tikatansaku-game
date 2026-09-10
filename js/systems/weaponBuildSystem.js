@@ -98,6 +98,7 @@ function healFromWeaponDamage(unit,stats,enemy,damage,slots,crit=false){
 }
 function buildIncomingDamage(damage,enemy,slots,unit,maxHp,guard=false){
  const tags=buildTags(slots),r=buildRuntime(unit);
+ damage=expeditionIncoming(damage,enemy,slots,unit,maxHp,guard);
  const synergy=evaluateSynergies(slots,'incoming',{enemy,unit,maxHp,hp:unit.hp,guard});
  damage=Math.round(damage*(1-(synergy.values.reduction||0)/100));
  synergyNextPower(synergy);
@@ -109,7 +110,7 @@ function buildIncomingDamage(damage,enemy,slots,unit,maxHp,guard=false){
  if(tags.has('safe'))damage=Math.round(damage*.95);
  if(tags.has('guard')&&guard)damage=Math.round(damage*.9);
  if(guard&&(tags.has('counter')||tags.has('justGuard')&&['heavy','critical_smash'].includes(enemy.actionType)))r.charge=1;
- if(tags.has('reflect')||(typeof expeditionHasPerk==='function'&&expeditionHasPerk('mirror'))){const before=enemy.hp,result=evaluateSynergies(slots,'reflect',{unit,enemy,maxHp,hp:unit.hp});enemy.hp=Math.max(1,enemy.hp-Math.min(20,Math.round(damage*((tags.has('reflect')?.15:0)+(result.values.reflect||0)/100))));if(before>enemy.hp){addLog(`[反射] ${before-enemy.hp}ダメージ`,'gold');synergyNotice(result,`反射 ${before-enemy.hp}`);}}
- if(damage>0)r.hurt++;return Math.max(0,damage);
+ if(tags.has('reflect')){const before=enemy.hp,result=evaluateSynergies(slots,'reflect',{unit,enemy,maxHp,hp:unit.hp});enemy.hp=Math.max(1,enemy.hp-Math.min(20,Math.round(damage*((tags.has('reflect')?.15:0)+(result.values.reflect||0)/100))));if(before>enemy.hp){addLog(`[反射] ${before-enemy.hp}ダメージ`,'gold');synergyNotice(result,`反射 ${before-enemy.hp}`);}}
+ if(damage>0){r.hurt++;if(expeditionPerks.active){const er=expeditionActor(unit,enemy);er.hurt=Math.min(5,er.hurt+1);if(expeditionHasPerk('revenge'))expeditionNotify(unit,'背水 +'+er.hurt);}}return Math.max(0,damage);
 }
 function buildKill(unit,slots,maxHp){const r=buildRuntime(unit);r.kills++;if(buildTags(slots).has('onKill'))unit.hp=Math.min(maxHp,unit.hp+Math.ceil(maxHp*.03));const result=evaluateSynergies(slots,'kill',{unit,maxHp,hp:unit.hp});if(unit.hp>0&&result.values.heal){const before=unit.hp;unit.hp=Math.min(maxHp,unit.hp+Math.floor(maxHp*result.values.heal/100));if(unit.hp>before)synergyNotice(result,`撃破回復 +${unit.hp-before}`);}synergyNextPower(result);}

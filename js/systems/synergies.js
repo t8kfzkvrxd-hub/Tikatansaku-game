@@ -34,9 +34,9 @@ function synergyHeavyDamage(damage,stats,enemy,unit){
  if(stats.dawnHeavy&&!dawnHeavyUsed(enemy,unit)){
   let actors=dawnHeavyUses.get(enemy);if(!actors){actors=new WeakSet();dawnHeavyUses.set(enemy,actors);}actors.add(unit);multiplier*=1+stats.dawnHeavy/100;
  }
- return Math.max(1,Math.round(damage*multiplier*(1+(stats.dawnDamage||0)/100)*(1+(stats.curseDamage||0)/100)));
+ return Math.max(1,Math.round(damage*multiplier*(1+(stats.dawnDamage||0)/100)*(1+(stats.curseDamage||0)/100)*(stats.expeditionMultiplier||1)));
 }
-function synergyDirectDamage(damage,stats){return Math.max(1,Math.round(damage*(1+(stats.dawnDamage||0)/100)*(1+(stats.curseDamage||0)/100)));}
+function synergyDirectDamage(damage,stats){return Math.max(1,Math.round(damage*(1+(stats.dawnDamage||0)/100)*(1+(stats.curseDamage||0)/100)*(stats.expeditionMultiplier||1)));}
 function synergyMemory(enemy,unit,create=false){
  if(!enemy||!unit)return {};
  let actors=synergyMemories.get(enemy);if(!actors&&create){actors=new WeakMap();synergyMemories.set(enemy,actors);}

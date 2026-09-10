@@ -64,7 +64,7 @@
           }
           state.starterPerk = p.starterPerk || null;
           state.rarityProgress = Object.assign(state.rarityProgress, p.rarityProgress || {});
-          state.craftProgress = { materials: {}, recipes: {}, crafted: {}, ...(p.craftProgress || {}) };
+          state.craftProgress = { materials: {}, recipes: {}, crafted: {}, ...(p.craftProgress || {}) }; if(typeof normalizeWeaponGoals==='function')normalizeWeaponGoals();
           state.maxUnlockedFloor = Math.max(1, Number(p.maxUnlockedFloor) || 1);
           state.deepestFloorReached = Number(p.deepestFloorReached) || 0;
           state.runRecords = Object.assign(state.runRecords, p.runRecords || {});

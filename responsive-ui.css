@@ -1,5 +1,30 @@
 /* Compact landscape layout; game rules and assets stay unchanged. */
+.expedition-replacement{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ui-space,8px)}
+.expedition-replacement .btn{min-height:44px;white-space:normal;font-size:14px}
+.expedition-exchange-modal button{min-height:44px}
+.update-notes-card:has(#summon-screen,.summon-results) .update-notes-actions button{min-height:44px}
 :root{--ui-space:8px;--ui-tap-size:44px;--ui-body-size:clamp(13px,1vw,15px);--ui-safe:#7dd3fc;--ui-danger:#f87171;--ui-reward:#fbbf24;--ui-special:#c084fc;--ui-heal:#86efac}
+.forge-next-preview{padding:4px 0;font-size:14px;line-height:1.4}.forge-next-preview small{font-size:12px}.forge-next-preview span{display:block}
+.forge-missing-sources section{margin:6px 0}.forge-missing-sources details{font-size:12px}.forge-alternatives>summary,.forge-target>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.forge-alternatives .forge-recommendation{border-color:#52657a}.forge-detail-modal .forge-recipe{padding:0;margin:0}.forge-detail-modal p{margin:4px 0}.forge-detail-modal .forge-secondary{border-top:1px solid #52657a;padding-top:8px}.forge-detail-modal summary{min-height:44px;cursor:pointer}.forge-detail-modal .btn{min-height:44px}
+.forge-detail-modal .update-notes-body{font-size:14px;line-height:1.4!important}.forge-decision{padding-bottom:8px}.forge-play{color:var(--ui-safe)}
+.perk-effect{font-size:16px;font-weight:600}.perk-effect small{display:block;font-size:13px;font-weight:400}.perk-effect strong{display:block}.lobby-hotspot:not(.notice-primary) .lobby-notice{font-size:11px;color:#bac8d3;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lobby-hotspot.notice-primary .lobby-notice{color:#ffe4a3;font-weight:600}
+.battle-parts-disclosure{grid-column:2;grid-row:3;position:relative;min-width:0;z-index:4}.battle-parts-disclosure>summary{min-height:44px;box-sizing:border-box;padding:10px;background:#122333e8;border:1px solid #6c8498;border-radius:5px;cursor:pointer;font-size:13px}.battle-parts-disclosure[open] .enemy-parts{position:absolute;bottom:100%;width:100%;background:#0c192bf5;padding:6px;box-sizing:border-box}
+.battle2 .battle-intent{padding:4px 6px;border-left:2px solid var(--ui-reward);background:#192b40;color:#fff}.battle2 .battle-intent small{color:#e9bd65}
+.battle-readout.battle2 .combat-actions button{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+.battle-skill-label{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1100px){
+ .forge-detail-modal .forge-focused-detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.forge-detail-modal .forge-secondary{grid-column:1/-1}.forge-detail-modal .forge-decision{position:sticky;top:0;align-self:start;background:#141726;z-index:1}.forge-detail-modal .forge-next-preview{font-size:13px}.forge-detail-modal .forge-quick-compare{padding:2px 0}
+}
+.forge-tree-track{display:flex;gap:var(--ui-space);max-width:100%;overflow-x:auto;overscroll-behavior:contain;padding:8px 0;scroll-snap-type:x proximity}
+.forge-tree-track>section{flex:0 0 min(280px,75vw);min-width:0;scroll-snap-align:start}
+.forge-tree-node{padding:8px;border:1px solid #5b7188;border-radius:6px;margin:4px 0;font-size:14px}.forge-tree-node.current{border:2px solid var(--ui-safe);background:#123047}.forge-tree-node.ready{box-shadow:inset 0 0 0 1px #86efac}
+.forge-tree-node .btn{min-height:44px}.forge-tree-node h3{font-size:16px}.forge-target{padding:8px;border-left:2px solid var(--ui-safe)}
+.forge-missing{color:#fca5a5}.forge-ready{color:#a7f3d0}.lobby-notice{max-width:170px;white-space:normal}
+.expedition-perk-modal .update-notes-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-content:start}.expedition-perk-modal .update-notes-body>p{grid-column:1/-1;margin:0}.expedition-perk-modal h3{font-size:16px}.expedition-perk-modal .forge-recipe{padding:8px;margin:0;font-size:14px}.expedition-perk-modal button{min-height:44px}
+.forge-tree-modal .update-notes-actions{display:flex;flex-wrap:wrap;gap:6px}.forge-tree-modal .update-notes-actions button{flex:1;min-height:44px}
+.forge-tree-modal nav.forge-actions{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap}.forge-tree-modal nav.forge-actions button{width:auto;min-width:44px;min-height:44px;flex:0 0 auto;margin:0;padding:4px 10px}.forge-tree-modal nav:first-child button{flex:1}.forge-tree-modal .update-notes-body>p{margin:4px 0}.forge-tree-node h3{margin:5px 0}
+.forge-quick-compare{display:flex;gap:10px;flex-wrap:wrap;padding:5px 0;font-size:14px}.forge-quick-compare .up{color:#86efac}.forge-quick-compare .down{color:#fca5a5}
 .forge-modal{background:#111925f5!important}
 .legendary-modal:has(.forge-modal),.legendary-modal:has(.equipment-modal){animation:none}
 .equipment-modal .update-notes-actions{display:flex;flex-direction:row}.equipment-modal .update-notes-actions button{flex:1;width:auto}

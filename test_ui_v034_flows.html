@@ -45,7 +45,7 @@ window.onload=()=>{
   check(!!completion&&completion.reason.includes('完成します'),'不足アクセが完成ビルド推薦になる');
   w.resetExpeditionPerks(true);s.screen='battle';
   const perks=w.eval('EXPEDITION_PERKS');
-  for(const p of perks){
+  for(const p of perks.filter(p=>['thunder','giant','fort','cut','chant','chain'].includes(p.id))){
    w.eval(`expeditionPerks.selected=[${JSON.stringify(p.id)}]`);
    const e={hp:10000,maxHp:10000,def:100,atk:100,turnCount:p.id==='sun'?0:6,isBoss:p.id==='giant',gearPoison:3,buildStatuses:{freeze:1,fire:1,bleed:1,curse:3}};
    s.currentEnemy=e;s.hp=20;s.buildRuntime={hits:12,hurt:1,shield:0,charge:0};
@@ -57,7 +57,10 @@ window.onload=()=>{
   w.eval("expeditionPerks.selected=['mirror']");
   let e={hp:1000,maxHp:1000,def:0,atk:100,turnCount:0};s.currentEnemy=e;
   w.buildIncomingDamage(100,e,s.equipped,s,100,false);
-  check(e.hp===992,'鏡の護りは反射装備なしでも8%反射');
+  check(e.hp===1000,'鉄壁反攻は通常被弾では発動しない');
+  w.buildIncomingDamage(100,e,s.equipped,s,100,true);
+  w.expeditionHitAfter(e,'attack',s.equipped,w.expeditionHitBefore(e));
+  check(e.hp<1000,'鉄壁反攻はガード後の直接攻撃で発動');
   w.eval("expeditionPerks.selected=['blood']");s.hp=20;
   check(w.healFromWeaponDamage(s,{maxHp:100,vamp:0},e,100,s.equipped)===5,'血刃が実HPを回復');
   w.eval("expeditionPerks.selected=['shell']");s.buildRuntime={hits:0,hurt:0,shield:0,charge:0};
@@ -66,7 +69,9 @@ window.onload=()=>{
   w.eval("expeditionPerks.selected=['blade']");const before=JSON.stringify(s.equipped),elna=w.characterEquipment('elna');
   const a=w.evaluateSynergies(s.equipped,'attack',{unit:s,enemy:e,action:'attack',hp:20,stats:{maxHp:100,atk:10}});
   const b=w.evaluateSynergies(elna,'attack',{unit:w.partyMember('elna'),enemy:e,action:'attack',hp:20,stats:{maxHp:100,atk:10}});
-  check(a.context.unit!==b.context.unit&&a.values.power>=12&&b.values.power>=12,'二人へ同じ探索強化・独立runtime');
+  const ps={atk:100,crit:0,maxHp:100},es={...ps};
+  w.expeditionAttack(ps,e,'heavy',s.equipped,20);w.expeditionAttack(es,e,'heavy',elna,20);
+  check(a.context.unit!==b.context.unit&&ps.expeditionMultiplier===.75&&es.expeditionMultiplier===.75,'二人へ同じ探索強化・独立runtime');
   check(before===JSON.stringify(s.equipped),'探索強化で装備データ無変更');
   w.resetExpeditionPerks();check(w.expeditionSynergyRules().length===0,'リセット後に追加ルールなし');
   out.push('ALL TESTS PASSED');

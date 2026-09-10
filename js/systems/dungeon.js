@@ -184,6 +184,7 @@
     }
 
     function selectDoor(index) {
+      if(expeditionPerksPending()){openExpeditionPerks();return;}
       if(state.screen!=='door_select'||!state.currentDoors[index]||state.currentDoors.selected||!lockTransition())return;
       state.currentDoors.selected=true;
       document.querySelectorAll('#viewport button,#viewport .door-card').forEach(b=>{b.disabled=true;b.setAttribute('aria-disabled','true');b.style.pointerEvents='none';});

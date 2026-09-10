@@ -5,7 +5,7 @@ window.onload=async()=>{
  const f=document.querySelector('iframe'),out=[],wait=()=>new Promise(r=>setTimeout(r,180));
  let w=f.contentWindow,d=w.document,s=w.__gameDebug.state;
  const check=(ok,n)=>{if(!ok)throw Error(n);};
- const separate=selector=>{const boxes=[...d.querySelectorAll(selector)].filter(e=>e.getClientRects().length).map(e=>e.getBoundingClientRect());boxes.forEach((a,i)=>boxes.slice(i+1).forEach(b=>check(a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1,'overlap '+selector)));};
+ const separate=selector=>{const boxes=[...d.querySelectorAll(selector)].filter(e=>e.checkVisibility()).map(e=>e.getBoundingClientRect());boxes.forEach((a,i)=>boxes.slice(i+1).forEach(b=>check(a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1,'overlap '+selector)));};
  try{
  w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';
  for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){

@@ -25,7 +25,8 @@ function selectLobbyFacility(id){
 function syncLobbyNotices(root){
  const next=BOSS_FLOORS.find(f=>!state.bossFirstKills[f]);
  const notices={'town-expedition':!state.chapter.contract?'同行登録から始めよう':next?`次の目標 ${next}F`:'探索へ',summons:(state.summonSystem?.jobs||[]).some(j=>Date.now()>=j.end)?'派遣完了':'','town-blacksmith':pendingFacilityUnlock?'新しい機能が解禁':forgeRecommendations('player',1).length?'おすすめ装備あり':'','town-tavern':facilityAvailable(2)&&state.bounty?.completed?'依頼報酬あり':''};
- root.querySelectorAll('.lobby-hotspot').forEach(button=>{const badge=button.querySelector('.lobby-notice'),message=notices[button.dataset.facility]||'';badge.textContent=message;badge.hidden=!message;});
+ const priority=notices.summons?'summons':notices['town-tavern']?'town-tavern':'town-expedition';
+ root.querySelectorAll('.lobby-hotspot').forEach(button=>{button.classList.toggle('notice-primary',button.dataset.facility===priority);const badge=button.querySelector('.lobby-notice'),message=notices[button.dataset.facility]||'';const goal=button.dataset.facility==='town-blacksmith'?lobbyWeaponGoalText():'';badge.textContent=goal||message;badge.hidden=!(goal||message);});
 }
 function lobbyNextHtml(){
  if(!state.chapter.contract)return '<button class="lobby-next" onclick="state.chapter.mode?showFirstContract():showChapterWelcome()"><b>冒険の準備をする</b><small>エルナと同行登録・最初の支援</small></button>';

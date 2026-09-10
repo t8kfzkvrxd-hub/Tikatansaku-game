@@ -88,8 +88,10 @@ function equipmentAttackStats(stats,enemy,action,slots=state.equipped,hp=state.h
  if(action==='skill')stats.atk*=1+Math.min(100,e.skillPower||0)/100;
  stats.atk=Math.round(stats.atk);
  buildAttack(stats,enemy,action,slots,hp);
+ expeditionAttack(stats,enemy,action,slots,hp);
 }
 function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
+ const expeditionBefore=expeditionHitBefore(enemy);
  consumeTemporarySynergyMarks(enemy,slots);
  if(typeof hitEnemyPart==='function')hitEnemyPart(enemy,action,slots);
  buildHit(enemy,action,isCrit,slots);
@@ -97,6 +99,7 @@ function equipmentHit(enemy,action,isCrit=false,slots=state.equipped) {
  if(e.fireDamage){enemy.hp-=e.fireDamage;addLog(`🔥 炎追撃 ${e.fireDamage}ダメージ`,'gold');}
  if(Math.random()*100<Math.min(85,(e.poisonChance||0)+(isCrit?(e.critPoison||0):0))) {enemy.gearPoison=3;addLog('☠️ 敵に毒を付与（3T）','gold');}
  if(action==='heavy'&&e.breakPower){enemy.def=Math.max(0,enemy.def-e.breakPower);addLog(`🔨 防御破壊 -${e.breakPower}`,'gold');}
+ expeditionHitAfter(enemy,action,slots,expeditionBefore);
 }
 function equipmentPoisonTick(enemy) {
  enemy.synergyRound=(enemy.synergyRound||0)+1;

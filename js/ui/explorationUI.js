@@ -10,6 +10,7 @@ function openExplorationPanel(tab='bag'){
 }
 function explorationArea(floor=state.floor){return explorationAreas.find(a=>floor>=a.floorMin&&floor<=a.floorMax);}
 function selectExplorationRoute(index){
+ if(expeditionPerksPending()){openExpeditionPerks();return;}
  const view=ExplorationScreen,doors=state.currentDoors;
  if(view.pending||state.screen!=='door_select'||doors.selected||!doors[index]||performance.now()<inputSafety.until)return;
  view.pending=true;

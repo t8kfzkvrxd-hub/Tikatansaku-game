@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><title>v0.34.2 UI regression</title><pre id="results">RUNNING</pre><iframe src="index.html"></iframe>
+<script>
+const backup=localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+const run=async function(){
+ const out=[],check=(name,p)=>out.push({name,pass:!!p}),wait=()=>new Promise(r=>setTimeout(r,500));
+ enterGameFromHome();closeGenericModal();state.chapter.pending=null;state.chapter.mode='skip';state.chapter.contract=true;state.chapter.owned.elna=true;state.screen='town';render();
+ check('1531装備・47タグ・25完成ビルド',Object.keys(EQUIPMENT_CATALOG).length===1531&&Object.keys(BUILD_CATALOG).length===47&&COMPLETED_BUILDS.length===25);
+ check('47タグ日本語説明',Object.keys(BUILD_CATALOG).every(t=>BUILD_GUIDES[t]?.length>10));
+ check('25完成ビルド説明・3指標',COMPLETED_BUILDS.every(b=>COMPLETED_GUIDES[b.id]?.length===7));
+ const base=FORGE_INDEX.find(n=>n.r.type==='weapon'&&!n.r.parent&&forgeRecipeRevealed(n.id)),second=FORGE_INDEX.find(n=>n.r.type==='weapon'&&n.id!==base.id&&forgeRecipeRevealed(n.id));
+ setWeaponGoal(base.id,'player');setWeaponGoal(second.id,'elna');saveState();loadState();check('キャラ別目標保存',normalizeWeaponGoals().player===base.id&&normalizeWeaponGoals().elna===second.id);
+ state.craftProgress.weaponGoals.player='removed';normalizeWeaponGoals();check('無効ID解除',!state.craftProgress.weaponGoals.player);
+ state.craftProgress.weaponGoals={player:base.id};syncLobbyScreen();check('ロビー目標',document.querySelector('[data-facility="town-blacksmith"]').innerText.includes(base.r.name));
+ openRecipeDetail(base.id);check('詳細に比較・派生・目標',!!document.querySelector('.forge-next-preview')&&document.getElementById('modal-layer').innerText.includes('この武器を目標にする'));
+ openWeaponTree(base.id);check('段階ツリー表示',!!document.querySelector('.forge-tree-modal .current'));
+ const hidden=FORGE_INDEX.find(n=>n.r.hiddenMaterial&&!recipeVisible(n.id));if(hidden){openWeaponTree(hidden.id);check('隠し名非表示',!document.getElementById('modal-layer').innerText.includes(hidden.r.name));}
+ const start=state.selectedStartFloor;planMaterialExploration(Object.keys(MATERIALS)[0],99999);check('未到達探索拒否',state.selectedStartFloor===start);
+ closeGenericModal();resetExpeditionPerks(true);state.screen='battle';for(let n=0;n<6;n++)expeditionKillReward();syncExpeditionPerkChoice();check('戦闘中に割り込みなし',document.getElementById('modal-layer').style.display==='none');
+ check('複数回分蓄積',expeditionPerks.pending===2);
+ state.screen='door_select';render();await wait();check('報酬後自動表示',document.getElementById('modal-layer').style.display!=='none');
+ const floor=state.floor,greed=state.greedLevel;selectDoor(0);check('未選択時ルート不可',state.floor===floor&&state.greedLevel===greed&&state.screen==='door_select');
+ const pick=expeditionPerks.offered[0];for(let n=0;n<20;n++)chooseExpeditionPerk(pick);await wait();check('20連打1回・次候補表示',expeditionPerks.selected.length===1&&expeditionPerks.pending===1&&expeditionPerks.offered.length===3);
+ chooseExpeditionPerk(expeditionPerks.offered[0]);await wait();check('全回数消化',!expeditionPerksPending()&&expeditionPerks.selected.length===2);
+ resetExpeditionPerks();check('帰還リセット',!expeditionPerks.active&&!expeditionPerks.selected.length);
+ state.screen='town';const oldSlots=state.equipped;state.equipped={weapon:{type:'weapon',tags:['lifesteal']},armor:{type:'armor',tags:['bleed']},accessory:{type:'accessory',tags:['lowHp']}};
+ state.craftProgress.buildDiscoveries={};buildDiscoveryInitialized=true;syncBuildDiscoveries();const count=document.querySelectorAll('.level-up-toast').length;syncBuildDiscoveries();check('完成発見は1回',count>0&&document.querySelectorAll('.level-up-toast').length===count&&state.craftProgress.buildDiscoveries['player:bloodPact']);state.equipped=oldSlots;
+ delete state.craftProgress.weaponGoals;saveState();loadState();check('目標なし旧形式ロード',Object.keys(normalizeWeaponGoals()).length===0);return out;
+};
+window.onload=async()=>{try{const rows=await document.querySelector('iframe').contentWindow.eval('('+run.toString()+')()');document.getElementById('results').textContent=JSON.stringify(rows,null,2)+'\n'+(rows.every(r=>r.pass)?'ALL TESTS PASSED':'FAIL');}catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}finally{backup===null?localStorage.removeItem('ABYSS_ROGUE_SAVED_V2'):localStorage.setItem('ABYSS_ROGUE_SAVED_V2',backup);}};
+</script>
