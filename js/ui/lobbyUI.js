@@ -8,6 +8,17 @@ const LOBBY_FACILITIES=[
  {id:'town-expedition',name:'地下迷宮',desc:'探索開始',x:52,y:46,w:19,h:28}
 ];
 const LobbyScreen={observer:null,facility:null};
+function lobbyNextHtml(){
+ if(!state.chapter.contract)return '<button class="lobby-next" onclick="state.chapter.mode?showFirstContract():showChapterWelcome()"><b>冒険の準備をする</b><small>エルナと同行登録・最初の支援</small></button>';
+ if(pendingFacilityUnlock)return `<button class="lobby-next" onclick="openFacilityUnlock()"><b>新しい施設機能が解禁</b><small>タップして確認</small></button>`;
+ const finished=(state.summonSystem?.jobs||[]).some(j=>Date.now()>=j.end);
+ const next=BOSS_FLOORS.find(f=>!state.bossFirstKills[f]);
+ return `<button class="lobby-next" onclick="${finished?"openSummons('dispatch')":"openLobbyNext()"}"><b>${finished?'召喚派遣の報酬を受け取る':next?'次の目標：'+next+'Fボス':'次の目標：装備・ビルドを整える'}</b><small>探索・装備・次のおすすめ</small></button>`;
+}
+function openLobbyNext(){
+ const row=forgeRecommendations('player',1)[0];
+ showChapterModal('次のおすすめ',`<button class="btn" onclick="openLobbyFacility('town-expedition')">探索へ行く</button><button class="btn" onclick="openLobbyEquipment()">装備を整える</button>${row?`<p>${uiEscape(row.r.name)}：${uiEscape(row.reason)}</p><button class="btn btn-gold" onclick="selectForgeView('recommended')">おすすめを鍛冶屋で確認</button>`:'<p>素材を持ち帰ると、鍛冶屋で次の装備を推薦します。</p>'}`,'<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
+}
 function lobbyFacilityHtml(id){
  const html=target=>document.getElementById(target)?.innerHTML||'';
  const funds=`<p>地上保管G：${state.vaultGold} / 核：${state.abyssCores} / 結晶：${state.deepCrystals}</p>`;
@@ -23,6 +34,7 @@ function refreshLobbyFacility(){
 }
 function openLobbyFacility(id){
  if(state.screen!=='town')return;
+ if(id==='town-blacksmith'){selectForgeView('recommended');return;}
  if(id==='archive'){
   showChapterModal('記憶の書庫',`<button class="btn btn-sub" onclick="openMemoryArchive()">ストーリー・回想</button><button class="btn btn-sub" onclick="openLobbyFacility('log')">冒険の軌跡</button><p>最高到達 B${state.deepestFloorReached}F / 解放 B${state.maxUnlockedFloor}F</p>`,`<button class="btn btn-sub" onclick="closeGenericModal()">ロビーへ戻る</button>`);return;
  }
@@ -58,6 +70,8 @@ function syncLobbyScreen(){
   image.addEventListener('load',fitLabels);LobbyScreen.observer=new ResizeObserver(fitLabels);LobbyScreen.observer.observe(art);fitLabels();
  }
  root.hidden=!active;
+ root.querySelector('.lobby-next')?.remove();
+ if(active)root.insertAdjacentHTML('beforeend',lobbyNextHtml());
  if(active)syncLobbySD(root);
  const content=document.getElementById('lobby-facility-content');
  if(content&&!town)closeGenericModal();

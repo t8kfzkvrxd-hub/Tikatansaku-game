@@ -91,24 +91,24 @@
         three_phase_core: 'HPに応じた三段階変異・行動学習'
         ,history_king:'反復行動を記録し、後半に対策',mirror_warden:'装備能力と構えを一部模倣',forget_librarian:'バフを奪いスキルを封印',boundary_gate:'装甲相と開放相が交互に切り替わる'
       };
-      const shown = scaledEnemyStats(boss,area,nextBossFloor,'boss',{labLevel:state.camp.lab,greed:state.greedLevel,enemyAtkMult:state.modifiers.enemyAtkMult});
+      const shown = scaledEnemyStats(boss,area,nextBossFloor,'boss',{labLevel:facilityTier(),greed:state.greedLevel,enemyAtkMult:state.modifiers.enemyAtkMult});
       return `<div style="font-size:10.5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);padding:6px;width:100%;border-radius:5px;">
         📡 次ボス B${nextBossFloor}F ${boss.name}：HP ${shown.hp} / 攻撃 ${shown.atk} / ${gimmicks[boss.gimmick]}
         <div>次の安全帰還：${getNextSafeFloor(state.floor||state.selectedStartFloor||1)??'なし'}F</div>
-        ${state.camp.lab>=5?`<div>🔬 深層危険解析：${area.rule||'敵の予告・状態異常を確認して行動を選ぶ。'} / ${gimmicks[boss.gimmick]}</div>`:''}
-        ${state.camp.lab >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
-        ${state.camp.lab >= 4 && state.rarityProgress.mythicPity >= 100 ? '<div style="color:#f9a8d4;">💠 神話級の気配が強まっている…</div>' : ''}
-        ${state.camp.lab >= 4 && state.rarityProgress.abyssalPity >= 800 ? '<div style="color:#67e8f9;">🌌 深淵の鼓動が近い…</div>' : ''}
+        ${facilityTier()>=5?`<div>🔬 深層危険解析：${area.rule||'敵の予告・状態異常を確認して行動を選ぶ。'} / ${gimmicks[boss.gimmick]}</div>`:''}
+        ${facilityTier() >= 3 ? '<b style="color:#4ade80;">（研究弱体化 -15%適用）</b>' : ''}
+        ${facilityTier() >= 4 && state.rarityProgress.mythicPity >= 100 ? '<div style="color:#f9a8d4;">💠 神話級の気配が強まっている…</div>' : ''}
+        ${facilityTier() >= 4 && state.rarityProgress.abyssalPity >= 800 ? '<div style="color:#67e8f9;">🌌 深淵の鼓動が近い…</div>' : ''}
       </div>`;
     }
 
     function render() {
+      syncFacilityCapacity();
       updateHeader();
       const vp = document.getElementById('viewport');
 
       // VIEW: TOWN / BASE CAMP
       if (state.screen === 'town') {
-        const vaultCost = getVaultUpgradeCost(state.camp.vaultLevel);
         const currentPolicy = state.expeditionPolicy || 'normal';
 
         const policies = [
@@ -163,104 +163,7 @@
             </button>
           </div>
 
-          <!-- Camp Facilities Grid (鍛冶屋, 道具屋, 倉庫, 酒場) -->
-          <div class="card">
-            <div class="card-title">
-              <span>🏛️ 拠点施設・発展</span>
-              <span style="font-size:11px; color:var(--muted);">🏦 地上保管G: ${state.vaultGold} / 核: ${state.abyssCores} / 結晶: ${state.deepCrystals}</span>
-            </div>
-            <div class="town-facilities">
-              <!-- Blacksmith -->
-              <div id="town-blacksmith" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                  <div style="font-size:12px; font-weight:bold; color:#fff;">🔨 鍛冶屋 Lv.${state.camp.blacksmith}</div>
-                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('blacksmith') ? 'disabled' : ''} onclick="upgradeCampFacility('blacksmith')">${getFacilityButtonText('blacksmith')}</button>
-                </div>
-                <div style="font-size:10.5px; color:#94a3b8;">
-                  ${state.camp.blacksmith >= 2 ? '装備を鍛え直して基礎威力を強化可能' : 'Lv2で装備の鍛錬・強化が解放'}
-                </div>
-                <div class="forge-actions"><button class="btn btn-sub btn-xs" onclick="openCrafting('refine')">強化</button><button class="btn btn-gold btn-xs" onclick="openCrafting('create')">作成</button><button class="btn btn-sub btn-xs" onclick="openCrafting('tree')">武器ツリー</button><button class="btn btn-sub btn-xs" onclick="openCrafting('awaken')">覚醒</button></div>
-                ${state.camp.blacksmith >= 2 ? `
-                  <div style="display:flex; gap:4px; margin-top:2px; width:100%;">
-                    ${state.equipped.weapon ? `<button class="btn btn-gold btn-xs" style="flex:1;" ${state.equipped.weapon.refineCount >= 10 ? 'disabled' : ''} onclick="refineEquippedItem('weapon')">⚔️ 武器強化 (${state.equipped.weapon.refineCount >= 10 ? 'MAX +10' : getRefineCost(state.equipped.weapon)+'G'})</button>` : ''}
-                    ${state.equipped.armor ? `<button class="btn btn-sub btn-xs" style="flex:1;" ${state.equipped.armor.refineCount >= 10 ? 'disabled' : ''} onclick="refineEquippedItem('armor')">🛡️ 防具強化 (${state.equipped.armor.refineCount >= 10 ? 'MAX +10' : getRefineCost(state.equipped.armor)+'G'})</button>` : ''}
-                  </div>
-                  ${state.camp.blacksmith >= 3 ? `<div style="display:flex;gap:4px;width:100%;margin-top:3px;">
-                    ${state.equipped.weapon && !state.equipped.weapon.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('weapon')">武器に特性付与 (150G)</button>` : ''}
-                    ${state.equipped.armor && !state.equipped.armor.affix ? `<button class="btn btn-purple btn-xs" style="flex:1;" onclick="openAffixModal('armor')">防具に特性付与 (150G)</button>` : ''}
-                  </div>` : ''}
-                  ${state.camp.blacksmith >= 4 && state.equipped.weapon?.affix ? `<button class="btn btn-sub btn-xs" style="width:100%" onclick="rerollEquipmentAffix('weapon')">🎲 武器特性再抽選 120G +結晶1</button>`:''}
-                  ${state.camp.blacksmith >= 5 && ['Mythic','Abyssal'].includes(state.equipped.weapon?.rarity) ? `<button class="btn btn-purple btn-xs" style="width:100%" onclick="enhanceHighRarity('weapon')">💠 高位能力強化 400G +結晶3</button>`:''}
-                ` : ''}
-              </div>
-
-              <!-- Shop -->
-              <div id="town-shop" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                  <div style="font-size:12px; font-weight:bold; color:#fff;">🏪 道具屋 Lv.${state.camp.shop}</div>
-                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('shop') ? 'disabled' : ''} onclick="upgradeCampFacility('shop')">${getFacilityButtonText('shop')}</button>
-                </div>
-                <div style="font-size:10.5px; color:#94a3b8;">
-                  ${state.camp.shop >= 2 ? '潜入前の携行補給品を購入可能' : 'Lv2で探索持込アイテムの購入が解放'}
-                </div>
-                ${state.camp.shop >= 2 ? `
-                  <div style="display:flex; gap:4px; margin-top:2px; width:100%;">
-                    <button class="btn btn-sub btn-xs" style="flex:1;" onclick="buyExpeditionSupply('potion')">🧪 傷薬持込 (30G)</button>
-                    <button class="btn btn-gold btn-xs" style="flex:1;" onclick="buyExpeditionSupply('charm')">🍀 幸運護符 (45G)</button>
-                  </div>
-                  ${state.camp.shop >= 4 ? `<div style="display:flex;gap:4px;width:100%;"><button class="btn btn-sub btn-xs" style="flex:1" onclick="buyExpeditionSupply('smoke')">💨 煙玉 60G</button><button class="btn btn-sub btn-xs" style="flex:1" onclick="buyExpeditionSupply('antidote')">💊 解毒薬 40G</button></div>`:''}
-                  ${state.camp.shop >= 5 ? `<button class="btn btn-purple btn-xs" style="width:100%" onclick="buyExpeditionSupply('greater')">🧴 上級傷薬 90G</button>`:''}
-                ` : ''}
-              </div>
-
-              <!-- Vault -->
-              <div id="town-vault" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                  <div style="font-size:12px; font-weight:bold; color:#fff;">📦 倉庫 Lv.${state.camp.vaultLevel} (${state.camp.vaultSize}枠)</div>
-                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('vault') ? 'disabled' : ''} onclick="upgradeVault()">${getFacilityButtonText('vault')}</button>
-                </div>
-                <div style="font-size:10.5px; color:#94a3b8;">容量+10枠 / 未持ち帰り防止</div>
-              </div>
-
-              <!-- Tavern -->
-              <div id="town-tavern" class="item-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                  <div style="font-size:12px; font-weight:bold; color:#fff;">🍺 冒険者の酒場 Lv.${state.camp.tavern}</div>
-                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('tavern') ? 'disabled' : ''} onclick="upgradeCampFacility('tavern')">${getFacilityButtonText('tavern')}</button>
-                </div>
-                <div style="font-size:10.5px; color:#e2e8f0; width:100%;">
-                  ${state.camp.tavern < 2 ? `<div style="color:#94a3b8;padding:5px;">🔒 酒場Lv2で討伐依頼を解放</div>` : state.bounty ? `
-                    <div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:2px;">
-                      <div style="display:flex; justify-content:space-between; font-size:10.5px;">
-                        <span>📜 討伐依頼: 魔物${state.bounty.targetKills}体</span>
-                        <b style="color:var(--gold);">${state.bounty.currentKills}/${state.bounty.targetKills}</b>
-                      </div>
-                      ${state.bounty.completed ? `
-                        <button class="btn btn-gold btn-xs" style="width:100%; margin-top:4px; padding:3px;" onclick="claimTavernBounty()">
-                          🎉 達成！ 報酬 +${getTavernReward()}G を受取
-                        </button>
-                      ` : `
-                        <div style="font-size:10px; color:#94a3b8; margin-top:2px;">達成報酬: ${getTavernReward()}G（最大1500G）</div>
-                      `}
-                      ${state.camp.tavern >= 4 && !state.bounty.completed ? `<div style="display:flex;gap:3px;margin-top:4px;"><button class="btn btn-sub btn-xs" onclick="selectTavernContract('short')">短期</button><button class="btn btn-sub btn-xs" onclick="selectTavernContract('elite')">Elite</button>${state.camp.tavern>=5?`<button class="btn btn-purple btn-xs" onclick="selectTavernContract('boss')">賞金首</button>`:''}</div>`:''}
-                    </div>
-                  ` : ''}
-                </div>
-              </div>
-
-              <!-- Laboratory -->
-              <div id="town-lab" class="item-row" style="grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:4px;">
-                <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-                  <div style="font-size:12px;font-weight:bold;color:#fff;">🔬 深淵研究所 Lv.${state.camp.lab}</div>
-                  <button class="btn btn-sub btn-xs" ${isFacilityUpgradeDisabled('lab') ? 'disabled' : ''} onclick="upgradeCampFacility('lab')">${getFacilityButtonText('lab')}</button>
-                </div>
-                <div style="font-size:10.5px;color:#cbd5e1;line-height:1.5;">
-                  Lv1 敵図鑑詳細${state.camp.lab >= 2 ? ' / Lv2 次ボス能力解析' : ''}${state.camp.lab >= 3 ? ' / Lv3 ボス最大HP-15%' : ''}${state.camp.lab >= 4 ? ' / Lv4 部屋危険度予測' : ''}
-                </div>
-                ${state.camp.lab >= 2 ? getLabBossIntelHtml() : '<div style="font-size:10px;color:#64748b;">Lv2で次ボスのHP・攻撃・特殊能力を表示</div>'}
-              </div>
-            </div>
-          </div>
+          ${facilityPanelsHtml()}
 
         `;
       }
@@ -328,7 +231,7 @@
                 <span>攻撃力: ${e.obscured?'記憶が曖昧':e.atk}</span>
                 <span>防御力: ${e.gimmick==='shield_barrier'&&state.bossBarrier ? e.def * 3 + ' (障壁)' : e.def}${e.gimmick==='mother_tree'&&state.bossAdds>0?' / 根：最終被ダメ-50%':''}</span>
               </div>
-              ${state.camp.lab >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
+              ${facilityTier() >= 1 && e.traitName ? `<div style="font-size:10.5px;color:#7dd3fc;margin-top:4px;">🔬 ${e.traitName}：${e.hint}</div>` : ''}
               ${Object.values(state.equipped).some(i => i?.archetype === 'thunder') ? `<div style="font-size:10.5px;color:#facc15;">⚡ 雷チャージ ${state.thunderCharges}/3（3で追加30ダメージ＆スタン）</div>` : ''}
               <div style="font-size:10.5px;color:${state.guardStamina <= 30 ? '#f87171' : '#93c5fd'};">🛡️ GUARD ${state.guardStamina}/100 ${state.guardFatigue >= 2 ? `⚠️ 疲労${state.guardFatigue}` : ''}</div>
               ${statuses ? `<div style="font-size:10.5px;color:#fca5a5;">${statuses}</div>` : ''}
@@ -406,7 +309,7 @@
                 <span style="font-size:18px;">${item ? item.icon : s.icon}</span>
                 <div>
                   <div class="item-name">${s.label}：${item ? item.name : '（未装備）'}</div>
-                  ${item ? `<div style="font-size:10px">${effectDescription(item.effects)||item.desc||''}</div><button class="btn btn-sub btn-xs" onclick="unequipItem('${s.k}')">解除</button>${state.screen==='town'&&state.camp.blacksmith>=2?`<button class="btn btn-gold btn-xs" ${item.refineCount>=10?'disabled':''} onclick="refineEquippedItem('${s.k}')">${item.refineCount>=10?'MAX +10':`強化 ${getRefineCost(item)}G`}</button>`:''}`:''}
+                  ${item ? `<div style="font-size:10px">${effectDescription(item.effects)||item.desc||''}</div><button class="btn btn-sub btn-xs" onclick="unequipItem('${s.k}')">解除</button>${state.screen==='town'&&facilityTier()>=2?`<button class="btn btn-gold btn-xs" ${item.refineCount>=10?'disabled':''} onclick="refineEquippedItem('${s.k}')">${item.refineCount>=10?'MAX +10':`強化 ${getRefineCost(item)}G`}</button>`:''}`:''}
                   <div class="item-stats">${item ? getItemStatSummary(item) : s.label}</div>
                   ${item && item.isCurse ? `<div class="item-curse-note">⚠️ 呪詛: ${item.desc}</div>` : ''}
                 </div>
@@ -517,7 +420,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:bold; color:#fff; margin-bottom:6px;">
             <span>${title}</span>
           </div>
-          ${controlsHtml}
+          <details><summary>検索・整理・売却</summary>${controlsHtml}</details>
           <div style="display:flex; flex-direction:column; gap:4px;">${listHtml}</div>
         `;
       } else if (state.activeTab === 'codex') {
@@ -539,7 +442,7 @@
         const upperHistoryHtml = (state.rarityProgress.upperDropHistory || []).map(h => `<div style="font-size:10px;color:#cbd5e1;padding:3px 0;">${h.rarity === 'Abyssal' ? '🌌' : '💠'} ${h.itemName} / B${h.floor}F / ${h.source} / GREED ${h.greed} / ${new Date(h.date).toLocaleString()}</div>`).join('');
         const enemyList = Object.values(state.codex.enemies).map(e => `
           <div class="codex-item"><span>${e.icon}</span><div><b style="color:${e.isBoss ? '#f87171' : '#7dd3fc'};">${e.name}</b>
-          <div style="font-size:10px;color:#cbd5e1;">${state.camp.lab >= 1 ? `HP ${e.maxHp || '?'} / 攻 ${e.atk || '?'} / 防 ${e.def || '?'}${e.traitName ? ` / ${e.traitName}: ${e.hint || ''}` : ''}` : '研究所Lv1で詳細解放'}</div></div></div>`).join('');
+          <div style="font-size:10px;color:#cbd5e1;">${facilityTier() >= 1 ? `HP ${e.maxHp || '?'} / 攻 ${e.atk || '?'} / 防 ${e.def || '?'}${e.traitName ? ` / ${e.traitName}: ${e.hint || ''}` : ''}` : '研究所Lv1で詳細解放'}</div></div></div>`).join('');
         const loreList = LORE_RECORDS.map(l => {
           const unlocked = state.codex.lore[l.id];
           return `
@@ -560,15 +463,14 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">${rarityCollectionHtml}</div>
           ${materialCodexHtml()}
-          <div style="font-size:11px;font-weight:bold;color:#f9a8d4;margin-bottom:4px;">超希少装備コレクション:</div>
-          <div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto;">${upperCatalogHtml}</div>
+          <details><summary>超希少装備コレクション</summary><div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto;">${upperCatalogHtml}</div></details>
           ${upperHistoryHtml ? `<details style="margin:7px 0;"><summary style="font-size:11px;color:#67e8f9;">初発見記録</summary>${upperHistoryHtml}</details>` : ''}
-          <div style="font-size:11px; font-weight:bold; color:#fff; margin-bottom:4px;">地下の記録 (ロア):</div>
+          <details><summary>地下の記録（ロア）</summary>
           <div style="display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto;">
             ${loreList}
           </div>
-          <div style="font-size:11px;font-weight:bold;color:#fff;margin:8px 0 4px;">遭遇した敵（研究所解析）:</div>
-          <div style="display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;">${enemyList || '<div style="font-size:10px;color:#64748b;">まだ敵と遭遇していません</div>'}</div>
+          </details><details><summary>遭遇した敵（研究所解析）</summary>
+          <div style="display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;">${enemyList || '<div style="font-size:10px;color:#64748b;">まだ敵と遭遇していません</div>'}</div></details>
         `;
       } else if (state.activeTab === 'log') {
         const logHtml = state.logs.map(l => `

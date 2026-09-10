@@ -1,4 +1,45 @@
 /* Compact landscape layout; game rules and assets stay unchanged. */
+:root{--ui-space:8px;--ui-tap-size:44px;--ui-body-size:clamp(13px,1vw,15px);--ui-safe:#7dd3fc;--ui-danger:#f87171;--ui-reward:#fbbf24;--ui-special:#c084fc;--ui-heal:#86efac}
+.forge-modal{background:#111925f5!important}
+.legendary-modal:has(.forge-modal),.legendary-modal:has(.equipment-modal){animation:none}
+.equipment-modal .update-notes-actions{display:flex;flex-direction:row}.equipment-modal .update-notes-actions button{flex:1;width:auto}
+.gear-summary>p{margin:6px 0}.gear-summary summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.forge-overview summary::before{content:'▸';margin-right:5px}.forge-overview[open] summary::before{content:'▾'}
+.forge-modal .update-notes-body{font-size:var(--ui-body-size);line-height:1.5!important}
+.forge-modal button,.forge-modal summary{min-height:var(--ui-tap-size);touch-action:manipulation}
+.forge-modal [aria-pressed=true]{border-color:var(--ui-safe);background:#163b52;color:#effbff}
+.forge-modal button:disabled{opacity:.5;cursor:not-allowed}
+.forge-modal nav[aria-label="レシピ分類"]{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:var(--ui-space);padding-bottom:4px}
+.forge-modal nav[aria-label="レシピ分類"] button{flex:none;width:auto;padding:5px 10px}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1100px){
+ .equipment-modal .update-notes-body{margin:6px 0}
+ .equipment-modal .gear-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px}
+ .equipment-modal .character-tabs{margin:0;gap:4px}
+ .equipment-modal .character-tab{min-height:44px;padding:3px}
+ .equipment-modal .equipment-slots{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;align-content:start}
+ .equipment-modal .equipment-slot{padding:0;gap:0}
+ .equipment-modal .equipment-slot .btn{min-height:44px;padding:3px;font-size:12px;line-height:16px}
+ .equipment-modal .equipment-slot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .forge-recommended .update-notes-body{display:grid;grid-template-columns:minmax(210px,.8fr) minmax(0,1.2fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"actor results" "overview results" "tabs results" "advanced results";gap:6px;overflow:hidden}
+ .forge-recommended .character-tabs{grid-area:actor;margin:0}
+ .forge-recommended .forge-overview{grid-area:overview;max-height:80px;overflow:auto}
+ .forge-recommended nav[aria-label="レシピ分類"]{grid-area:tabs;flex-wrap:wrap;align-content:start;overflow:auto}
+ .forge-recommended #forge-results{grid-area:results;min-height:0;overflow:auto;overscroll-behavior:contain}
+ .forge-recommended .forge-filter-panel{grid-area:advanced;max-height:80px;overflow:auto}
+ .forge-recommended .forge-recommendation:first-child{margin-top:0}
+ .forge-recommended .forge-recommendation h3{font-size:14px;margin:0}
+}
+.forge-overview summary{display:flex;align-items:center;cursor:pointer;font-size:13px}
+.forge-reason{color:var(--ui-safe);font-weight:600}
+.forge-recommendation{margin:var(--ui-space) 0;padding:var(--ui-space)}
+.forge-recommendation h3{font-size:16px}.forge-recommendation p{margin:4px 0}
+.lobby-next{position:absolute;top:max(8px,var(--safe-top));left:50%;transform:translateX(-50%);width:min(44%,460px);min-height:44px;padding:6px;background:#102b3de8;color:#def7ff;border:1px solid var(--ui-safe);border-radius:6px;z-index:4;font-size:14px;cursor:pointer;touch-action:manipulation}
+.lobby-next b,.lobby-next small{display:block}.lobby-next small{font-size:12px}
+.lobby-hotspot:not([data-facility="town-expedition"]) span{box-shadow:none;border-color:#8996a75c}
+.expedition-perk-button{min-height:44px;min-width:44px;padding:5px 10px;background:#19283c;color:#d9ecff;border:1px solid #7b98b9;border-radius:5px;font-size:13px;cursor:pointer;touch-action:manipulation}
+.battle2 .build-chips[hidden]{display:none!important}
+.battle2 .battle-toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.battle2 .battle-toolbar button{width:auto;padding:4px;font-size:13px}
 .combat-number-space,.battle-readout:has(.enemy-parts) .combat-number-space{height:64px}
 .combat-float{animation-name:responsive-combat-float;line-height:1.15}
 @keyframes responsive-combat-float{0%{opacity:0;transform:translate(-50%,0)}15%,75%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px)}}

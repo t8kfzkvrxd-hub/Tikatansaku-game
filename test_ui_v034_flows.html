@@ -1,0 +1,77 @@
+<!doctype html><meta charset="utf-8"><title>v0.34.0 実処理テスト</title>
+<pre id="results">RUNNING</pre><iframe src="index.html#game"></iframe>
+<script>
+const backup=localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+window.onload=()=>{
+ const w=document.querySelector('iframe').contentWindow,out=[];
+ const check=(ok,name)=>{out.push((ok?'PASS ':'FAIL ')+name);if(!ok)throw Error(name)};
+ try{
+  w.enterGameFromHome();w.closeGenericModal();
+  const s=w.__gameDebug.state,recipes=w.eval('CRAFT_RECIPES'),materials=w.eval('MATERIALS');
+  s.screen='town';s.chapter.pending=null;s.chapter.mode='skip';s.chapter.owned.elna=true;s.chapter.companion='elna';w.migrateCompanionEquipment();
+  s.bossFirstKills={10:true,30:true,50:true,100:true};s.vaultGold=100000;s.camp.vaultSize=500;
+  s.storage=[];s.craftProgress.materials={};
+  for(const [key,m]of Object.entries(materials)){
+   s.craftProgress.materials[key]=true;
+   if(!m.currency)for(let i=0;i<20;i++)s.storage.push({...m,key,type:'material',id:crypto.randomUUID()});
+  }
+  s.abyssCores=100;
+  const row=w.forgeRecommendations('elna').find(r=>r.ready&&!r.r.parent);
+  check(!!row,'未所持のエルナ向け作成候補');
+  const oldGold=s.vaultGold,counts=Object.fromEntries(Object.keys(row.r.materials).map(k=>[k,w.materialCount(k)]));
+  check(w.craftEquipment(row.id),'推薦から正式な製作処理');
+  check(s.vaultGold===oldGold-row.r.gold,'製作Gは1回消費');
+  check(Object.entries(row.r.materials).every(([k,n])=>w.materialCount(k)===counts[k]-n),'必要素材を正確に消費');
+  check(s.storage.some(i=>i.key===row.id),'製作物が倉庫へ入る');
+  w.saveState();w.loadState();check(s.storage.some(i=>i.key===row.id),'製作物の保存・再読込');
+  const eligible=Object.entries(recipes).filter(([,r])=>!r.parent&&['Common','Rare','Epic'].includes(r.rarity));
+  const item=pair=>({...pair[1],key:pair[0],id:crypto.randomUUID()});
+  let witness=null;
+  for(const b of w.eval('COMPLETED_BUILDS')){
+   const groups=['weapon','armor','accessory'].map(type=>{
+    const map=new Map();for(const p of eligible.filter(([,r])=>r.type===type)){
+     const tags=w.buildTags({item:p[1]}),mask=b.requiredTags.reduce((v,t,i)=>v|(tags.has(t)?1<<i:0),0);
+     if(mask&&!map.has(mask))map.set(mask,p);
+    }return [...map];
+   });
+   for(const [a,pa]of groups[0])for(const [c,pc]of groups[1])for(const [d,pd]of groups[2]){
+    if((a|c|d)===7&&(a|c)!==7){witness={b,pa,pc,pd};break;}
+   }
+   if(witness)break;
+  }
+  check(!!witness,'実在レシピで完成ビルド構成を発見');
+  s.equipped=w.emptyEquipmentSlots();s.equipped.weapon=item(witness.pa);s.equipped[w.equipmentSlot(witness.pc[1])]=item(witness.pc);
+  const completion=w.forgeRecommendations('player',1531).find(r=>r.id===witness.pd[0]);
+  check(!!completion&&completion.reason.includes('完成します'),'不足アクセが完成ビルド推薦になる');
+  w.resetExpeditionPerks(true);s.screen='battle';
+  const perks=w.eval('EXPEDITION_PERKS');
+  for(const p of perks){
+   w.eval(`expeditionPerks.selected=[${JSON.stringify(p.id)}]`);
+   const e={hp:10000,maxHp:10000,def:100,atk:100,turnCount:p.id==='sun'?0:6,isBoss:p.id==='giant',gearPoison:3,buildStatuses:{freeze:1,fire:1,bleed:1,curse:3}};
+   s.currentEnemy=e;s.hp=20;s.buildRuntime={hits:12,hurt:1,shield:0,charge:0};
+   const rule=p.rules[0],action=rule.condition==='heavy'?'heavy':rule.condition==='skill'?'skill':'attack';
+   const result=w.evaluateSynergies({},rule.trigger,{unit:s,enemy:e,action,hp:20,maxHp:100,stats:{atk:100,maxHp:100},runtime:s.buildRuntime,guard:true,overflow:10});
+   check(result.values[rule.stat]>0,'探索強化の条件・共通評価接続：'+p.name);
+  }
+  s.equipped=w.emptyEquipmentSlots();s.buildRuntime={hits:0,hurt:0,shield:0,charge:0};s.hp=80;
+  w.eval("expeditionPerks.selected=['mirror']");
+  let e={hp:1000,maxHp:1000,def:0,atk:100,turnCount:0};s.currentEnemy=e;
+  w.buildIncomingDamage(100,e,s.equipped,s,100,false);
+  check(e.hp===992,'鏡の護りは反射装備なしでも8%反射');
+  w.eval("expeditionPerks.selected=['blood']");s.hp=20;
+  check(w.healFromWeaponDamage(s,{maxHp:100,vamp:0},e,100,s.equipped)===5,'血刃が実HPを回復');
+  w.eval("expeditionPerks.selected=['shell']");s.buildRuntime={hits:0,hurt:0,shield:0,charge:0};
+  check(w.buildIncomingDamage(10,e,s.equipped,s,100)===6,'初回障壁が実被ダメージを軽減');
+  check(w.buildIncomingDamage(10,e,s.equipped,s,100)===10,'初回障壁の無限再付与なし');
+  w.eval("expeditionPerks.selected=['blade']");const before=JSON.stringify(s.equipped),elna=w.characterEquipment('elna');
+  const a=w.evaluateSynergies(s.equipped,'attack',{unit:s,enemy:e,action:'attack',hp:20,stats:{maxHp:100,atk:10}});
+  const b=w.evaluateSynergies(elna,'attack',{unit:w.partyMember('elna'),enemy:e,action:'attack',hp:20,stats:{maxHp:100,atk:10}});
+  check(a.context.unit!==b.context.unit&&a.values.power>=12&&b.values.power>=12,'二人へ同じ探索強化・独立runtime');
+  check(before===JSON.stringify(s.equipped),'探索強化で装備データ無変更');
+  w.resetExpeditionPerks();check(w.expeditionSynergyRules().length===0,'リセット後に追加ルールなし');
+  out.push('ALL TESTS PASSED');
+ }catch(e){out.push('FAIL '+e.stack)}
+ finally{if(backup===null)localStorage.removeItem('ABYSS_ROGUE_SAVED_V2');else localStorage.setItem('ABYSS_ROGUE_SAVED_V2',backup)}
+ document.getElementById('results').textContent=out.join('\n');
+};
+</script>

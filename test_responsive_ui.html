@@ -20,9 +20,13 @@ window.onload=async()=>{
  w.openLobbyFacility(id);await wait();const card=d.querySelector('.update-notes-card'),actions=d.querySelector('.update-notes-actions');
  check(card&&actions,'modal '+id);const r=card.getBoundingClientRect(),a=actions.getBoundingClientRect();check(r.top>=0&&r.bottom<=height+1&&r.right<=width+1&&a.bottom<=height+1,'modal bounds '+id);w.closeGenericModal();
  }
- w.openCharacterEquipment('elna');await wait();check(d.querySelectorAll('.equipment-slot').length===7,'seven slots');w.closeGenericModal();
+ w.openCharacterEquipment('elna');await wait();check(d.querySelectorAll('.equipment-slot').length===7,'seven slots');
+ separate('.gear-summary,.equipment-slots');
+ for(const b of d.querySelectorAll('.equipment-slot button:first-child')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&r.width>=44&&r.height>=44,'visible tappable equipment slot');}
+ w.closeGenericModal();
  for(const open of [()=>w.openHomeSettings(),()=>w.showUpdateNotes(false),()=>w.openCrafting('create'),()=>w.openCharacterStatus('elna')]){open();await wait();const a=d.querySelector('.update-notes-actions').getBoundingClientRect();check(a.top>=0&&a.bottom<=height,'detail footer');w.closeGenericModal();}
- s.floor=2;w.generateDoorsForFloor();await wait();separate('.exploration-route,.exploration-hud');
+ s.floor=2;w.resetExpeditionPerks(true);w.generateDoorsForFloor();await wait();separate('.exploration-route,.exploration-hud');
+ w.offerExpeditionPerks();w.openExpeditionPerks();await wait();const perk=d.querySelector('button[onclick^="chooseExpeditionPerk"]');perk.scrollIntoView({block:'center'});perk.click();check(w.eval('expeditionPerks.selected.length')===1,'perk UI selection');
  s.floor=10;w.startBossBattle(w.getCurrentArea().boss);w.render();await wait();
  separate('.battle-unit,.enemy-parts,.combat-actions,.combat-number-space,#sub-tabs');
  for(const b of d.querySelectorAll('.combat-actions button,.enemy-parts button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height,'battle controls bounds');}

@@ -42,10 +42,10 @@ window.addEventListener('load', () => setTimeout(() => {
     w.escapeBattleWithSmoke();
     check(!game.state.inventory.some(i => i.type === 'escape_item') && game.state.floor === beforeFloor + 1, '煙玉を消費して報酬なしで次階へ進む');
 
-    game.state.floor = 10; game.state.camp.lab = 1;
+    game.state.floor = 10; game.state.bossFirstKills={};game.state.chapter.complete=false;
     w.startBossBattle(game.AREAS[0].boss); const fullBossHp=game.state.currentEnemy.maxHp;
-    game.state.camp.lab = 3; w.startBossBattle(game.AREAS[0].boss);
-    check(game.state.currentEnemy.maxHp === Math.round(fullBossHp*.85), '研究所Lv3でボス最大HP-15%');
+    game.state.bossFirstKills[30]=true; w.startBossBattle(game.AREAS[0].boss);
+    check(game.state.currentEnemy.maxHp === Math.round(fullBossHp*.85), '30Fクリア後にボス最大HP-15%');
     game.state.floor=1;w.startMerchantEvent();
     check(game.state.currentEvent.choices.length===3&&!game.state.currentEvent.choices.some(c=>c.text.includes('友好枠')),'旧商人加護なしで通常購入可能');
     check(typeof w.upgradeTalent==='undefined','永久強化購入を廃止');
@@ -54,7 +54,7 @@ window.addEventListener('load', () => setTimeout(() => {
     const vaultCost = w.getVaultUpgradeCost(game.state.camp.vaultLevel);
     const goldBeforeVault = game.state.vaultGold;
     w.upgradeVault();
-    check(game.state.camp.vaultSize === oldVaultSize + 10 && game.state.vaultGold === goldBeforeVault - vaultCost, '倉庫増築が表示価格で+10枠');
+    check(game.state.camp.vaultSize === oldVaultSize && game.state.vaultGold === goldBeforeVault, '旧倉庫増築は容量・Gを変更しない');
 
     game.state.camp.shop = 2; game.state.preparedItems = []; game.state.preparedBuffs = {chestRareBonus:0,goldMult:1};
     w.buyExpeditionSupply('potion');
@@ -65,7 +65,7 @@ window.addEventListener('load', () => setTimeout(() => {
     game.state.screen='town';game.state.camp.tavern = 3; game.state.camp.rescuedAdventurer = false; w.selectStarterPerk('luck'); w.startDungeonRun();
     const hpWithoutLeon = game.state.maxHp;
     game.state.screen='town';game.state.camp.rescuedAdventurer = true; w.selectStarterPerk('luck'); w.startDungeonRun();
-    check(game.state.maxHp === hpWithoutLeon + 20, '特製スープは酒場Lv3かつレオン救助後のみ発動');
+    check(game.state.maxHp === hpWithoutLeon + 20, '特製スープは30Fクリアかつレオン救助後のみ発動');
 
     game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 10000; game.state.camp.blacksmith = 3;
     const weapon = game.state.equipped.weapon;
@@ -73,7 +73,7 @@ window.addEventListener('load', () => setTimeout(() => {
     w.refineEquippedItem('weapon');
     check(game.state.vaultGold === beforeRefineGold - refineCost && w.getRefineCost(weapon) === refineCost + 40, '鍛冶強化の表示・判定・消費価格を共通化');
     w.applyEquipmentAffix('weapon', 'boss_slayer');
-    check(weapon.affix === 'boss_slayer', '鍛冶屋Lv3で装備特性を付与できる');
+    check(weapon.affix === 'boss_slayer', '30Fクリア後に装備特性を付与できる');
 
     game.state.inventory = [{name:'C',icon:'○',rarity:'Common'},{name:'L',icon:'★',rarity:'Legendary'}];
     w.emergencyEscape();
@@ -86,7 +86,12 @@ window.addEventListener('load', () => setTimeout(() => {
 
     game.state.mystery.eggHatched = true; game.state.hp = 30; game.state.floor = 1;
     w.startNormalBattle(false); const hpBeforeDragon = game.state.hp;
+    // Isolate regeneration from a random kill, status damage, and the queued enemy turn.
+    game.state.statusEffects = {poison:0,bleed:0,paralysis:0,bind:0,curse:0,weakened:0};
+    game.state.currentEnemy.hp = game.state.currentEnemy.maxHp = 100000;
+    w.setTimeout = () => 0;
     w.playerCombatAction('attack');
+    w.setTimeout = nativeTimeout;
     check(game.state.hp === hpBeforeDragon + 3, '深淵の幼竜が毎ターンHP+3回復する');
     game.state.currentEnemy = null;
 
@@ -117,8 +122,8 @@ window.addEventListener('load', () => setTimeout(() => {
     check(!game.state.inventory.includes(upper)&&game.state.inventory.at(-1).type==='material'&&!game.state.inventory.at(-1).locked, '装備報酬を製作用素材へ変換し自動ロックしない');
     w.closeGenericModal();
 
-    game.state.screen = 'town'; game.state.floor = 0; game.state.camp.tavern = 1; w.render();
-    check(d.getElementById('viewport').textContent.includes('酒場Lv2で討伐依頼を解放'), '酒場Lv1では討伐依頼をロック表示');
+    game.state.screen = 'town'; game.state.floor = 0; game.state.camp.tavern = 1; game.state.bossFirstKills={}; game.state.chapter.complete=false; w.render();
+    check(d.getElementById('town-tavern').textContent.includes('10Fクリア後に解禁'), '未クリア時は討伐依頼をロック表示');
 
     game.state.storage = Array.from({length: game.state.camp.vaultSize}, (_, i) => ({name:`品${i}`,icon:'📦',rarity:'Common'}));
     game.state.inventory = [{name:'新戦利品',icon:'✨',rarity:'Rare'}];
@@ -134,28 +139,18 @@ window.addEventListener('load', () => setTimeout(() => {
 
     game.state.screen = 'town'; game.state.floor = 0; game.state.vaultGold = 1000000; game.state.deepCrystals = 100;
     for (const type of ['blacksmith','shop','tavern','lab']) {
-      game.state.camp[type] = 1;
-      while (game.state.camp[type] < 5) {
-        const levelBefore = game.state.camp[type];
-        const goldBefore = game.state.vaultGold;
-        const crystalsBefore = game.state.deepCrystals;
-        const expectedGold = w.getFacilityUpgradeCost(type);
-        const expectedCrystals = w.getFacilityCrystalCost(type);
-        check(w.performFacilityUpgrade(type), `${type} Lv${levelBefore}→${levelBefore + 1}を購入できる`);
-        check(game.state.camp[type] === levelBefore + 1 && game.state.vaultGold === goldBefore - expectedGold && game.state.deepCrystals === crystalsBefore - expectedCrystals, `${type}の表示価格・消費・レベル遷移が一致`);
-        w.closeGenericModal();
-      }
+      game.state.camp[type] = 5;
+      const before = game.state.vaultGold;
+      check(!w.performFacilityUpgrade(type) && game.state.vaultGold === before, type+'の施設購入は廃止');
     }
-    game.state.camp.vaultLevel = 1; game.state.camp.vaultSize = 20;
-    for (let expectedLevel = 2; expectedLevel <= 3; expectedLevel++) {
-      const sizeBefore = game.state.camp.vaultSize;
-      check(w.performFacilityUpgrade('vault'), `倉庫Lv${expectedLevel}へ増築できる`);
-      check(game.state.camp.vaultLevel === expectedLevel && game.state.camp.vaultSize === sizeBefore + 10, '倉庫レベルと容量が正確に連動');
-      w.closeGenericModal();
+    game.state.bossFirstKills={};game.state.camp.vaultSize=20;
+    check(w.facilityTier()===1,'旧施設Lv5でも進行未達は初期機能');
+    for(const [floor,tier] of [[10,2],[30,3],[50,4],[100,5]]) {
+      game.state.bossFirstKills[floor]=true;w.syncFacilityCapacity();
+      check(w.facilityTier()===tier,floor+'Fクリアで機能解禁');
     }
-    w.saveState();
-    const savedFacilities = JSON.parse(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')).camp;
-    check(savedFacilities.blacksmith === 5 && savedFacilities.shop === 5 && savedFacilities.tavern === 5 && savedFacilities.lab === 5 && savedFacilities.vaultLevel === 3, '施設レベルをセーブデータへ保存');
+    game.state.camp.vaultSize=280;w.saveState();w.loadState();
+    check(game.state.camp.vaultSize>=280&&game.state.camp.blacksmith===5,'旧施設情報を読め、既存倉庫容量を失わない');
 
     const areaCases = [[30,2],[31,3],[40,3],[41,4],[50,4],[51,5],[60,5]];
     for (const [floor, areaIndex] of areaCases) {

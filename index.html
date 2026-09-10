@@ -1182,29 +1182,7 @@
        DATA STRUCTURES (LORE, BOSSES, ITEMS, SYNERGIES, CODEX)
        ========================================================================== */
     function getFacilityUpgradeCost(type) {
-      const cfg = FACILITY_CONFIG[type];
-      const level = type === 'vault' ? state.camp.vaultLevel : Number(state.camp[type]);
-      if (!cfg || level >= cfg.maxLevel) return null;
-      return Math.round(cfg.baseCost * Math.pow(cfg.growth, Math.max(0, level - 1)) / 10) * 10;
-    }
-
-    function getFacilityCrystalCost(type) {
-      const level = type === 'vault' ? state.camp.vaultLevel : Number(state.camp[type]);
-      return type !== 'vault' && level >= 4 ? 3 : (type !== 'vault' && level >= 3 ? 1 : 0);
-    }
-
-    function getFacilityButtonText(type) {
-      const cost = getFacilityUpgradeCost(type);
-      if (cost === null) return 'MAX';
-      const crystals = getFacilityCrystalCost(type);
-      if (state.vaultGold < cost) return `あと${cost - state.vaultGold}G必要`;
-      if (state.deepCrystals < crystals) return `深層結晶あと${crystals - state.deepCrystals}`;
-      return `強化 ${cost}G${crystals ? ` +結晶${crystals}` : ''}`;
-    }
-
-    function isFacilityUpgradeDisabled(type) {
-      const cost = getFacilityUpgradeCost(type);
-      return cost === null || state.vaultGold < cost || state.deepCrystals < getFacilityCrystalCost(type);
+      return null;
     }
 
     function isBossFloor(floor) { return BOSS_FLOORS.includes(Number(floor)); }
@@ -1416,6 +1394,7 @@
     function startDungeonRun() {
       if(state.screen!=='town'||!canWarpTo(state.selectedStartFloor||1))return;
       state.companionBattle={};
+      resetExpeditionPerks(true);
       state.buildRuntime={hits:0,hurt:0,kills:0,shield:0,charge:0};
       state.returnResolved=false;
       initAudio();
@@ -1482,7 +1461,7 @@
       state.mystery.hasSecondChance = hasPortrait;
 
       // Leon's soup requires both the upgraded tavern and an actual rescue.
-      if (state.camp.tavern >= 3 && state.camp.rescuedAdventurer === true) {
+      if (facilityTier() >= 3 && state.camp.rescuedAdventurer === true) {
         state.hp += 20;
         state.maxHp += 20;
         addLog('🧝 救助した冒険者レオンの特製スープを飲み干した！ 最大HP+20', 'heal');
@@ -1525,6 +1504,7 @@
       if(!canStoreItems(state.inventory)){openWarehouseOverflowModal(vaultFree());return;}
       state.returnResolved=true;
       playSound('escape');
+      resetExpeditionPerks();
       state.vaultGold += state.dungeonGold;
       
       // Move inventory into storage
@@ -1586,6 +1566,7 @@
       if(state.screen==='town'||state.returnResolved)return;
       state.returnResolved=true;
       playSound('gameover');
+      resetExpeditionPerks();
       let keptItems = customKeptItems;
       let lostItems = customLostItems;
 
@@ -1636,8 +1617,6 @@
     function renderWarehouseOverflowContent() {
       const m = document.getElementById('modal-layer');
       const freeSlots = vaultFree();
-      const upgradeCost = getVaultUpgradeCost(state.camp.vaultLevel);
-      const canUpgrade = upgradeCost!==null&&state.vaultGold >= upgradeCost;
 
       const itemsHtml = state.inventory.map((it, idx) => !usesVaultSlot(it)?'':`
         <div class="item-row r-${it.rarity}" style="margin-bottom:4px;">
@@ -1660,18 +1639,10 @@
           <h2 style="font-size:18px; font-weight:900; color:#fff;">倉庫の保管枠が不足しています！</h2>
           <p style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">
             持ち帰った戦利品 <b style="color:#fbbf24;">${vaultUsed(state.inventory)}枠分（素材は枠不要）</b> に対し、現在の倉庫空き枠は <b style="color:${freeSlots <= 0 ? '#ef4444' : '#4ade80'};">${freeSlots}枠</b> です。<br>
-            不要なアイテムを売却するか、倉庫を拡張してすべてのアイテムを安全に収めてください。
+            不要な戦利品または倉庫の既存品を売却して、空き枠を確保してください。
           </p>
 
-          <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="text-align:left;">
-              <div style="font-size:12px; font-weight:bold; color:#fff;">倉庫拡張 (Lv.${state.camp.vaultLevel} → ${state.camp.vaultLevel + 1})</div>
-              <div style="font-size:11px; color:#94a3b8;">容量 +10枠 (現在: ${state.camp.vaultSize}枠)</div>
-            </div>
-            <button class="btn ${canUpgrade ? 'btn-gold' : 'btn-sub'} btn-xs" ${canUpgrade ? '' : 'disabled'} onclick="upgradeVaultInOverflow()">
-              🔨 即座に拡張 (${upgradeCost}G)
-            </button>
-          </div>
+          <p>倉庫容量 ${state.camp.vaultSize}枠。ボスクリアで自動拡張されます。</p>
 
           <div style="text-align:left; font-size:12px; font-weight:bold; color:var(--gold); margin-bottom:6px;">
             戦利品一覧 (売却して空き枠を確保):
@@ -1738,15 +1709,7 @@
     }
 
     function upgradeVaultInOverflow() {
-      initAudio();
-      const cost = getVaultUpgradeCost(state.camp.vaultLevel);
-      if (cost===null || state.vaultGold < cost) return;
-      state.vaultGold -= cost;
-      state.camp.vaultLevel = (state.camp.vaultLevel || 1) + 1;
-      state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
-      playSound('heal');
-      saveState();
-      renderWarehouseOverflowContent();
+      return false;
     }
 
     function confirmWarehouseStorage() {
@@ -2764,32 +2727,7 @@
     }
 
     function performFacilityUpgrade(type) {
-      initAudio();
-      const cfg = FACILITY_CONFIG[type];
-      const cost = getFacilityUpgradeCost(type);
-      const crystalCost = getFacilityCrystalCost(type);
-      if (!cfg || cost === null) { addLog('この施設はMAXです。','info'); render(); return false; }
-      if (state.vaultGold < cost || state.deepCrystals < crystalCost) {
-        addLog(`強化資源不足：必要 ${cost}G${crystalCost ? ` / 深層結晶${crystalCost}` : ''}（地上保管G ${state.vaultGold}）`, 'danger');
-        render(); return false;
-      }
-      state.vaultGold -= cost;
-      state.deepCrystals -= crystalCost;
-      if (type === 'vault') { state.camp.vaultLevel += 1; state.camp.vaultSize += 10; }
-      else state.camp[type] += 1;
-      const newLevel = type === 'vault' ? state.camp.vaultLevel : state.camp[type];
-      playSound('heal');
-      addLog(`${cfg.icon} ${cfg.name}をLv.${newLevel}へ強化！`, 'gold');
-      saveState(); updateHeader(); render();
-      showFacilityUpgradeModal(type, newLevel);
-      return true;
-    }
-
-    function showFacilityUpgradeModal(type, level) {
-      const cfg = FACILITY_CONFIG[type];
-      const unlock = type === 'vault' ? `倉庫容量が${state.camp.vaultSize}枠になりました！` : `${cfg.unlocks[level - 1]}が解放されました！`;
-      const m = document.getElementById('modal-layer'); m.style.display='flex'; m.className='legendary-modal';
-      m.innerHTML=`<div class="card" style="max-width:430px;width:100%;border:2px solid #fbbf24;padding:22px;text-align:center;"><div style="font-size:36px;">🏗️</div><div style="font-size:11px;letter-spacing:2px;color:#fbbf24;">FACILITY UPGRADED</div><h2 style="color:#fff;margin:8px;">${cfg.icon} ${cfg.name} Lv.${level}</h2><p style="color:#cbd5e1;font-size:13px;">${unlock}</p><button class="btn btn-gold" style="margin-top:14px;" onclick="closeGenericModal()">確認</button></div>`;
+      return false; // Legacy entry: facility upgrades no longer consume resources.
     }
 
     function refineEquippedItem(slot) {
@@ -2797,6 +2735,7 @@
     }
 
     function refineEquipmentItem(item, slot) {
+      if(state.screen!=='town'||!facilityAvailable(2))return;
       initAudio();
       if (!item) {
         addLog('鍛え直す装備を身に着けていません！', 'danger');
@@ -2850,7 +2789,7 @@
     };
 
     function openAffixModal(slot) {
-      if (state.camp.blacksmith < 3) return;
+      if (facilityTier() < 3) return;
       const item = state.equipped[slot];
       if (!item || item.affix) return;
       const cost = 150;
@@ -2865,6 +2804,7 @@
     }
 
     function applyEquipmentAffix(slot, affixKey) {
+      if(state.screen!=='town'||!facilityAvailable(3))return;
       const item = state.equipped[slot];
       const affix = EQUIPMENT_AFFIXES[slot]?.find(a => a.key === affixKey);
       const cost = 150;
@@ -2880,7 +2820,7 @@
     }
 
     function rerollEquipmentAffix(slot) {
-      const item=state.equipped[slot]; if(!item||!item.affix||state.camp.blacksmith<4)return;
+      const item=state.equipped[slot]; if(!item||!item.affix||facilityTier()<4)return;
       if(state.vaultGold<120||state.deepCrystals<1){addLog('再抽選には120Gと深層結晶1が必要','danger');render();return;}
       const pool=EQUIPMENT_AFFIXES[slot].filter(a=>a.key!==item.affix);const next=pool[Math.floor(Math.random()*pool.length)];
       state.vaultGold-=120;state.deepCrystals--;item.affix=next.key;item.affixName=next.name;item.desc=`${item.desc.split(' 【')[0]} 【${next.name}: ${next.desc}】`;
@@ -2888,7 +2828,7 @@
     }
 
     function enhanceHighRarity(slot) {
-      const item=state.equipped[slot];if(!item||!['Mythic','Abyssal'].includes(item.rarity)||state.camp.blacksmith<5)return;
+      const item=state.equipped[slot];if(!item||!['Mythic','Abyssal'].includes(item.rarity)||facilityTier()<5)return;
       if(item.highEnhanced){addLog('この高位装備は強化済み','info');return;}
       if(state.vaultGold<400||state.deepCrystals<3){addLog('高位強化には400Gと深層結晶3が必要','danger');render();return;}
       state.vaultGold-=400;state.deepCrystals-=3;item.highEnhanced=true;if(item.baseAtk)item.baseAtk+=6;if(item.baseDef)item.baseDef+=5;if(item.hp)item.hp+=20;
@@ -2900,6 +2840,7 @@
     }
 
     function buyExpeditionSupply(type) {
+      if(state.screen!=='town'||!facilityAvailable(({potion:2,charm:2,smoke:4,antidote:4,greater:5})[type]||99))return;
       initAudio();
       if (type === 'potion') {
         const cost = 30;
@@ -2910,7 +2851,7 @@
         }
         state.preparedItems = state.preparedItems || [];
         const currentPots = state.preparedItems.filter(i => i.type === 'potion').length;
-        const carryLimit = state.camp.shop >= 3 ? 5 : 3;
+        const carryLimit = facilityTier() >= 3 ? 5 : 3;
         if (currentPots >= carryLimit) {
           addLog(`出撃持込の補給品は最大${carryLimit}個までです！`, 'danger');
           render();
@@ -3076,7 +3017,7 @@
 
     function claimTavernBounty() {
       initAudio();
-      if (state.camp.tavern < 2 || !state.bounty || !state.bounty.completed) return;
+      if (facilityTier() < 2 || !state.bounty || !state.bounty.completed) return;
       const reward = getTavernReward();
       state.vaultGold += reward;
       playSound('gold');
@@ -3098,9 +3039,9 @@
     }
 
     function selectTavernContract(type) {
-      if (state.camp.tavern < 4) return;
+      if (facilityTier() < 4) return;
       const defs={short:{targetKills:5,rewardGold:180,label:'短期討伐'},elite:{targetKills:10,rewardGold:420,label:'Elite掃討'},boss:{targetKills:18,rewardGold:850,label:'深層賞金首'}};
-      if(type==='boss'&&state.camp.tavern<5)return;
+      if(type==='boss'&&facilityTier()<5)return;
       state.bounty={...defs[type],currentKills:0,completed:false,type};
       addLog(`📜 ${defs[type].label}を受注した`,'gold');saveState();render();
     }
@@ -3285,6 +3226,9 @@
   <script src="js/ui/synergyUI.js"></script>
   <link rel="stylesheet" href="synergy-ui.css">
   <script src="forge-ui.js"></script>
+  <script src="js/ui/forgeRecommendations.js"></script>
+  <script src="js/systems/facilityProgression.js"></script>
+  <script src="js/systems/expeditionPerks.js"></script>
   <script src="js/ui/catalogTreeUI.js"></script>
   <script src="js/ui/materialUI.js"></script>
   <script src="js/ui/characterEquipmentUI.js"></script>

@@ -98,6 +98,7 @@ function evaluateSynergies(slots,trigger,options={}){
  const c=synergyContext(slots,options),rules=[];
  for(const item of Object.values(slots).filter(Boolean)){const spec=itemSynergy(item);if(spec)for(const rule of spec.rules)rules.push({...rule,origin:spec.id});}
  for(const build of completedBuildState(slots).filter(b=>b.active))for(const rule of build.rules)rules.push({...rule,origin:build.id,completedName:build.name});
+ if(typeof expeditionSynergyRules==='function')for(const rule of expeditionSynergyRules())rules.push(rule);
  const matched=rules.filter(r=>r.trigger===trigger&&synergyCondition(r,c)),values={};
  for(const rule of matched)values[rule.stat]=Math.min(SYNERGY_LIMITS[rule.stat]||0,(values[rule.stat]||0)+rule.value);
  return {values,matched,context:c,trigger};
@@ -108,6 +109,7 @@ function synergyNotice(result,text){
  const r=buildRuntime(c.unit),turn=c.enemy.turnCount||0;if(r.synergyLogTurn!==turn){r.synergyLogTurn=turn;r.synergyLogCount=0;}
  if(r.synergyLogCount>=2)return;r.synergyLogCount++;
  addLog(`[${c.unit===state?'主人公':CHARACTER_DATA[c.unit.id]?.name||c.unit.id}／${names.slice(0,2).join('・')}] ${text}`,'gold');
+ if(typeof battleNotice==='function')battleNotice(`《${names[0]}》${text}`);
 }
 function syncSynergyRuntime(unit,slots){
  const runtime=buildRuntime(unit),key=Object.entries(slots).map(([slot,i])=>slot+':'+(i?.id||'')+':'+(i?.key||'')).join('|');

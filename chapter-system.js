@@ -58,7 +58,7 @@ function advanceTownGuide(){
  if(step===0)openCrafting('create');
  else if(step===1){setTab('bag');showChapterModal('📦 倉庫','<p>素材はまとめて表示されます。作成に使う素材や装備は、売却前にロックを確認しましょう。</p>','<button class="btn btn-gold" onclick="closeGenericModal()">確認</button>');}
  else if(step===2)showChapterModal('🏪 道具屋','<p>購入品は次の探索へ持ち越されます。まず薬と帰還手段を用意しましょう。</p>','<button class="btn btn-gold" onclick="closeGenericModal()">地上の道具屋を見る</button>');
- else if(step===3)showChapterModal('🍺 いつもの席','<p>エルナ「10階くらいでそんなに疲れてたら1000階なんて無理じゃない？ ……冗談。今日はよく頑張ったね」</p><p>討伐依頼は酒場Lv2から。受けた依頼は帰還後に報酬を受け取れます。</p>','<button class="btn btn-gold" onclick="closeGenericModal()">休憩を終える</button>');
+ else if(step===3)showChapterModal('🍺 いつもの席','<p>エルナ「10階くらいでそんなに疲れてたら1000階なんて無理じゃない？ ……冗談。今日はよく頑張ったね」</p><p>討伐依頼は10Fクリア後から。受けた依頼は帰還後に報酬を受け取れます。</p>','<button class="btn btn-gold" onclick="closeGenericModal()">休憩を終える</button>');
  else if(step===4)openMemoryArchive();
  else c.guideActive=false;
  saveState();render();

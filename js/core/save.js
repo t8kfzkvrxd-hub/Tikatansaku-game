@@ -42,7 +42,7 @@
           if (state.camp.vaultLevel === undefined || isNaN(state.camp.vaultLevel)) {
             state.camp.vaultLevel = Math.max(1, Math.round(((state.camp.vaultSize || 20) - 20) / 10) + 1);
           }
-          state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
+          state.camp.vaultSize = Math.max(Number(p.camp?.vaultSize)||20,20 + (state.camp.vaultLevel - 1) * 10);
 
           state.vaultGold = p.vaultGold || 0;
           state.abyssCores = p.abyssCores || 0;
@@ -75,7 +75,7 @@
             state.camp[key] = Math.max(1, Math.min(FACILITY_CONFIG[key].maxLevel, Number(state.camp[key]) || 1));
           });
           state.camp.vaultLevel = Math.max(1, Math.min(FACILITY_CONFIG.vault.maxLevel, Number(state.camp.vaultLevel) || 1));
-          state.camp.vaultSize = 20 + (state.camp.vaultLevel - 1) * 10;
+          state.camp.vaultSize = Math.max(Number(p.camp?.vaultSize)||20,20 + (state.camp.vaultLevel - 1) * 10);
         } else {
           initStarterItems();
         }
@@ -90,6 +90,7 @@
       for(const id of Object.keys(state.chapter.owned||{}))if(state.chapter.owned[id])partyMember(id);
       state.maxUnlockedFloor=Math.min(MAX_DUNGEON_FLOOR,Math.max(1,state.deepestFloorReached,...Object.keys(state.bossFirstKills).filter(f=>state.bossFirstKills[f]).map(f=>Number(f)+10)));
       if(!canWarpTo(state.selectedStartFloor))state.selectedStartFloor=1;
+      syncFacilityCapacity();
     }
 
     function resetGameSave(reloadPage = true) {

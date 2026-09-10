@@ -1,8 +1,13 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.33.4';
+    const GAME_VERSION = '0.34.0';
     const UPDATE_NOTES = [
+      'v0.34.0：鍛冶屋はキャラ別おすすめ最大5件から。完成ビルド・基礎能力差・不足素材と入手先を確認でき、全1531装備は「すべて」から検索可能',
+      '施設Lv購入を廃止。10・30・50・100Fクリアで機能解禁、召喚・派遣は既存どおり20Fクリア。旧施設情報を読め、既存倉庫容量は縮小しません',
+      '探索中限定の強化24種を追加。3撃破ごとに3候補から1つ選択し二人へ適用。帰還・敗北・再読込で消失し、装備と共通の効果上限を維持',
+      '道の選択で次の3戦の敵ATK+30%・G+50%、または次の1戦の敵ATK−15%・G−25%。素材抽選率は変更なし。残り戦数と詳細を探索強化ボタンで確認',
+      'ロビーの次目標、装備7枠、鍛冶屋のスマホ横2列配置を整理。詳細能力・図鑑・整理操作は展開式。戦闘は4行動とHP・予告を優先し、完成効果を短く表示',
       '氷葬・呪刻のマーク仕様を正式採用。黎明のみ開幕2行動の最終与ダメージを+50%へ調整。初回強攻撃×1.40と3行動目以降の性能、他24ビルド、セーブ形式は維持',
       '氷葬・呪刻をキャラ別の次攻撃マークへ変更。黎明は最初の2行動と一度きりの強攻撃最終倍率へ接続。他22完成効果・セーブ形式は維持',
       '氷葬の通常・スキル会心と強攻撃補正、呪刻の呪いスタックDEF低下、黎明の開幕2ターン・初回強攻撃を調整。他22完成効果・セーブ形式は維持',
@@ -112,10 +117,5 @@
     // Underground Lore & Mysteries (地下世界の真相)
     const SAVE_KEY = 'ABYSS_ROGUE_SAVED_V2';
 
-    const FACILITY_CONFIG = {
-      blacksmith: { name:'鍛冶屋', icon:'🔨', maxLevel:5, baseCost:120, growth:1.65, unlocks:['初期設備','装備鍛錬','特性付与','特性再抽選','高レア能力強化'] },
-      shop: { name:'道具屋', icon:'🏪', maxLevel:5, baseCost:120, growth:1.60, unlocks:['基本商品','傷薬・護符','持込上限拡張','煙玉・解毒薬','上級補給品'] },
-      tavern: { name:'冒険者の酒場', icon:'🍺', maxLevel:5, baseCost:120, growth:1.62, unlocks:['噂話','討伐依頼','救助NPC加入','複数依頼','特殊賞金首'] },
-      lab: { name:'深淵研究所', icon:'🔬', maxLevel:5, baseCost:120, growth:1.68, unlocks:['敵図鑑詳細','次ボス解析','ボスHP-15%','部屋傾向予測','深層危険解析'] },
-      vault: { name:'倉庫', icon:'📦', maxLevel:20, baseCost:160, growth:1.32, unlocks:[] }
-    };
+    // Legacy save normalization only. Unlocks live in facilityProgression.js.
+    const FACILITY_CONFIG = {blacksmith:{maxLevel:5},shop:{maxLevel:5},tavern:{maxLevel:5},lab:{maxLevel:5},vault:{maxLevel:20}};

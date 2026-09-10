@@ -17,7 +17,7 @@ function materialRange(floors){
 }
 function materialSourceHtml(key){
  const known=materialKnown(key),rows=materialSources(key);
- return rows.map(r=>{const seen=known&&!!state.codex.enemies[r.enemy.name];return `<div>${seen?uiEscape(r.enemy.name):'？？？'}（${{normal:'通常敵',elite:'エリート',boss:'ボス'}[r.kind]}） / ${seen?materialRange(r.floors):r.area.min+'〜'+r.area.max+'F付近'}${!r.drop?'・宝箱のみ':''}</div>`;}).join('')||'<div>入手先未登録</div>';
+ return rows.map(r=>{const seen=known&&!!state.codex.enemies[r.enemy.name];return `<div>${seen?uiEscape(r.enemy.name):'？？？'}（${{normal:'通常敵',elite:'エリート',boss:'ボス'}[r.kind]}） / ${seen?materialRange(r.floors):r.area.min+'〜'+r.area.max+'F付近'}${!r.drop?'・宝箱のみ':''} / ${r.area.min<=Math.max(1,state.deepestFloorReached)?'到達済み範囲':'未到達'}</div>`;}).join('')||'<div>入手先未登録</div>';
 }
 function openMaterialDetail(key,recipeId=null){
  const m=MATERIALS[key];if(!m)return;const known=materialKnown(key),rows=materialSources(key),ids=MATERIAL_RECIPES[key]||[];

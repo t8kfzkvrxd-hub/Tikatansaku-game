@@ -22,6 +22,7 @@
       };
 
       recordBattleParticipants(state.currentEnemy);
+      prepareExpeditionEncounter(state.currentEnemy);
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
       applyEnemyPulse(state.currentEnemy);
@@ -38,7 +39,7 @@
     function startBossBattle(bossTemplate) {
       resetBattleBuilds();
       playSound('hit');
-      const scaled=scaledEnemyStats(bossTemplate,getCurrentArea(),state.floor,'boss',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel,labLevel:state.camp.lab});
+      const scaled=scaledEnemyStats(bossTemplate,getCurrentArea(),state.floor,'boss',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel,labLevel:facilityTier()});
       state.currentEnemy = {
         name: bossTemplate.name,
         icon: bossTemplate.icon,
@@ -61,6 +62,7 @@
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;
 
       recordBattleParticipants(state.currentEnemy);
+      prepareExpeditionEncounter(state.currentEnemy);
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
       decideEnemyIntent();
@@ -727,6 +729,7 @@
       if(!state.currentEnemy||state.currentEnemy.rewardClaimed)return;
       clearTemporarySynergies();
       state.currentEnemy.rewardClaimed=true;
+      expeditionKillReward();
       syncActionButtons();
       const enemy = state.currentEnemy;
       awardBattleExperience(enemy);
@@ -744,7 +747,7 @@
         addLog(`🌌 深淵喰らいが成長：探索中攻撃力 +${state.abyssGrowth}`, 'gold');
       }
 
-      if (state.camp.tavern >= 2 && state.bounty && !state.bounty.completed) {
+      if (facilityTier() >= 2 && state.bounty && !state.bounty.completed) {
         const killBonus = state.expeditionPolicy === 'bounty' ? 2 : 1;
         state.bounty.currentKills = (state.bounty.currentKills || 0) + killBonus;
         if (state.bounty.currentKills >= state.bounty.targetKills) {
@@ -758,6 +761,7 @@
       const baseGold = 12 + state.floor * 6;
       let earnedGold = Math.round(baseGold * (1 + stats.goldRate / 100));
       earnedGold = Math.round(earnedGold * (state.modifiers.goldMult || 1));
+      earnedGold = Math.round(earnedGold * (enemy.expeditionGold || 1));
       if (state.expeditionPolicy === 'bounty') earnedGold = Math.round(earnedGold * 1.5);
       state.dungeonGold += earnedGold;
       state.runRecords.mostGold=Math.max(state.runRecords.mostGold||0,state.dungeonGold);
@@ -773,6 +777,7 @@
 
         if (isFirstKill) {
           state.bossFirstKills[state.floor] = true;
+          announceFacilityUnlock(state.floor);
           saveState();
 
           let sigItem = null;
