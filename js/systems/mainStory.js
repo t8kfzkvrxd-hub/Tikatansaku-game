@@ -1,7 +1,7 @@
 // New chapter progression is isolated inside the existing chapter save envelope.
 const MainStory={active:null,scheduled:false,closing:false,facilityVisit:null};
 function mainStoryState(){return state.chapter?.mainStory;}
-function newMainStoryState(legacy=false){return {version:1,legacy,stage:legacy?'free':'opening',seen:{},read:{},unlocked:{1:true},firstPlayed:{},noticeSeen:false,craftedId:null,visited:{}};}
+function newMainStoryState(legacy=false){return {version:2,legacy,stage:legacy?'free':'opening',seen:{},read:{},unlocked:{1:true},firstPlayed:{},autoplaySkipped:{},noticeSeen:false,craftedId:null,visited:{}};}
 function mainStoryTutorial(){const s=mainStoryState();return !!s&&!s.legacy&&s.stage!=='free';}
 function mainStoryTownRequired(){return mainStoryTutorial()&&['tavern','forge','warehouse','shop','equipment','ending','return'].includes(mainStoryState().stage);}
 function persistMainStory(){
@@ -9,7 +9,8 @@ function persistMainStory(){
   checkpointChapter({currentDoors:structuredClone(state.currentDoors||[])});
  }else saveState();
 }
-function mainStoryBackground(place){
+function mainStoryBackground(place,floor=1){
+ if(place==='exploration')return explorationArea(floor)?.backgrounds[0]?.src||mainStoryBackground('mine');
  if(place==='portal')return 'assets/images/exploration/return-portal.png';
  if(place==='mine')return explorationArea(1)?.backgrounds[0]?.src||'assets/images/exploration/explore-01-mine.png';
  return 'assets/ac935e06-88d5-4889-9435-5e3a3e410ef6.png';
@@ -28,7 +29,7 @@ function renderMainStory(){
  if(!line){finishMainStoryScene();return;}
  const [speaker,text]=line,names={player:'主人公',elna:'エルナ'},visual=storyVisualState(a.scene,a.page);
  const m=document.getElementById('modal-layer');m.style.display='flex';m.className='legendary-modal main-story-modal';
- m.innerHTML=`<section class="main-story-scene" role="dialog" aria-modal="true" aria-label="${uiEscape(data.title)}" style="background-image:url('${mainStoryBackground(data.place)}')">${visual.background?'<img class="story-background" alt="" aria-hidden="true">':''}<header class="story-heading">第1章 ふたりで潜る理由 / ${uiEscape(data.title)}${a.mode==='REPLAY'?' ― 回想':''}</header><div class="story-portraits">${storyPortraitMarkup(visual)}</div><div class="story-dialog"><h2 class="story-speaker">${uiEscape(names[speaker]||speaker||'　')}</h2><div class="story-text" tabindex="0" onclick="nextMainStory()">${uiEscape(text)}</div><footer class="story-actions"><small>${a.page+1} / ${data.lines.length}</small><button class="btn btn-sub" onclick="skipMainStory()">${mainStoryState().seen[a.scene]?'既読スキップ':'会話をスキップ'}</button><button class="btn btn-gold" onclick="nextMainStory()">次へ ▼</button></footer></div></section>`;
+ m.innerHTML=`<section class="main-story-scene" role="dialog" aria-modal="true" aria-label="${uiEscape(data.title)}" style="background-image:url('${mainStoryBackground(data.place,data.floor)}')">${visual.background?'<img class="story-background" alt="" aria-hidden="true">':''}<header class="story-heading">第1章 ふたりで潜る理由 / ${uiEscape(data.title)}${a.mode==='REPLAY'?' ― 回想':''}</header><div class="story-portraits">${storyPortraitMarkup(visual)}</div><div class="story-dialog"><h2 class="story-speaker">${uiEscape(names[speaker]||speaker||'　')}</h2><div class="story-text" tabindex="0" onclick="nextMainStory()">${uiEscape(text)}</div><footer class="story-actions"><small>${a.page+1} / ${data.lines.length}</small><button class="btn btn-sub" onclick="skipMainStory()">${mainStoryState().seen[a.scene]?'既読スキップ':'会話をスキップ'}</button><button class="btn btn-gold" onclick="nextMainStory()">次へ ▼</button></footer></div></section>`;
  bindStoryImages(m,visual.background,a.page===0);
  if(a.mode==='REPLAY')m.querySelector('.story-actions').insertAdjacentHTML('beforeend','<button class="btn btn-sub" onclick="cancelMainStoryReplay()">回想を終了</button>');
  m.querySelector('.story-text').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextMainStory();}};
@@ -45,7 +46,7 @@ function nextMainStory(){
 function skipMainStory(){if(!MainStory.active)return;if(!mainStoryState().seen[MainStory.active.scene]&&!confirm('この会話をスキップしますか？ 必要な施設操作は省略されません。'))return;finishMainStoryScene();}
 function finishMainStoryScene(){
  const a=MainStory.active;if(!a)return;const s=mainStoryState(),data=MAIN_STORY_SCENES[a.scene];
- s.seen[a.scene]=true;s.firstPlayed[a.scene]=true;
+ s.seen[a.scene]=true;if(a.mode!=='REPLAY')s.firstPlayed[a.scene]=true;
  if(MAIN_STORY_EPISODES[data.episode].every(id=>s.seen[id]))s.read[data.episode]=true;
  MainStory.active=null;
  if(a.mode!=='REPLAY'){state.chapter.pending=null;state.chapter.checkpoint=null;}
@@ -53,6 +54,7 @@ function finishMainStoryScene(){
  if(a.mode==='REPLAY'){
   saveState();if(a.queue.length){const [next,...queue]=a.queue;playMainStory(next,'REPLAY',queue);}else {syncLobbyAudio();openMemoryArchive();}return;
  }
+ if(data.floor){advanceAfterMainStoryBoss(data.floor);return;}
  if(a.scene==='opening'){s.stage='dungeon';state.chapter.mode='skip';if(!state.chapter.contract)registerFirstContract();}
  if(a.scene==='afterBoss'){
   s.stage='return';state.chapter.pending={kind:'mainStoryReturn'};checkpointChapter();returnToTown(true);return;
@@ -69,7 +71,7 @@ function finishMainStoryScene(){
 }
 function replayMainStory(episode=1,all=false){
  const s=mainStoryState();if(!s?.unlocked[episode]||MainStory.active)return;
- const scenes=[...MAIN_STORY_EPISODES[episode],...(all&&s.unlocked[2]?MAIN_STORY_EPISODES[2]:[])];
+ const scenes=all?Object.keys(MAIN_STORY_EPISODES).filter(n=>Number(n)>=episode&&s.unlocked[n]).flatMap(n=>MAIN_STORY_EPISODES[n]):[...MAIN_STORY_EPISODES[episode]];
  playMainStory(scenes.shift(),'REPLAY',scenes);
 }
 function cancelMainStoryReplay(){
@@ -91,7 +93,7 @@ function syncMainStory(){
  if(s.legacy){
   if((state.deepestFloorReached>=10||state.bossFirstKills[10])&&!s.noticeSeen&&state.screen==='town'){
    s.unlocked[2]=true;
-   showChapterModal('メインストーリーが新しくなりました','<p>第1章「始まり」「10階」を記憶の書庫で読めます。進行や所持品は変わりません。</p>','<button class="btn btn-gold" onclick="ackMainStoryNotice(true)">最初から見る</button><button class="btn btn-sub" onclick="ackMainStoryNotice(false)">あとで</button>');
+   showChapterModal('メインストーリーが新しくなりました','<p>第1章「ふたりで潜る理由」の到達済みの話を、記憶の書庫で読めます。進行や所持品は変わりません。</p>','<button class="btn btn-gold" onclick="ackMainStoryNotice(true)">最初から見る</button><button class="btn btn-sub" onclick="ackMainStoryNotice(false)">あとで</button>');
   }return;
  }
  if(s.stage==='opening'){playMainStory('opening');return;}
@@ -135,8 +137,15 @@ migrateChapter=function(saved){
  mainStoryMigrate(saved);
  const legacy=!!saved?.mode||!!saved?.contract||(state.deepestFloorReached||0)>0;
  const raw=saved?.mainStory;
- state.chapter.mainStory={...newMainStoryState(legacy),...(raw||{}),seen:{...(raw?.seen||{})},read:{...(raw?.read||{})},unlocked:{1:true,...(raw?.unlocked||{})},firstPlayed:{...(raw?.firstPlayed||{})},visited:{...(raw?.visited||{})}};
+ state.chapter.mainStory={...newMainStoryState(legacy),...(raw||{}),seen:{...(raw?.seen||{})},read:{...(raw?.read||{})},unlocked:{1:true,...(raw?.unlocked||{})},firstPlayed:{...(raw?.firstPlayed||{})},autoplaySkipped:{...(raw?.autoplaySkipped||{})},visited:{...(raw?.visited||{})}};
  if(state.deepestFloorReached>=10||state.bossFirstKills[10])state.chapter.mainStory.unlocked[2]=true;
+ const story=mainStoryState(),reached=Math.max(Number(state.deepestFloorReached)||0,...Object.keys(state.bossFirstKills||{}).filter(f=>state.bossFirstKills[f]).map(Number));
+ for(const m of MAIN_STORY_MILESTONES)if(reached>=m.floor){
+  story.unlocked[m.episode]=true;
+  // Existing progress is archive-only, never a backlog of forced scenes.
+  if(!raw||Number(raw.version||1)<2)story.autoplaySkipped[m.scene]=true;
+ }
+ story.version=2;
  // Archive-era progress is retained, but its retired scenes never autoplay.
  if(state.chapter.pending&&!['mainStory','mainStoryReturn','return'].includes(state.chapter.pending.kind)){
   state.chapter.pending={kind:'return',floor:state.floor};state.currentEnemy=null;
@@ -153,19 +162,40 @@ dismissUpdateNotes=function(mark){mainStoryDismiss(mark);scheduleMainStory();};
 resumeChapter=function(){if(state.chapter.pending?.kind==='return')returnToTown(true);else syncMainStory();};
 openMemoryArchive=function(){
  const s=mainStoryState();if(!s)return;
- showChapterModal('記憶の書庫 ― 第1章 ふたりで潜る理由',[1,2].map(n=>`<p><button class="btn btn-sub" ${s.unlocked[n]?'':'disabled'} onclick="replayMainStory(${n})">第${n}話「${n===1?'始まり':'10階'}」 / ${s.read[n]?'既読':s.unlocked[n]?'未読':'10F到達で解放'}</button></p>`).join('')+'<p>回想は物語のみ。装備・素材・攻略進行は変わりません。</p>','<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
+ const entries=[{episode:1,title:'始まり〜10階・町の支度',floor:1},...MAIN_STORY_MILESTONES];
+ showChapterModal('記憶の書庫 ― 第1章 ふたりで潜る理由',entries.map((m,i)=>`<p><button class="btn btn-sub" ${s.unlocked[m.episode]?'':'disabled'} onclick="replayMainStoryChapterEpisode(${i+1})">第${i+1}話「${m.title}」 / ${(i===0?s.read[1]&&s.read[2]:s.read[m.episode])?'既読':s.unlocked[m.episode]?'未読':m.floor+'F到達で解放'}</button></p>`).join('')+'<p>到達済みの話を回想できます。回想で装備・素材・攻略進行は変わりません。</p>','<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
 };
+function replayMainStoryChapterEpisode(number){
+ if(number!==1){const m=MAIN_STORY_MILESTONES[number-2];if(m)replayMainStory(m.episode);return;}
+ const s=mainStoryState();if(!s||MainStory.active)return;
+ const scenes=[...MAIN_STORY_EPISODES[1],...(s.unlocked[2]?MAIN_STORY_EPISODES[2]:[])];
+ playMainStory(scenes.shift(),'REPLAY',scenes);
+}
 chapterTownHtml=function(){return mainStoryTownRequired()?'<button class="btn btn-gold" onclick="continueMainStoryTown()">町の案内を再開</button>':'';};
 tutorialBanner=function(){return '';};
 const mainStoryStartRun=startDungeonRun;
 startDungeonRun=function(){if(mainStoryTownRequired()){continueMainStoryTown();return;}if(MainStory.active)return;mainStoryStartRun();};
 afterChapterBoss=function(floor){
+ if(MainStory.active)return;
  state.maxUnlockedFloor=Math.max(state.maxUnlockedFloor,Math.min(MAX_DUNGEON_FLOOR,floor+10));
  state.currentEnemy=null;state.chapter.unlocked[floor]=true;
  const s=mainStoryState();if(floor>=10)s.unlocked[2]=true;
- if(floor===10&&mainStoryTutorial()&&s.stage==='dungeon'){playMainStory('afterBoss');return;}
- saveState();if(floor>=MAX_DUNGEON_FLOOR){returnToTown(true);return;}state.floor=floor+1;generateDoorsForFloor();
+ if(floor===10&&mainStoryTutorial()&&s.stage==='dungeon'){playBossMainStory('afterBoss');return;}
+ const milestone=MAIN_STORY_MILESTONES.find(m=>m.floor===floor);
+ if(milestone){
+  s.unlocked[milestone.episode]=true;
+  if(!s.firstPlayed[milestone.scene]&&!s.autoplaySkipped[milestone.scene]){playBossMainStory(milestone.scene);return;}
+ }
+ advanceAfterMainStoryBoss(floor);
 };
+function playBossMainStory(scene){
+ // A defeated enemy is null. Persist a safe backdrop before Home renders on reload.
+ state.screen='door_select';state.currentDoors=[];playMainStory(scene);
+}
+function advanceAfterMainStoryBoss(floor){
+ if(floor>=MAX_DUNGEON_FLOOR){saveState();returnToTown(true);return;}
+ state.floor=floor+1;generateDoorsForFloor();saveState();
+}
 const mainStoryReturn=finalizeSafeReturn;
 finalizeSafeReturn=function(){
  const s=mainStoryState();

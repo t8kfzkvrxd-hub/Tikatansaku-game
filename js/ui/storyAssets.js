@@ -38,7 +38,7 @@ function storyVisualState(scene,page){
  }
  // NPCs never swap into the player's slot. A player monologue doesn't make the NPC respond.
  const cast=visual.npc?[speaker==='player'?'player':'elna',visual.npc]:['player','elna'];
- return {speaker,cast,expressions,background:visual.background?`assets/story/backgrounds/${visual.background}.png`:''};
+ return {speaker,cast,expressions,background:visual.background?`assets/story/backgrounds/${visual.background}.png`:data.place==='exploration'?mainStoryBackground(data.place,data.floor):''};
 }
 function storyPortraitMarkup(visual){
  return visual.cast.map(id=>{

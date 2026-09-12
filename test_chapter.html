@@ -11,6 +11,7 @@ window.onload=async()=>{
    s.screen='town';s.floor=0;s.deepestFloorReached=30;s.vaultGold=987;
    s.bossFirstKills={10:true,20:true};s.chapter.pending=null;s.chapter.checkpoint=null;
    s.chapter.mainStory=w.newMainStoryState(profile==='legacy');
+   s.chapter.mainStory.version=1; // v0.35 story-complete save, before the 20–100F addition.
    s.chapter.mainStory.stage='free';s.chapter.mainStory.noticeSeen=true;
    s.chapter.mainStory.read={1:true,2:true};s.chapter.mainStory.unlocked={1:true,2:true};
    w.saveState();
@@ -23,6 +24,10 @@ window.onload=async()=>{
    for(const floor of [10,20,30,40,50,60,70,80,90,100]){
     s.floor=floor;s.screen='battle';s.currentEnemy=null;s.returnResolved=false;
     const gold=s.vaultGold;w.afterChapterBoss(floor);
+    if(floor>30){
+     check(!!w.eval('MainStory.active')&&w.eval('MainStory.active.mode')==='STORY',profile+' newly reached '+floor+' story');
+     let pages=0;while(w.eval('MainStory.active')&&pages++<30)w.nextMainStory();check(pages<30,profile+' finite new scene');
+    }
     check(s.floor===floor+1&&!w.eval('MainStory.active')&&!s.chapter.pending,profile+' '+floor+' no old automatic script');
     check(s.vaultGold===gold,profile+' no repeated return reward '+floor);
    }

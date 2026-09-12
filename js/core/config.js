@@ -1,8 +1,10 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.35.6';
+    const GAME_VERSION = '0.36.1';
     const UPDATE_NOTES = [
+      '第1章の台本を調整。日常の掛け合い、50Fの地図、100Fの成長と約束を整理。発生条件・進行・報酬・画像・音声は変更なし',
+      '第1章「ふたりで潜る理由」を100Fまで追加。20〜100Fのボス後会話と全10話の回想に対応。既存進行・報酬・戦闘バランスは維持',
       'ミュート・BGM音量・SE音量をゲームセーブと分離して即時保存。起動時に復元し、回想のフェード値は保存しません',
       '施設NPCの短文を名前付き会話帯へ整理。回想中はロビーBGMをフェード停止し、終了・中断後に復帰。音源・SE・ゲーム進行は変更なし',
       '倉庫の素材説明がない場合にundefinedが表示される不具合を修正。既存の説明・素材・抽選・セーブ仕様は変更なし',

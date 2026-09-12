@@ -1,4 +1,4 @@
-// Script text is unchanged. Unavailable expressions fall back to the same character's normal.
+// Unavailable expressions fall back to the same character's normal.
 const MAIN_STORY_EXPRESSIONS={player:['normal','smile','confused','serious','angry','shock','sad','fear','empty'],elna:['normal','smile','worried','serious','sad','fear','empty','cry','angry'],tavern_master:['normal','serious','exasperated'],blacksmith:['normal','confident','serious'],item_shopkeeper:['normal','smile','worried']};
 const MAIN_STORY_SCENES={
  opening:{episode:1,title:'始まり',place:'town',lines:[
@@ -50,19 +50,19 @@ const MAIN_STORY_SCENES={
   ['player','そこは譲らないのな。']
  ]},
  afterBoss:{episode:2,title:'10階',place:'mine',lines:[
-  ['','第2話　10階\n巨人の足音が止み、坑道に静けさが戻った。'],
-  ['player','よし。まだ行けそうだな。','smile'],
+  ['','第1話　10階\n巨人の足音が止み、坑道に静けさが戻った。'],
+  ['player','よし、十階。……俺も、さすがに足にきた。','smile'],
   ['elna','……。','worried'],
   ['player','その顔で続ける気か？','confused'],
   ['','剣を収める指が震えた。エルナは壁に手をつき、ゆっくり息を整える。'],
   ['elna','……戻ろ。','worried'],
-  ['player','珍しいな。']
+  ['player','帰り道は、急がなくていいさ。']
  ]},
  tavern:{episode:2,title:'いつもの町',place:'town',lines:[
   ['酒場主人','……帰ってきたか。'],
   ['player','疲れた……。'],
   ['','酒場主人はエルナの汚れた袖に目を落とし、水を差し出した。'],
-  ['酒場主人','初日から10階まで行く奴があるか。嬢ちゃん、無茶しすぎだ。'],
+  ['酒場主人','いきなり10階まで足を延ばす奴があるか。嬢ちゃん、無茶しすぎだ。'],
   ['elna','……まだ浅いです。'],
   ['酒場主人','お前にとっちゃそうでも、身体は一つしかねえんだぞ。'],
   ['酒場主人','潜り続けるなら、最低限この町の使い方くらい覚えろ。まずは鍛冶場だ。']
@@ -98,3 +98,119 @@ const MAIN_STORY_SCENES={
  ]}
 };
 const MAIN_STORY_EPISODES={1:['opening','childhood','portal','material','parts','perk','beforeBoss'],2:['afterBoss','tavern','forge','warehouse','shop','equipment','ending']};
+// Internal IDs 1/2 remain intact for v0.35 saves; the archive groups both as episode 1.
+const MAIN_STORY_MILESTONES=[
+ {floor:20,episode:3,scene:'promiseHome',title:'帰り道の約束'},
+ {floor:30,episode:4,scene:'favoriteThings',title:'好きなもの'},
+ {floor:40,episode:5,scene:'ourRhythm',title:'ふたりの戦い方'},
+ {floor:50,episode:6,scene:'reasonBelow',title:'どうして潜るのか'},
+ {floor:60,episode:7,scene:'supper',title:'帰ったら'},
+ {floor:70,episode:8,scene:'oldScrape',title:'昔の傷'},
+ {floor:80,episode:9,scene:'stayClose',title:'そばにいて'},
+ {floor:90,episode:10,scene:'tomorrowPlan',title:'約束'},
+ {floor:100,episode:11,scene:'furtherTogether',title:'まだ先へ'}
+];
+const MAIN_STORY_CONTINUATION={
+ promiseHome:[
+  ['','戦いの音が遠のいた。エルナは倒れた石柱に腰を下ろし、水筒の蓋を回す。'],
+  ['elna','ねえ。子供の頃、丘に秘密基地を作ったよね。','smile'],
+  ['player','お前が隊長で、俺が屋根係だったやつな。','smile'],
+  ['elna','雨のたびに葉っぱの屋根が落ちて。晴れたら、また枝を集めて。','smile'],
+  ['player','隊長は途中から木の実ばっかり探してたけど。','confused'],
+  ['elna','あの辺、帰ったら久しぶりに歩きたいな。今なら、もっと丈夫に作れそう。','smile'],
+  ['player','今度は屋根係も交代な。'],
+  ['elna','寄り道用のおやつも持っていこう。基地作りには、それも大事。','smile'],
+  ['player','その準備だけは昔から完璧だよな。','smile']
+ ],
+ favoriteThings:[
+  ['elna','休憩。袋の底に、飴がひとつ残ってた。','smile'],
+  ['player','よくここまで我慢したな。','smile'],
+  ['elna','あなた、昔から甘いもの好きだったよね。私は酸っぱい飴も好き。'],
+  ['player','酸っぱいのを買って、毎回最初の一個で顔しかめるくせに。','confused'],
+  ['elna','粉のついた丸いの。包みを開くと、指まで真っ白になるやつ。','smile'],
+  ['','エルナは包み紙を小さく畳み、空いた袋へしまった。'],
+  ['elna','次に町へ戻ったら、あの店の新作を見ようかな。味見は大事だし。','smile'],
+  ['player','調査って言えば何個でも食べられると思ってるな。','smile'],
+  ['elna','買いすぎないように、小銭入れだけ持って行こ。']
+ ],
+ ourRhythm:[
+  ['elna','最近、足元を見る余裕が出てきた。最初は剣先ばかり見てたのに。'],
+  ['player','四十階分の練習は無駄じゃなかったな。','smile'],
+  ['elna','次、右から来たら私が先に動く。踏み込んで、左へ抜ける。','serious'],
+  ['player','俺はその隙を狙う。','serious'],
+  ['elna','大きいのが来たら欲張らずに止まる。……その方が、続けやすい。','serious'],
+  ['player','さっきは俺も一歩深く入った。次は、あの腕が下がるまで待つ。'],
+  ['elna','上手く動けると、ちょっと楽しいね。次も、足を揃えて。','smile'],
+  ['player','了解。転ぶなよ、隊長。','smile']
+ ],
+ reasonBelow:[
+  ['','五十階の標のそばで、エルナは借りた地図を広げた。'],
+  ['elna','この地図の先、道が二つに分かれてる。片方だけ、行き先が書いてないんだよね。','serious'],
+  ['player','道の線はあるのに、行き先だけ空欄か。'],
+  ['elna','自分の目で見て、帰ったらここに書き足したいな。どこへ続いてるのか。'],
+  ['player','戻る道の目印は、俺も見ておく。'],
+  ['','エルナは空欄の横に小さな丸をつけ、地図を畳んだ。'],
+  ['elna','今日見つけた道、その先まで見ておきたい。'],
+  ['player','よし。地図の続きを見に行こう。','smile']
+ ],
+ supper:[
+  ['elna','帰ったら何食べようか。歩いてたら、お腹空いてきた。','smile'],
+  ['player','肉。焼いたやつ。','smile'],
+  ['elna','今日は野菜のシチューにしようかな。じゃがいも、多めで。'],
+  ['player','俺の希望、じゃがいもに負けたな。','confused'],
+  ['elna','パンも買って帰ろ。丸いのは、鍋の底まですくえて便利。','smile'],
+  ['elna','食後の片付けまで終わったら、今日は早く寝よ。','smile']
+ ],
+ oldScrape:[
+  ['elna','この石段、昔登った丘の崖に似てる。あの時は背伸びしたなあ。'],
+  ['player','近道だって言って、道じゃない所へ行ったんだよ。','confused'],
+  ['elna','足をひねって動けなくなって。帰りの夕焼け、やけに長かった。','worried'],
+  ['player','背負ったまま坂を下ったからな。'],
+  ['elna','迎えに来てもらった上に、籠まで持ってもらって……あの日は、ごめんね。'],
+  ['player','籠の木の実は半分もらったけどな。','smile'],
+  ['','エルナは石段の端を靴で確かめ、平らな方に足を置いた。'],
+  ['elna','今日は遠回りでも、ちゃんと道を選ぼ。帰りまでが冒険だし。','smile'],
+  ['player','遠回りなら、景色を見る暇もあるしな。','smile']
+ ],
+ stayClose:[
+  ['','張りつめていた肩をほぐし、エルナは階段へ続く灯りを数えた。'],
+  ['elna','八十階。入口から見たら、ずいぶん遠くまで来たね。'],
+  ['player','帰ったら自慢できるな。','smile'],
+  ['elna','もう少しだけ、一緒に来て。ここまで来たら、百階の景色も見たい。','smile'],
+  ['player','今さら置いていく気なんてないよ。'],
+  ['elna','隣で歩くくらいが、ちょうどいいな。……今日は急がず行こ。'],
+  ['player','荷紐も締め直しとくか。'],
+  ['elna','ここまで来てよかった。町で話せること、また増えた。','smile']
+ ],
+ tomorrowPlan:[
+  ['elna','百階を越えたら、一度ちゃんと休もうかな。','smile'],
+  ['player','その予定、忘れないように書いとこう。'],
+  ['elna','温泉のある宿がいいな。朝は、鐘が鳴っても布団の中。','smile'],
+  ['player','起きたら夕飯になってそうだな。','smile'],
+  ['elna','窓際でお茶も飲みたい。何も急がない日を、丸一日。'],
+  ['','エルナは地図の余白に「休み」と書き、丁寧に丸で囲んだ。'],
+  ['elna','これで予定は決まり。まずは次の十階を、無事に抜けよう。','serious'],
+  ['player','休暇のためのラストスパートか。悪くないな。','smile']
+ ],
+ furtherTogether:[
+  ['','百階の戦いが終わった。エルナは剣を収め、荷袋を下ろした。'],
+  ['elna','十階では、立ってるだけで精一杯だったな。'],
+  ['player','帰り道も、やけに長かった。'],
+  ['elna','今日は、ちゃんと景色を見る余裕がある。','smile'],
+  ['','エルナは荷袋に肘を置き、百階の灯りをゆっくり見渡した。'],
+  ['elna','……ここまで歩いてきたんだね。','smile'],
+  ['player','よく頑張ったよ。ほんとに。'],
+  ['elna','休む日の丸、消さないでおこ。'],
+  ['player','温泉だったな。','smile'],
+  ['elna','……帰ったら、あの丘も見に行きたい。','smile'],
+  ['player','今度は雨漏りしない屋根にしよう。','smile'],
+  ['','地図をしまうと、エルナは肩の力を抜いた。'],
+  ['elna','……次も行こ。','smile'],
+  ['elna','この先の寄り道にも、付き合ってね。','smile'],
+  ['','第1章「ふたりで潜る理由」 COMPLETE\n第2章　101F〜']
+ ]
+};
+for(const milestone of MAIN_STORY_MILESTONES){
+ MAIN_STORY_SCENES[milestone.scene]={episode:milestone.episode,title:milestone.title,place:'exploration',floor:milestone.floor,lines:MAIN_STORY_CONTINUATION[milestone.scene]};
+ MAIN_STORY_EPISODES[milestone.episode]=[milestone.scene];
+}

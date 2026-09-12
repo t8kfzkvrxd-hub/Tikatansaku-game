@@ -1,0 +1,70 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><script src="tests/fixture.js"></script>
+<title>Chapter one completion</title><pre id="results">RUNNING</pre><iframe id="game" src="index.html#game" style="width:932px;height:430px"></iframe>
+<script>
+async function chapterOneTests(){
+ const results=[],check=(name,pass)=>{results.push({name,pass:!!pass});if(!pass)throw Error(name);},wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const clear=()=>{MainStory.active=null;state.chapter.pending=null;state.chapter.checkpoint=null;document.getElementById('modal-layer').style.display='none';};
+ const finish=()=>{let i=0;while(MainStory.active&&i++<200)nextMainStory();check('会話有限',i<200);};
+ const wealth=()=>JSON.stringify([state.inventory,state.storage,state.equipped,state.chapter.equipment,state.vaultGold,state.dungeonGold,state.hp,state.chapter.characters,state.summons,state.bossFirstKills]);
+ clear();HomeScreen.active=false;state.chapter.mainStory=newMainStoryState(false);mainStoryState().stage='free';mainStoryState().noticeSeen=true;
+ check('10話構成',MAIN_STORY_MILESTONES.length+1===10);
+ for(const m of MAIN_STORY_MILESTONES){
+  clear();state.floor=m.floor;state.screen='battle';state.currentEnemy=null;state.bossFirstKills[m.floor]=true;
+  const before=wealth();afterChapterBoss(m.floor);
+  check('撃破後checkpointは敵nullの戦闘画面を保存しない',state.chapter.checkpoint.screen==='door_select'&&state.chapter.checkpoint.currentEnemy===null);
+  check(m.floor+'F初回会話',MainStory.active?.scene===m.scene&&mainStoryState().unlocked[m.episode]);
+  for(let i=0;i<20;i++)afterChapterBoss(m.floor);
+  check('二重ボス通知で進行しない',MainStory.active?.page===0&&state.floor===m.floor);
+  nextMainStory();const raw=structuredClone(state.chapter);migrateChapter(raw);document.getElementById('modal-layer').style.display='none';syncMainStory();
+  check('途中再開',MainStory.active?.scene===m.scene&&MainStory.active.page===1);
+  if(m.floor===100){MainStory.active.page=MAIN_STORY_SCENES[m.scene].lines.length-1;renderMainStory();check('章完了表示',document.querySelector('.story-text').textContent.includes('COMPLETE'));}
+  finish();check('素材HP等無変更',wealth()===before);check('次階へ進行',state.floor===m.floor+1&&!MainStory.active&&mainStoryState().firstPlayed[m.scene]);
+  state.floor=m.floor;state.screen='battle';afterChapterBoss(m.floor);check('2回目自動再生なし',!MainStory.active&&state.floor===m.floor+1);
+ }
+ for(const floor of [0,10,19,20,85,100,200]){
+  clear();state.deepestFloorReached=floor;state.bossFirstKills={};state.screen='town';state.floor=0;
+  const old=structuredClone(state.chapter);delete old.mainStory;const before=wealth();migrateChapter(old);
+  check('旧セーブ所持品維持 '+floor,wealth()===before);
+  check('旧セーブ巻戻しなし '+floor,state.floor===0&&state.deepestFloorReached===floor&&!mainStoryTownRequired());
+  for(const m of MAIN_STORY_MILESTONES)check('到達解放 '+floor+'/'+m.floor,!!mainStoryState().unlocked[m.episode]===(floor>=m.floor));
+  if(floor>=20){const m=MAIN_STORY_MILESTONES.findLast(m=>m.floor<=floor);state.floor=m.floor;afterChapterBoss(m.floor);check('過去会話の強制なし',!MainStory.active);}
+ }
+ clear();state.deepestFloorReached=85;state.bossFirstKills={};const previous={...newMainStoryState(false),version:1,stage:'free',read:{1:true,2:true}};
+ migrateChapter({...state.chapter,mainStory:previous});check('v0.35既読ID維持',mainStoryState().read[1]&&mainStoryState().read[2]&&mainStoryState().unlocked[9]&&!mainStoryState().unlocked[10]);
+ // Old players still receive newly reached future episodes, without tutorial replay.
+ state.floor=90;afterChapterBoss(90);check('旧プレイヤー新到達は再生',MainStory.active?.scene==='tomorrowPlan');finish();
+ clear();state.screen='town';state.floor=0;mainStoryState().noticeSeen=true;for(const m of MAIN_STORY_MILESTONES)mainStoryState().unlocked[m.episode]=true;
+ for(const muted of [true,false]){
+  setMasterMute(muted);setBgmVolume(.27);render();await wait(350);
+  const before=JSON.stringify([wealth(),state.floor,state.screen,state.deepestFloorReached,mainStoryState().firstPlayed,mainStoryState().stage]);
+  replayMainStory(3);await wait(350);check('回想中BGM停止',lobbyBgm.paused);finish();await wait(350);
+  check('回想無報酬・進行不変',JSON.stringify([wealth(),state.floor,state.screen,state.deepestFloorReached,mainStoryState().firstPlayed,mainStoryState().stage])===before);
+  check('回想後音量ミュート復帰',lobbyBgm.paused===muted&&lobbyBgm.volume===.27);
+  replayMainStory(4);await wait(350);cancelMainStoryReplay();await wait(350);check('中断復帰',lobbyBgm.paused===muted&&lobbyBgm.volume===.27);
+ }
+ const elna=Object.values(MAIN_STORY_CONTINUATION).flat().filter(l=>l[0]==='elna');
+ check('強い表情なし',elna.every(l=>!['empty','cry','fear','shock','angry'].includes(l[2])));
+ check('新規NPCの主人公への応答なし',Object.values(MAIN_STORY_CONTINUATION).flat().every(l=>['','player','elna'].includes(l[0])));
+ check('装備等維持',Object.keys(CRAFT_RECIPES).length===1531&&EXPEDITION_PERKS.length===24);
+ return results;
+}
+document.getElementById('game').onload=async()=>{
+ const frame=document.getElementById('game'),w=frame.contentWindow,out=document.getElementById('results');
+ try{
+  const results=await w.eval('('+chapterOneTests.toString()+')()');
+  for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';
+   await new Promise(r=>setTimeout(r,120));
+   const checks=await w.eval(`(async()=>{const checks=[];for(const m of MAIN_STORY_MILESTONES){MainStory.active=null;replayMainStory(m.episode);for(let i=0;i<MAIN_STORY_SCENES[m.scene].lines.length;i++){
+    MainStory.active.page=i;renderMainStory();await Promise.all([...document.querySelectorAll('.story-portrait,.story-background')].map(img=>img.decode()));
+    const dialog=document.querySelector('.story-dialog').getBoundingClientRect(),portraits=[...document.querySelectorAll('.story-portrait')];
+    const pass=portraits.every(img=>img.naturalWidth>0&&!img.dataset.fallback&&img.getBoundingClientRect().bottom<=dialog.top+1)&&[...document.querySelectorAll('.story-actions button')].every(b=>{const r=b.getBoundingClientRect();return r.height>=44&&r.right<=innerWidth&&r.bottom<=innerHeight;})&&document.documentElement.scrollWidth<=innerWidth;
+    checks.push({name:'${width}x${height} '+m.scene+'/'+i,pass});
+   }cancelMainStoryReplay();}return checks;})()`);
+   results.push(...checks);
+  }
+  if(results.some(x=>!x.pass))throw Error(JSON.stringify(results.filter(x=>!x.pass)));
+  out.textContent=JSON.stringify(results,null,2)+'\nALL TESTS PASSED';
+ }catch(e){out.textContent='FAIL '+e.stack;}finally{frame.remove();}
+};
+</script></html>
