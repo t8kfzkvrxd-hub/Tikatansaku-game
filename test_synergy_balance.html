@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
 window.onload=()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[],check=(ok,n)=>{if(!ok)throw Error(n);out.push('PASS '+n)};try{
 w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.owned.elna=true;s.chapter.companion='elna';w.partyMember('elna');
 const rows=Object.entries(w.eval('EQUIPMENT_CATALOG')),recipes=w.eval('CRAFT_RECIPES'),builds=w.eval('COMPLETED_BUILDS'),cache=new Map();

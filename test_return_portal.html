@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game" style="width:740px;height:360px"></iframe><pre id="results">RUNNING</pre><script>
 window.onload=async()=>{const f=document.querySelector('iframe'),w=f.contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms)),check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)};try{
 w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.chapter.mode='skip';s.chapter.owned.elna=true;s.chapter.companion='elna';w.partyMember('elna').unit.hp=0;s.hp=60;s.inventory=[w.materialInstance('area_1_enemy_0_common','test'),w.materialInstance('area_1_enemy_0_common','test'),w.materialInstance('area_1_enemy_1_common','test')];s.dungeonGold=123;s.greedLevel=1;
 for(let floor=1;floor<=200;floor++){s.floor=floor;s.screen='safe_point';w.syncReturnPortal();check(w.returnPortalActive()===(floor%10===5),'gate '+floor);}s.floor=15;s.screen='safe_point';w.render();

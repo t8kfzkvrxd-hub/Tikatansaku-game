@@ -17,10 +17,15 @@ function completedBuildSummary(id){
  const slots=characterEquipment(id);if(!slots)return '';const states=completedBuildState(slots),active=states.filter(b=>b.active),locked=states.filter(b=>b.configured&&b.locked);
  return `<div class="completed-build-summary"><button class="btn btn-sub" onclick="openCompletedBuilds('${id}')">完成ビルド ${active.length}件${locked.length?' / 主効果未解禁 '+locked.length+'件':''} · 詳細／不足タグ</button><small>${active.length?active.slice(0,3).map(b=>'《'+b.name+'》').join(' ')+(active.length>3?' 他'+(active.length-3)+'件':''):'未完成：武器・防具・アクセと必要タグを組み合わせる'}</small></div>`;
 }
-function openCompletedBuilds(id='player',buildId=null){
+function openCompletedBuilds(id='player',buildId=null,showAll=false){
  const slots=characterEquipment(id);if(!slots)return;
- const states=completedBuildState(slots),tags=buildTags(slots),list=buildId?states.filter(b=>b.id===buildId):states.slice().sort((a,b)=>Number(b.active)-Number(a.active)||a.missing.length-b.missing.length);
+ const states=completedBuildState(slots),tags=buildTags(slots),sorted=states.slice().sort((a,b)=>Number(b.active)-Number(a.active)||(a.missing.length+a.missingRoles.length)-(b.missing.length+b.missingRoles.length)),list=buildId?states.filter(b=>b.id===buildId):showAll?sorted:[...sorted.filter(b=>b.active).slice(0,3),...sorted.filter(b=>!b.active&&!b.locked&&b.missing.length<=2&&b.missingRoles.length<=1).slice(0,3)];
  const names={weapon:'武器',armor:'防具',accessory:'アクセサリー'};
  showChapterModal(`${combatName(id)}：完成ビルド`,`${renderCharacterSD(id,{size:'small',selected:true})}<p>武器・防具・アクセを各1点以上装備し、必要タグを全て満たすと完成。同タグは1回扱い。完成していても効果は記載条件でのみ発動します。</p><div class="completed-build-list">${list.map(b=>`<section><button class="btn ${b.active?'btn-gold':'btn-sub'}" aria-label="${b.name}の詳細" onclick="openCompletedBuilds('${id}','${b.id}')">${b.configured&&b.locked?'構成完成 / 主効果未解禁（'+b.unlockFloor+'F以降）':b.active?'✓ 完成':'未完成'} 《${b.name}》</button>${buildId?buildGuideHtml(b):`<p>${uiEscape(COMPLETED_GUIDES[b.id]?.[0]||'')}</p>`}${buildId?`<p>必要：${b.requiredTags.map(t=>`${tags.has(t)?'✓':'−'} ${BUILD_CATALOG[t]}`).join(' / ')}</p>${b.missing.length?`<p>不足タグ：${b.missing.map(t=>BUILD_CATALOG[t]).join(' / ')}</p>`:''}${b.missingRoles.length?`<p>不足部位：${b.missingRoles.map(t=>names[t]).join(' / ')}</p>`:''}${buildId?`<ul>${b.rules.map(r=>`<li>${uiEscape(synergyRuleText(r))}</li>`).join('')}</ul>`:''}`:''}</section>`).join('')}</div><details class="synergy-details"><summary>重複・安全上限</summary><p>新補助：攻撃+35%、会心+20pt、軽減15%、部位補正+25%、吸血+5ptまで。既存タグとの攻撃補正合計+100%、吸血25%・1回最大HP8%・ボス抑制、障壁最大HP15%、反射20ダメージを維持。追加ダメージは主命中からのみ、追加攻撃自身は再抽選しません。</p></details>`,`<button class="btn btn-sub" onclick="${buildId?`openCompletedBuilds('${id}')`:`openCharacterEquipment('${id}')`}">戻る</button><button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>`);
  document.querySelector("#modal-layer .update-notes-card")?.classList.add("synergy-modal");
+ if(!buildId){
+  document.querySelector('.completed-build-list').insertAdjacentHTML('beforebegin',`<p>${showAll?'全25ビルド':'発動中・構成完成 最大3件／完成に近い候補 最大3件'}</p>`);
+  if(!list.length)document.querySelector('.completed-build-list').innerHTML='<p>今の装備では完成に近い候補はありません。</p>';
+  document.querySelector('.update-notes-actions').insertAdjacentHTML('afterbegin',`<button class="btn btn-sub" onclick="openCompletedBuilds('${id}',null,${!showAll})">${showAll?'近いビルドへ戻る':'全ビルドを見る'}</button>`);
+ }
 }

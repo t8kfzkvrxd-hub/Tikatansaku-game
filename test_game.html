@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html><script src="tests/fixture.js"></script>
 <meta charset="utf-8">
 <title>ABYSS DELVER smoke tests</title>
 <iframe id="game" src="index.html#game"></iframe>
@@ -27,7 +27,7 @@ window.addEventListener('load', () => setTimeout(() => {
     check(['通常攻撃', '強攻撃', '防御', w.getEquippedSkillInfo().name].every(t => battleText.includes(t)), '戦闘UIに4行動が表示される');
     check(battleText.includes('煙玉で逃走'), '通常戦闘で煙玉ボタンが表示される');
     game.state.skillCooldown = 2; w.render();
-    check(d.getElementById('viewport').textContent.includes('あと2T') && d.querySelector('button[disabled]'), 'スキルCDを残りターン表示して無効化');
+    check(d.querySelector('.battle2 [onclick="playerCombatAction(\'skill\')"]')?.disabled&&d.querySelector('.battle2 [onclick="playerCombatAction(\'skill\')"]').textContent.includes('待機'), 'スキルCD中は待機表示して無効化');
     const nativeTimeout = w.setTimeout; w.setTimeout = () => 0;
     for (const action of ['attack','heavy','defend','skill']) {
       w.startNormalBattle(false); game.state.skillCooldown = 0;
@@ -103,6 +103,8 @@ window.addEventListener('load', () => setTimeout(() => {
 
     w.setTimeout = () => 0;
     game.state.equipped.armor = {...game.AREAS[0].boss, key:'mythic_sky_shield', name:'天城の絶対盾', type:'armor', rarity:'Mythic', archetype:'shield', baseDef:10, hp:0};
+    const guardCompanion=game.state.chapter.companion,guardRandom=w.Math.random;
+    game.state.chapter.companion=null;w.Math.random=()=>.99; // Isolate player guard fatigue from enemy target selection / evasion.
     game.state.currentEnemy = {name:'訓練巨人',icon:'🗿',hp:200,maxHp:200,atk:50,def:0,actionType:'heavy',nextMult:1,isBoss:false};
     game.state.hp = 100; game.state.guardFatigue = 1; game.state.guardStamina = 90; game.state.guardBroken = false;
     const guardHp = game.state.hp; const guardEnemyHp = game.state.currentEnemy.hp;
@@ -111,6 +113,7 @@ window.addEventListener('load', () => setTimeout(() => {
     game.state.currentEnemy.actionType = 'normal'; game.state.currentEnemy.nextMult = 1; game.state.guardFatigue = 3; game.state.guardBroken = false;
     const tiredHp = game.state.hp; w.enemyTurn(true);
     check(tiredHp - game.state.hp >= 12, '連続防御で軽減率が低下する');
+    game.state.chapter.companion=guardCompanion;w.Math.random=guardRandom;
     w.setTimeout = nativeTimeout;
 
     game.state.rarityProgress.mythicPity = 249;

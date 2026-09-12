@@ -1,10 +1,22 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre><script>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre><script>
 window.onload=async()=>{
  const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow,s=w.__gameDebug.state;
  const check=(ok,n)=>{if(!ok)throw Error(n);out.push('PASS '+n)},pause=()=>new Promise(r=>setTimeout(r,100));
  try{
  w.closeGenericModal();s.chapter.pending=null;s.chapter.checkpoint=null;s.chapter.mode='skip';s.chapter.contract=true;s.screen='town';s.vaultGold=100000;s.camp.vaultSize=20;s.camp.vaultLevel=1;
  const data=w.__equipmentDebug,key=Object.keys(data.materials).find(k=>k.endsWith('_common')),material={...data.materials[key],key,type:'material'};
+ const sentinel=/\b(undefined|null|NaN)\b/;
+ for(const [id,m]of Object.entries(data.materials)){
+  const item={...m,key:id,type:'material'};
+  check(typeof w.getItemStatSummary(item)==='string'&&!sentinel.test(w.getItemStatSummary(item)),'safe material summary '+id);
+ }
+ for(const desc of [undefined,null,NaN,'undefined','null','NaN',''])check(w.getItemStatSummary({...material,desc})==='','missing description '+String(desc));
+ check(w.getItemStatSummary({...material,desc:'説明文を維持'})==='説明文を維持','existing description preserved');
+ const descriptionStorage=s.storage;
+ s.storage=['Common','Rare','Epic','Legendary','Mythic','Abyssal'].map((rarity,i)=>({...material,id:'description-'+i,rarity,desc:i===1?'説明文を維持':undefined}));
+ w.openLobbyFacility('warehouse');w.setStorageCategory('material');w.refreshLobbyFacility();
+ check(!sentinel.test(w.document.querySelector('#lobby-facility-content').textContent),'warehouse no missing-value text');
+ s.storage=descriptionStorage;w.closeGenericModal();
  s.storage=Array.from({length:5000},(_,i)=>({...material,id:'material-'+i,locked:i===0}));
  check(w.vaultUsed()===0&&w.materialCount(key,true)===5000,'5000 materials consume zero slots');
  const saved=JSON.stringify(s.storage);w.saveState();await new Promise(r=>{frame.onload=r;w.location.reload()});w=frame.contentWindow;s=w.__gameDebug.state;w.closeGenericModal();
@@ -46,7 +58,7 @@ window.onload=async()=>{
    for(const b of w.document.querySelectorAll('.update-notes-actions button')){const r=b.getBoundingClientRect();check(r.bottom<=height&&r.top>=0&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,'footer reachable '+width);}
   }
   w.closeGenericModal();w.enterGameFromHome();w.closeGenericModal();s.chapter.pending=null;s.floor=4;s.hp=10000;w.generateDoorsForFloor();await pause();
-  const doors=[...w.document.querySelectorAll('#viewport .door-card')];check(doors.length===3&&doors.some(d=>d.textContent.includes('戦闘')),'visible combat option '+width);
+  const doors=[...w.document.querySelectorAll('.exploration-route')];check(doors.length===3&&doors.some(d=>d.textContent.includes('戦闘')),'visible combat option '+width);
   for(const door of doors){door.scrollIntoView({block:'center'});await pause();const r=door.getBoundingClientRect();check(r.width>=44&&r.height>=44&&door.contains(w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),'door tap area '+width);}
   s.screen='town';w.render();
  }

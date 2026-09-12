@@ -24,8 +24,10 @@ function selectLobbyFacility(id){
 }
 function syncLobbyNotices(root){
  const next=BOSS_FLOORS.find(f=>!state.bossFirstKills[f]);
- const notices={'town-expedition':!state.chapter.contract?'同行登録から始めよう':next?`次の目標 ${next}F`:'探索へ',summons:(state.summonSystem?.jobs||[]).some(j=>Date.now()>=j.end)?'派遣完了':'','town-blacksmith':pendingFacilityUnlock?'新しい機能が解禁':forgeRecommendations('player',1).length?'おすすめ装備あり':'','town-tavern':facilityAvailable(2)&&state.bounty?.completed?'依頼報酬あり':''};
+ const recommendations=forgeRecommendations('player',1531);
+ const notices={'town-expedition':!state.chapter.contract?'同行登録から始めよう':next?`次の目標 ${next}F`:'探索へ',summons:(state.summonSystem?.jobs||[]).some(j=>Date.now()>=j.end)?'派遣完了':'','town-blacksmith':pendingFacilityUnlock?'新しい機能が解禁':recommendations.length?'おすすめ装備あり':'','town-tavern':facilityAvailable(2)&&state.bounty?.completed?'依頼報酬あり':''};
  const priority=notices.summons?'summons':notices['town-tavern']?'town-tavern':'town-expedition';
+ if(priority==='town-expedition'&&state.chapter.contract){const ready=recommendations.some(r=>r.r.type==='weapon'&&r.ready);notices['town-expedition']=(next?`目標 ${next}F / `:'')+(ready?'おすすめ：鍛冶場で武器作成':'おすすめ：探索へ');}
  root.querySelectorAll('.lobby-hotspot').forEach(button=>{button.classList.toggle('notice-primary',button.dataset.facility===priority);const badge=button.querySelector('.lobby-notice'),message=notices[button.dataset.facility]||'';const goal=button.dataset.facility==='town-blacksmith'?lobbyWeaponGoalText():'';badge.textContent=goal||message;badge.hidden=!(goal||message);});
 }
 function lobbyNextHtml(){

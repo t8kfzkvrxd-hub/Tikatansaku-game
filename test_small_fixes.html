@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>Small fixes tests</title>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>Small fixes tests</title>
 <iframe id="game" src="index.html#game"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload = () => setTimeout(() => {
@@ -7,11 +7,11 @@ window.onload = () => setTimeout(() => {
  try {
   const s = w.__gameDebug.state;
   w.closeGenericModal(); w.setTimeout = () => 0;
-  s.screen='town'; s.camp.tavern=5; s.expeditionPolicy='bounty'; s.vaultGold=100000;
+  s.screen='town'; s.camp.tavern=5;s.bossFirstKills[10]=true; s.expeditionPolicy='bounty'; s.vaultGold=100000;
   s.bounty={rewardGold:1e12,targetKills:5,completed:true};
   for(let i=0;i<100;i++) { s.bounty.completed=true; const gold=s.vaultGold; w.claimTavernBounty(); check(s.vaultGold-gold<=1500 && s.bounty.rewardGold<=1000,'酒場報酬上限 '+i); }
   s.camp.blacksmith=2; s.equipped.weapon.refineCount=9; w.refineEquippedItem('weapon'); const gold=s.vaultGold, atk=s.equipped.weapon.baseAtk;
-  w.refineEquippedItem('weapon'); check(s.equipped.weapon.refineCount===10 && s.vaultGold===gold && s.equipped.weapon.baseAtk===atk && w.document.getElementById('viewport').textContent.includes('MAX +10'),'+10強化上限・MAX表示');
+  w.refineEquippedItem('weapon'); check(s.equipped.weapon.refineCount===10 && s.vaultGold===gold && s.equipped.weapon.baseAtk===atk && w.document.getElementById('sub-panel').textContent.includes('MAX +10'),'+10強化上限・MAX表示');
   const item=(id,rarity,type='weapon')=>({id,name:id,icon:'📦',rarity,type,baseAtk:1});
   const locked={...item('locked','Epic'),locked:true};
   s.storage=[item('common','Common'),item('rare','Rare'),item('epic','Epic'),locked,s.equipped.weapon,item('mythic','Mythic'),item('abyssal','Abyssal')];

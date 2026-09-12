@@ -24,6 +24,9 @@ parts = {
 for path, spans in parts.items():
     current=(ROOT/path).read_text()
     if path=='js/ui/itemPresentation.js':
+        # v0.35.4: allow only the explicit presentation-only missing-desc fix;
+        # test_material_routes.html exercises its behavior for every material.
+        current=current.replace("      // Legacy/enemy-drop materials may have no description. Never stringify\n      // missing metadata in the warehouse or shared equipment presentation.\n      const description = typeof it.desc === 'string' && !/^(undefined|null|NaN)$/i.test(it.desc.trim()) ? it.desc : '';\n      return s.join(' | ') || description;", "      return s.join(' | ') || it.desc;")
         current=current.replace('吸血率+${it.vamp}%','吸血+${it.vamp}').replace('      if (it.primaryBuildTag) s.push(`ビルド:${BUILD_CATALOG[it.primaryBuildTag]||it.primaryBuildTag}`);\n','')
     if path=='js/ui/render.js':
         current=current.replace(' id="town-vault"','').replace(' id="town-talents"','')

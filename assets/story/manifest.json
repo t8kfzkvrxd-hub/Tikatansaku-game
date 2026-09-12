@@ -1,0 +1,705 @@
+{
+  "sources": {
+    "エルナ立ち絵1.png": {
+      "sha256": "8188b155fe8271065e7c6a99878a347cd3024d02093701aed094891dcc2d2e0c",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "エルナ立ち絵２.png": {
+      "sha256": "71dc94ce09f8553403f7d6330508ddbb3e8a28b18d055001a51260e4e3d5451f",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "エルナ立ち絵３.png": {
+      "sha256": "ab276ac10ed5b1e213bea2ac45acb75efe2decf258aa5a3846609d6a60f04854",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "player立ち絵１.png": {
+      "sha256": "e7b846bc19eb350044fb47a91a03880e79f45a9dbe9f0fdfad516a191a2b4513",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "player立ち絵２.png": {
+      "sha256": "8def48287cfe86e54074a15c75e30c10bfda2d3e8ba9eb807517ab707d5627a1",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "player立ち絵３.png": {
+      "sha256": "9bf7488bc05d5508451ee81ca704979c7e5a4b9088f68edfcff5b7e0cdf3fc94",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "酒場主人立ち絵.png": {
+      "sha256": "21f26783d9a218376e0c4c65553a74035ed5bb1b58b524bba7d9ccf0b1afd6ef",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "鍛冶場立ち絵.png": {
+      "sha256": "6fb0d85579c3197f78318486deb15cd43d4462af4a7fa91d62c9a5524b7df2ca",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "道具屋立ち絵.png": {
+      "sha256": "bb73797a6a4c858fcac3c3abcc2d785a797d7a69f2dfacfdf71fbe25b9b3f6d8",
+      "width": 1774,
+      "height": 887,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    "酒場背景.png": {
+      "sha256": "cabe3758015e078964215d23ef218abf4d5f7ce927e51da0f83692b5eac040f4",
+      "width": 1672,
+      "height": 941,
+      "format": "PNG",
+      "mode": "RGB"
+    },
+    "鍛冶場背景.png": {
+      "sha256": "a13dd60395d3b436c5c94ce297d59c44e778af522c304742c4f0ec0c039f7d54",
+      "width": 1672,
+      "height": 941,
+      "format": "PNG",
+      "mode": "RGB"
+    },
+    "倉庫背景.png": {
+      "sha256": "66582be7401882b1a1a289c4a6cec4226e6466487770832f300d5b95a96ac94b",
+      "width": 1672,
+      "height": 941,
+      "format": "PNG",
+      "mode": "RGB"
+    },
+    "道具屋背景.png": {
+      "sha256": "c24a6156f0102e45df2192b6fad2a488635e1aa17bb6aecc3747030e521b8212",
+      "width": 1672,
+      "height": 941,
+      "format": "PNG",
+      "mode": "RGB"
+    },
+    "playerserious.png": {
+      "sha256": "e33e2e7d35fcfd47993c58ed71aad451ef5fe437967a6ea57d7dd22f7c9ba13e",
+      "width": 1024,
+      "height": 1536,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        254
+      ]
+    },
+    "playerangry.png": {
+      "sha256": "f49caf95033cc402b6bc6474408e9e852b3e457dce4a5e5622aecab73c991f57",
+      "width": 1024,
+      "height": 1536,
+      "format": "PNG",
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        254
+      ]
+    }
+  },
+  "parts": [
+    {
+      "file": "characters/elna/normal.png",
+      "sourceFile": "assets/エルナ立ち絵1.png",
+      "sourceRect": [
+        0,
+        0,
+        616,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        34,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "991c767db13a9aa680a4ae59c3a61eafe2a7ce01cfb974e69b6b65e88fe590e0"
+    },
+    {
+      "file": "characters/elna/smile.png",
+      "sourceFile": "assets/エルナ立ち絵1.png",
+      "sourceRect": [
+        591,
+        0,
+        593,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        45,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "76c2f2efc8f961b194083457e280551a2845de42e961cdd3fbb82db91226b6e0"
+    },
+    {
+      "file": "characters/elna/worried.png",
+      "sourceFile": "assets/エルナ立ち絵1.png",
+      "sourceRect": [
+        1170,
+        0,
+        604,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        40,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "48afe176a42dd504ba0e30cc3997e6c939d0fe13bbcafd4b2edad9b014fe70b1"
+    },
+    {
+      "file": "characters/elna/serious.png",
+      "sourceFile": "assets/エルナ立ち絵２.png",
+      "sourceRect": [
+        0,
+        0,
+        589,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        47,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "60a8009f5d8bb08713dd5b9de97290de815717a6c6705689ba6362374e96bdcd"
+    },
+    {
+      "file": "characters/elna/sad.png",
+      "sourceFile": "assets/エルナ立ち絵２.png",
+      "sourceRect": [
+        593,
+        0,
+        600,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        42,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "163b44967ada0870ea8a440214f2eac76d7acfec28ad46dcb258842638fc75f2"
+    },
+    {
+      "file": "characters/elna/fear.png",
+      "sourceFile": "assets/エルナ立ち絵２.png",
+      "sourceRect": [
+        1180,
+        0,
+        594,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        45,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "8870195ad337b008bb752352bd7650618ad053c002a1784d8388f3555ee63146"
+    },
+    {
+      "file": "characters/elna/empty.png",
+      "sourceFile": "assets/エルナ立ち絵３.png",
+      "sourceRect": [
+        0,
+        0,
+        601,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        41,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "9825803ef1396ce6723fdaf93142a88fb96f5dd384178ebf7c3a100ceee52b16"
+    },
+    {
+      "file": "characters/elna/cry.png",
+      "sourceFile": "assets/エルナ立ち絵３.png",
+      "sourceRect": [
+        580,
+        0,
+        629,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        27,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "5546df1f20535805eacd158b29552986a67412d7d389f23000cf837e011bc634"
+    },
+    {
+      "file": "characters/elna/angry.png",
+      "sourceFile": "assets/エルナ立ち絵３.png",
+      "sourceRect": [
+        1184,
+        0,
+        590,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        47,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "11214c0c7b1da407add6f60890e9d06e554ed37aeb6f7ba2418f2c8945500a6b"
+    },
+    {
+      "file": "characters/player/normal.png",
+      "sourceFile": "assets/player立ち絵１.png",
+      "sourceRect": [
+        0,
+        0,
+        595,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        44,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "f35108772026bf83e85ba1d58242fab1b0018f78cee85e9e0fdf16bb31f1b277"
+    },
+    {
+      "file": "characters/player/smile.png",
+      "sourceFile": "assets/player立ち絵１.png",
+      "sourceRect": [
+        568,
+        0,
+        623,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        30,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "dc045d35dde5cd2a9a0fad99ae56763ba6fc9dc749986bc26a7cfaf406fa37b0"
+    },
+    {
+      "file": "characters/player/confused.png",
+      "sourceFile": "assets/player立ち絵１.png",
+      "sourceRect": [
+        1183,
+        0,
+        591,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        46,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "f3825072a425181c09933bf38d57c51db96362dcd94508899d8c9a51a5bdb149"
+    },
+    {
+      "file": "characters/player/shock.png",
+      "sourceFile": "assets/player立ち絵２.png",
+      "sourceRect": [
+        1170,
+        0,
+        604,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        40,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "3d1b1bc0db56ab84ecdc2318b2ce87555a41e589c51903336b96d6f00bb5f8e7"
+    },
+    {
+      "file": "characters/player/sad.png",
+      "sourceFile": "assets/player立ち絵３.png",
+      "sourceRect": [
+        0,
+        0,
+        637,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        23,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "1d9f699cc1788ae3e97967ed81b857857591bb19617553ed7a2789a3aa62f9cf"
+    },
+    {
+      "file": "characters/player/fear.png",
+      "sourceFile": "assets/player立ち絵３.png",
+      "sourceRect": [
+        583,
+        0,
+        652,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        16,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "cfcfef4c3cb12419d8a2802511d8a88185f56ea8085a648a934120ec1821deaa"
+    },
+    {
+      "file": "characters/player/empty.png",
+      "sourceFile": "assets/player立ち絵３.png",
+      "sourceRect": [
+        1183,
+        0,
+        591,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        46,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "587aca6038ab229ed68aee57476a65b2435b4f8caed6dcd22f96757ff01bf192"
+    },
+    {
+      "file": "characters/tavern_master/normal.png",
+      "sourceFile": "assets/酒場主人立ち絵.png",
+      "sourceRect": [
+        0,
+        0,
+        652,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        16,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "6b224e62d446f4c6b1a5de5abfaab53e169f06f9bf2bdca21083f00240a7da5c"
+    },
+    {
+      "file": "characters/tavern_master/serious.png",
+      "sourceFile": "assets/酒場主人立ち絵.png",
+      "sourceRect": [
+        592,
+        0,
+        593,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        45,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "d405264e03f2e48a8d1f80f6b614b626bfeb2fe0d1d2e70418e1b91834db0d85"
+    },
+    {
+      "file": "characters/tavern_master/exasperated.png",
+      "sourceFile": "assets/酒場主人立ち絵.png",
+      "sourceRect": [
+        1152,
+        0,
+        622,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        31,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "c6bc8680af9171b40f339513f88029378f6ddb91403862d76bb534a53a8c18a6"
+    },
+    {
+      "file": "characters/blacksmith/normal.png",
+      "sourceFile": "assets/鍛冶場立ち絵.png",
+      "sourceRect": [
+        0,
+        0,
+        649,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        17,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "a87d53335bcac821b10f0d99ce01300af01c0ded9c95aca25193e867808c8712"
+    },
+    {
+      "file": "characters/blacksmith/confident.png",
+      "sourceFile": "assets/鍛冶場立ち絵.png",
+      "sourceRect": [
+        594,
+        0,
+        610,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        37,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "c01155bee007759f384c464d75b9fc7c3dc6ba74064ed380e898d997e6b3fb1c"
+    },
+    {
+      "file": "characters/blacksmith/serious.png",
+      "sourceFile": "assets/鍛冶場立ち絵.png",
+      "sourceRect": [
+        1183,
+        0,
+        591,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        46,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "75b425ecafec453105410aa41e912e6f7721f257d09b81bbd94e938aeaaeb28f"
+    },
+    {
+      "file": "characters/item_shopkeeper/normal.png",
+      "sourceFile": "assets/道具屋立ち絵.png",
+      "sourceRect": [
+        0,
+        0,
+        621,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        31,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "95b656d7a18f0a8d33ad2c46e5d0f7897f887da8672cc2ef7e2822c48134ab89"
+    },
+    {
+      "file": "characters/item_shopkeeper/smile.png",
+      "sourceFile": "assets/道具屋立ち絵.png",
+      "sourceRect": [
+        590,
+        0,
+        590,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        47,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "40af0fd216e7c6587d73b854db3d2edfcdcfcb15a4d831323c3c820da8d0f403"
+    },
+    {
+      "file": "characters/item_shopkeeper/worried.png",
+      "sourceFile": "assets/道具屋立ち絵.png",
+      "sourceRect": [
+        1184,
+        0,
+        590,
+        887
+      ],
+      "sourceType": "transparent-seam-crop",
+      "originalEdgeClipped": true,
+      "width": 684,
+      "height": 919,
+      "paddingOffset": [
+        47,
+        16
+      ],
+      "pixelExact": true,
+      "sha256": "79fc23ecefe55c9efc9dbe55c5b797458482a6607d40d0a340cfeaf1ea3fea61"
+    },
+    {
+      "file": "characters/player/serious.png",
+      "sourceFile": "assets/playerserious.png",
+      "sourceRect": [
+        0,
+        0,
+        1024,
+        1536
+      ],
+      "sourceType": "single-portrait-fit",
+      "width": 684,
+      "height": 919,
+      "contentSize": [
+        591,
+        887
+      ],
+      "paddingOffset": [
+        46,
+        16
+      ],
+      "pixelExact": false,
+      "resampling": "LANCZOS (uniform fit only)",
+      "sha256": "0cb02d2f259b72f67c523dc0d09cb47056ad6ce30530ba6040efbcae68a62c6c"
+    },
+    {
+      "file": "characters/player/angry.png",
+      "sourceFile": "assets/playerangry.png",
+      "sourceRect": [
+        0,
+        0,
+        1024,
+        1536
+      ],
+      "sourceType": "single-portrait-fit",
+      "width": 684,
+      "height": 919,
+      "contentSize": [
+        591,
+        887
+      ],
+      "paddingOffset": [
+        46,
+        16
+      ],
+      "pixelExact": false,
+      "resampling": "LANCZOS (uniform fit only)",
+      "sha256": "49417151ebc454a950d43fb810f01057204b1975e0518d92d784aae911277b54"
+    }
+  ],
+  "rejected": [],
+  "seamPolicy": "Only alpha <= 3 fringe may cross a seam; RGBA retained unchanged. No opaque contours cut."
+}

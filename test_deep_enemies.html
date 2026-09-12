@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=()=>setTimeout(()=>{const w=document.querySelector('iframe').contentWindow,s=w.__gameDebug.state,out=[];const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS: '+n);};
 try{
@@ -13,11 +13,11 @@ try{
  w.clearPlayerStatuses();w.deepEnemyTurn({trait:'false_friend'},false);check(s.statusEffects.curse&&s.statusEffects.weakened,'偽りの幼馴染が状態異常');
  w.clearPlayerStatuses();e={trait:'warped_tree',hp:50,maxHp:100};w.deepEnemyTurn(e,false);check(e.hp>50&&s.statusEffects.bleed,'歪曲樹人の回復・出血');
  const data=w.__equipmentDebug;s.screen='town';s.currentEnemy=null;s.camp.vaultSize=1000;s.vaultGold=100000;s.abyssCores=100;
- for(const area of w.__gameDebug.AREAS.filter(a=>a.min>=61)){
+ for(const area of w.__gameDebug.AREAS.filter(a=>a.min>=61&&a.max<=100)){
   const id='gear_'+area.enemies[0].materialSource+'_weapon',r=data.recipes[id];for(const [key,n]of Object.entries(r.materials))for(let i=0;i<n;i++)s.storage.push({...data.materials[key],key,type:'material',id:crypto.randomUUID()});
   check(w.craftEquipment(id),'新素材クラフト '+area.tag);w.closeGenericModal();
  }
- s.camp.lab=5;s.floor=90;check(w.getLabBossIntelHtml().includes('忘却の司書')&&w.getLabBossIntelHtml().includes('危険解析'),'研究所Lv5と100F解析');
+ s.camp.lab=5;s.bossFirstKills[100]=true;s.floor=90;check(w.getLabBossIntelHtml().includes('忘却の司書')&&w.getLabBossIntelHtml().includes('危険解析'),'100Fクリア済み研究所の解析');
  out.push('MATERIALS '+Object.keys(data.materials).length+' RECIPES '+Object.keys(data.recipes).length);
  out.push('ALL TESTS PASSED');
 }catch(e){out.push('FAIL: '+e.stack);}document.getElementById('results').textContent=out.join('\n');},300);

@@ -12,5 +12,8 @@
       if (it.heal) s.push(`回復+${it.heal}`);
       if (it.affixName) s.push(`特性:${it.affixName}`);
       if (it.bossUnique) s.push('秘宝 / Boss Unique');
-      return s.join(' | ') || it.desc;
+      // Legacy/enemy-drop materials may have no description. Never stringify
+      // missing metadata in the warehouse or shared equipment presentation.
+      const description = typeof it.desc === 'string' && !/^(undefined|null|NaN)$/i.test(it.desc.trim()) ? it.desc : '';
+      return s.join(' | ') || description;
     }

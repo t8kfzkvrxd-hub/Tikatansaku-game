@@ -1,0 +1,39 @@
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>v0.34.6 UI friction regression</title><pre id="results">RUNNING</pre><iframe src="index.html"></iframe>
+<script>
+const backup=localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+const run=async()=>{
+ const rows=[],check=(name,pass)=>{rows.push({name,pass:!!pass});if(!pass)throw Error(name);};
+ enterGameFromHome();closeGenericModal();state.chapter.pending=null;state.chapter.mode='skip';state.chapter.contract=true;state.chapter.owned.elna=true;state.chapter.companion='elna';migrateCompanionEquipment();
+ state.equipped=emptyEquipmentSlots();state.chapter.equipment.elna=emptyEquipmentSlots();state.floor=1;state.screen='door_select';
+ const full=['thunder','blood','giant','fort','fang','ember','cut','mirror'];
+ const offer=(pending=1)=>{closeGenericModal();resetExpeditionPerks(true);state.screen='door_select';expeditionPerks.selected=[...full];expeditionPerks.pending=pending;expeditionPerks.offered=['calm','hammer','endure'];expeditionOfferSerial++;};
+ const ledger=()=>JSON.stringify({floor:state.floor,hp:state.hp,greed:state.greedLevel,storage:state.storage,g:state.gold,party:state.chapter.party,save:localStorage.getItem(SAVE_KEY)});
+ offer();const before=ledger(),serial=expeditionOfferSerial;openExpeditionPerks();check('whole cards / skip',document.querySelectorAll('.perk-choice').length===3&&!!document.querySelector('button[onclick^="skipExpeditionPerk"]'));
+ for(let n=0;n<20;n++)skipExpeditionPerk(serial);
+ check('20 clicks skip once / 8 unchanged',JSON.stringify(expeditionPerks.selected)===JSON.stringify(full)&&!expeditionPerksPending());check('skip no penalty / save write',before===ledger());
+ syncExpeditionPerkChoice();await new Promise(r=>setTimeout(r,450));check('skipped offer stays closed',!expeditionPerks.offered.length&&document.getElementById('modal-layer').style.display==='none');
+ generateDoorsForFloor();await new Promise(r=>setTimeout(r,450));selectExplorationRoute(state.currentDoors.findIndex(d=>['battle_normal','elite_battle'].includes(d.type)));await new Promise(r=>setTimeout(r,450));check('skip then exploration route enters battle',state.screen==='battle');
+ offer(2);const oldSerial=expeditionOfferSerial;for(let n=0;n<20;n++)skipExpeditionPerk(oldSerial);check('stale click cannot skip next reward',expeditionPerks.pending===1);closeGenericModal();
+ offer();chooseExpeditionPerk('calm');check('exchange picker does not mutate',JSON.stringify(expeditionPerks.selected)===JSON.stringify(full));confirmExpeditionExchange('calm','thunder');const text=document.getElementById('modal-layer').innerText;
+ check('compare old/new descriptions',text.includes('失う強化')&&text.includes('得る強化')&&text.includes(EXPEDITION_PERKS.find(p=>p.id==='calm').description)&&text.includes(EXPEDITION_PERKS.find(p=>p.id==='thunder').description));
+ document.querySelector('.update-notes-actions button').click();check('confirmed exchange 8',expeditionPerks.selected.length===8&&!expeditionPerks.selected.includes('thunder')&&expeditionPerks.selected.includes('calm'));
+ state.screen='battle';state.currentEnemy={name:'試験敵',hp:1000,maxHp:1000,atk:10,def:5,parts:[],buildStatuses:{}};expeditionPerks.selected=full;expeditionPerks.offered=['calm'];expeditionPerks.pending=1;
+ openExpeditionPerks();check('battle read-only 8 descriptions',document.querySelectorAll('.expedition-perk-modal article').length===8&&!document.querySelector('.perk-choice')&&!document.querySelector('button[onclick^="skipExpeditionPerk"]'));
+ check('battle acquisition rejected',!chooseExpeditionPerk('calm','thunder')&&!skipExpeditionPerk());const html=document.getElementById('modal-layer').innerHTML;openExpeditionReplacement('calm');check('battle exchange UI rejected',html===document.getElementById('modal-layer').innerHTML);
+ const ally=partyMember('elna').unit;state.hp=100;ally.hp=100;expeditionPerks.selected=['thunder','hammer','endure','blood','chant'];state.buildRuntime={hits:2,synergyNext:20};ally.buildRuntime={hits:1,synergyNext:0};const a=expeditionActor(state),b=expeditionActor(ally);a.smash=40;a.chain=3;a.blood=2;b.chain=1;
+ const runtime=JSON.stringify(a),player=explorationDecisionStates(state),elna=explorationDecisionStates(ally);check('readiness actor independent',player.includes('雷撃 2/3 HIT')&&elna.includes('雷撃 1/3 HIT')&&player.some(t=>t.includes('+40%'))&&!elna.some(t=>t.includes('+40%')));check('readiness no mutation',JSON.stringify(a)===runtime);
+ openExpeditionPerks();check('full readiness accessible',document.getElementById('modal-layer').innerText.includes('主人公：次の行動')&&document.getElementById('modal-layer').innerText.includes('エルナ：次の行動'));
+ closeGenericModal();resetExpeditionPerks();state.screen='town';state.vaultGold=100000;state.storage=[];render();forgeFilters.character='player';
+ const locked=FORGE_INDEX.find(n=>n.r.type==='weapon'&&materialProgressionIssue(n.r.rarity)),base=FORGE_INDEX.find(n=>n.r.type==='weapon'&&!n.r.parent&&forgeRecipeRevealed(n.id));
+ check('future rarity separated',forgeBranchState(locked.id).group==='future');check('no false close completion for locked weapon',forgeFutureGroups(locked.id).every(r=>r.group==='将来的に関連する'));
+ const advice=forgeEmptyAdvice();check('empty recommendation one actionable reason',!!advice.reason&&!!advice.action&&forgeEmptyHtml().includes('上級者向け'));eval(advice.action);check('empty advice opens screen',document.getElementById('modal-layer').style.display!=='none'||!!LobbyScreen.facility);
+ openWeaponTree(base.id);check('tree compact single node actions',document.querySelectorAll('.forge-branch').length<=5&&[...document.querySelectorAll('.forge-branch')].every(b=>!b.querySelector('button')));
+ openCompletedBuilds('player');check('default max6',document.querySelectorAll('.completed-build-list section').length<=6);document.querySelector('button[onclick*="null,true"]').click();check('explicit full25',document.querySelectorAll('.completed-build-list section').length===25);
+ check('actual skill role',skillRole({desc:'次ターン確定会心'})==='会心準備'&&skillRole({desc:'HP吸収60%'})==='吸収');check('actual core break benefit',partPurpose('core').includes('ATK'));
+ check('water advice from actual gimmick',(()=>{state.waterLevel=80;return battleIntentAdvice({gimmick:'rising_water',actionType:'critical_smash'}).advice.includes('排水')})());
+ const card=explorationRouteCard({type:'battle_normal',runRisk:'bold'},0,'坑道');check('route no duplicate modifiers',(card.match(/ATK/g)||[]).length===1&&(card.match(/50%/g)||[]).length===1);
+ check('1531 / 47 / 25 / 24',Object.keys(EQUIPMENT_CATALOG).length===1531&&Object.keys(BUILD_CATALOG).length===47&&COMPLETED_BUILDS.length===25&&EXPEDITION_PERKS.length===24&&EXPEDITION_LIMIT===8);
+ saveState();const saved=localStorage.getItem(SAVE_KEY);loadState();check('old save load / no UI runtime persisted',!!saved&&!saved.includes('expeditionOfferSerial')&&!saved.includes('expeditionActors')&&SAVE_KEY==='ABYSS_ROGUE_SAVED_V2');return rows;
+};
+window.onload=async()=>{try{const rows=await document.querySelector('iframe').contentWindow.eval('('+run.toString()+')()');document.getElementById('results').textContent=JSON.stringify(rows,null,2)+'\nALL TESTS PASSED';}catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}finally{backup===null?localStorage.removeItem('ABYSS_ROGUE_SAVED_V2'):localStorage.setItem('ABYSS_ROGUE_SAVED_V2',backup);}};
+</script>

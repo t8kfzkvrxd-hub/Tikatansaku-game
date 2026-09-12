@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game" style="width:1366px;height:768px;border:0"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=async()=>{
  const frame=document.querySelector('iframe'),w=frame.contentWindow,d=w.document,lines=[],wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -6,7 +6,7 @@ window.onload=async()=>{
  try{
   w.closeGenericModal();w.__gameDebug.state.screen='town';w.__gameDebug.state.chapter.pending=null;w.__gameDebug.state.chapter.owned.elna=true;w.render();
   await d.querySelector('.lobby-background').decode();await wait(100);
-  check(d.querySelectorAll('.lobby-hotspot').length===7,'7 facility labels');
+  check(d.querySelectorAll('.lobby-hotspot').length===8,'8 facility labels including summons');
   for(const [width,height]of [[1920,1080],[1366,768],[932,430],[844,390],[740,360]]){
    frame.style.width=width+'px';frame.style.height=height+'px';await wait(180);
    check(d.documentElement.scrollWidth<=width&&d.documentElement.scrollHeight<=height,'no scroll '+width);
@@ -15,23 +15,21 @@ window.onload=async()=>{
    rects.forEach((r,i)=>{check(r.width>=44&&r.height>=44,'hit size '+width+' '+i);for(let j=0;j<i;j++){const s=rects[j];check(r.right<=s.left||r.left>=s.right||r.bottom<=s.top||r.top>=s.bottom,'non-overlap '+i+'/'+j)}});
    for(const label of d.querySelectorAll('.lobby-hotspot span,.lobby-menu button')){const r=label.getBoundingClientRect();check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height,'label fits '+width+' '+label.textContent)}
   }
-  for(const b of d.querySelectorAll('.lobby-hotspot')){b.click();check(d.getElementById('modal-layer').style.display!=='none','open '+b.dataset.facility);w.closeGenericModal()}
+  for(const b of d.querySelectorAll('.lobby-hotspot')){b.click();await wait(300);check(d.getElementById('modal-layer').style.display!=='none','open '+b.dataset.facility);w.closeGenericModal()}
   w.openLobbyFacility('warehouse');w.setStorageCategory('material');check(d.querySelector('#lobby-facility-content button[onclick="setStorageCategory(\'material\')"]').classList.contains('btn-gold'),'warehouse filter refresh');w.closeGenericModal();
   d.querySelector('.lobby-menu button').click();check(d.getElementById('modal-layer').textContent.includes('エルナ')&&d.getElementById('modal-layer').textContent.includes('アクセ2'),'equipment character switch + seven slots');w.closeGenericModal();
   check(!d.querySelector('.lobby-menu').textContent.includes('拠点管理')&&typeof w.openLobbyManagement==='undefined','legacy management removed');
   const s=w.__gameDebug.state;s.vaultGold=100000;s.abyssCores=100;s.deepCrystals=100;
-  for(const [id,key,action] of [['town-blacksmith','blacksmith',"upgradeCampFacility('blacksmith')"],['town-shop','shop',"upgradeCampFacility('shop')"],['town-tavern','tavern',"upgradeCampFacility('tavern')"],['town-lab','lab',"upgradeCampFacility('lab')"],['warehouse','vaultLevel','upgradeVault()']]){
-   s.camp[key]=1;w.render();w.openLobbyFacility(id);const before=s.camp[key],size=s.camp.vaultSize;
-   const button=[...d.querySelectorAll('#lobby-facility-content button')].find(b=>b.getAttribute('onclick')===action);
-   check(button&&!button.disabled,'upgrade accessible '+id);button.click();check(s.camp[key]===before+1,'upgrade applied '+id);
-   if(id==='warehouse')check(s.camp.vaultSize===size+10,'warehouse +10');
-   check(d.getElementById('modal-layer').textContent.includes('Lv.2'),'upgrade confirmation '+id);w.closeGenericModal();w.openLobbyFacility(id);
-   check(d.querySelector('#lobby-facility-content').textContent.includes('Lv.2'),'upgrade display refresh '+id);w.closeGenericModal();
+  s.bossFirstKills[10]=true;s.bossFirstKills[30]=true;s.bossFirstKills[50]=true;s.bossFirstKills[100]=true;
+  for(const id of ['town-blacksmith','town-shop','town-tavern','town-lab','warehouse']){
+   w.render();w.openLobbyFacility(id);
+   check(!d.querySelector('#modal-layer [onclick^="upgradeCampFacility"],#modal-layer [onclick="upgradeVault()"]'),'retired level UI absent '+id);
+   check(w.facilityTier()===5,'progress unlocks all services '+id);w.closeGenericModal();
   }
   w.openLobbyFacility('town-lab');check(!d.querySelector('#lobby-facility-content [onclick^="upgradeTalent"]'),'permanent blessings removed');
   d.querySelector('#lobby-facility-content [onclick*="codex"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('図鑑'),'codex reachable');w.closeGenericModal();
   w.openLobbyFacility('archive');check(d.querySelector('[onclick="openMemoryArchive()"]'),'story replays reachable');d.querySelector('[onclick="openLobbyFacility(\'log\')"]').click();check(d.querySelector('#lobby-facility-content').textContent.includes('冒険の軌跡'),'logs reachable');w.closeGenericModal();
-  w.saveState();const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'),camp=JSON.stringify(s.camp),unlocked=s.maxUnlockedFloor;
+  s.deepestFloorReached=100;s.maxUnlockedFloor=110;w.syncFacilityCapacity();w.saveState();const saved=w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2'),camp=JSON.stringify(s.camp),unlocked=s.maxUnlockedFloor;
   w.loadState();check(JSON.stringify(w.__gameDebug.state.camp)===camp&&w.__gameDebug.state.maxUnlockedFloor===unlocked,'save facility levels and unlocks preserved');
   w.render();w.openLobbyFacility('warehouse');w.closeGenericModal();check(w.localStorage.getItem('ABYSS_ROGUE_SAVED_V2')===saved,'navigation does not rewrite save');
   w.showHomeScreen();check(!d.body.classList.contains('at-lobby'),'home clears map');w.enterGameFromHome();w.closeGenericModal();check(d.body.classList.contains('at-lobby'),'home to map');

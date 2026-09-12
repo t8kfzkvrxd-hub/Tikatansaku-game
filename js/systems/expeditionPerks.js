@@ -16,6 +16,7 @@ let expeditionPerks={active:false,selected:[],offered:[],kills:0,contract:null,p
 function resetExpeditionPerks(active=false){if(typeof expeditionClearRuntime==='function')expeditionClearRuntime();expeditionPerks={active,selected:[],offered:[],kills:0,contract:null,pending:0};}
 function expeditionPerksPending(){return expeditionPerks.active&&(expeditionPerks.offered.length>0||expeditionPerks.pending>0);}
 let expeditionPerkIntro=false;
+let expeditionOfferSerial=0;
 function syncExpeditionPerkChoice(){
  if(expeditionPerks.dismissed)return;
  if(!expeditionPerksPending()||!['door_select','safe_point'].includes(state.screen)||HomeScreen.active)return;
@@ -64,6 +65,7 @@ function offerExpeditionPerks(){
  pick(pool.filter(p=>!chosen.some(q=>q.category===p.category)));
  while(chosen.length<Math.min(3,pool.length))pick(pool);
  expeditionPerks.offered=chosen.map(p=>p.id);
+ expeditionOfferSerial++;
 }
 function chooseExpeditionPerk(id,replaceId=null){
  if(!expeditionPerks.active||!['door_select','safe_point'].includes(state.screen)||!expeditionPerks.offered.includes(id))return false;
@@ -72,21 +74,32 @@ function chooseExpeditionPerk(id,replaceId=null){
  if(expeditionPerks.selected.length>=EXPEDITION_LIMIT){if(!expeditionPerks.selected.includes(replaceId)){openExpeditionReplacement(id);return false;}expeditionPerks.selected=expeditionPerks.selected.filter(k=>k!==replaceId);expeditionClearRuntime();}
  expeditionPerks.offered=[];expeditionPerks.dismissed=false;expeditionPerks.pending=Math.max(0,(expeditionPerks.pending||1)-1);expeditionPerks.selected.push(id);closeGenericModal();render();const names=expeditionName();if(names.length)addLog('探索ビルド形成《'+names.join('・')+'》','gold');return true;
 }
+function skipExpeditionPerk(serial=expeditionOfferSerial){
+ if(serial!==expeditionOfferSerial||!expeditionPerks.active||!['door_select','safe_point'].includes(state.screen)||expeditionPerks.selected.length<EXPEDITION_LIMIT||!expeditionPerks.offered.length)return false;
+ expeditionOfferSerial++;expeditionPerks.offered=[];expeditionPerks.pending=Math.max(0,(expeditionPerks.pending||1)-1);expeditionPerks.dismissed=false;closeGenericModal();render();return true;
+}
+function confirmExpeditionExchange(id,old,serial=expeditionOfferSerial){
+ if(serial!==expeditionOfferSerial||!['door_select','safe_point'].includes(state.screen)||!expeditionPerks.offered.includes(id)||!expeditionPerks.selected.includes(old)||!expeditionValidExchange(id,old))return;
+ showChapterModal('探索強化を交換',`<div class="perk-comparison"><section><h3>失う強化</h3>${expeditionPerkDescription(old)}</section><section><h3>得る強化</h3>${expeditionPerkDescription(id)}</section></div>`,`<button class="btn btn-gold" onclick="if(expeditionOfferSerial===${serial})chooseExpeditionPerk('${id}','${old}')">交換する</button><button class="btn btn-sub" onclick="openExpeditionReplacement('${id}')">戻る</button>`);
+ document.querySelector('#modal-layer .update-notes-card').classList.add('expedition-exchange-modal');
+}
+function expeditionPerkDescription(id){const p=EXPEDITION_PERKS.find(p=>p.id===id);return p?`<b>${uiEscape(p.name)}</b><p>${uiEscape(p.description)}</p>${p.drawback?`<small class="forge-missing">代償：${uiEscape(p.drawback)}</small>`:''}`:'';}
 function openExpeditionReplacement(id){
- if(!expeditionPerks.offered.includes(id))return;
+ if(!expeditionPerks.active||!['door_select','safe_point'].includes(state.screen)||!expeditionPerks.offered.includes(id))return;
  const name=EXPEDITION_PERKS.find(p=>p.id===id).name;
- showChapterModal('8枠：交換する強化を選ぶ',`<p>《${uiEscape(name)}》と交換。選ぶまでは変更しません。</p><div class="expedition-replacement">${expeditionPerks.selected.map(old=>`<button class="btn btn-sub" ${expeditionValidExchange(id,old)?'':'disabled'} onclick="chooseExpeditionPerk('${id}','${old}')">${uiEscape(EXPEDITION_PERKS.find(p=>p.id===old).name)}${expeditionValidExchange(id,old)?'':'（連携維持に必要）'}</button>`).join('')}</div>`,`<button class="btn btn-sub" onclick="openExpeditionPerks()">候補へ戻る</button>`);
+ showChapterModal('8枠：交換する強化を選ぶ',`<p>《${uiEscape(name)}》と交換。次の画面で効果を比較します。</p><div class="expedition-replacement">${expeditionPerks.selected.map(old=>`<button class="btn btn-sub" ${expeditionValidExchange(id,old)?'':'disabled'} onclick="confirmExpeditionExchange('${id}','${old}',${expeditionOfferSerial})">${uiEscape(EXPEDITION_PERKS.find(p=>p.id===old).name)}${expeditionValidExchange(id,old)?'':'（連携維持に必要）'}</button>`).join('')}</div>`,`<button class="btn btn-sub" onclick="openExpeditionPerks()">候補へ戻る</button>`);
  document.querySelector('#modal-layer .update-notes-card')?.classList.add('expedition-exchange-modal');
 }
 function openExpeditionPerks(){
- if(state.screen==='battle'||HomeScreen.active)return;
+ if(HomeScreen.active)return;
  expeditionPerks.dismissed=false;
- const pending=expeditionPerks.offered,list=pending.length?pending:expeditionPerks.selected;
- showChapterModal(pending.length?'3体撃破の報酬：1つ選ぶ':'今回の探索強化',`${expeditionPerks.contract?.remaining>0?`<p>道の効果：あと${expeditionPerks.contract.remaining}戦 / 敵ATK ×${expeditionPerks.contract.atk}・獲得G ×${expeditionPerks.contract.gold}。素材率は通常です。</p>`:''}<p>今回の探索で二人を強化（${expeditionPerks.selected.length}/8）${expeditionName().map(n=>'《'+n+'》').join('')}</p>${list.map(id=>{const p=EXPEDITION_PERKS.find(p=>p.id===id);return `<article class="forge-recipe"><small>${p.name}</small><p class="perk-effect">${uiEscape(p.description)}${p.drawback?`<small class="forge-missing">代償：${uiEscape(p.drawback)}</small>`:''}</p>${pending.length?`<button class="btn" onclick="chooseExpeditionPerk('${id}')">これを選ぶ</button>`:''}</article>`;}).join('')||'<p>3戦の撃破ごとに、3候補から1つ選べます。</p>'}`,` ${pending.length?'':'<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>'}`);
+ const pending=state.screen==='battle'?[]:expeditionPerks.offered,list=pending.length?pending:expeditionPerks.selected;
+ showChapterModal(pending.length?'3体撃破の報酬：1つ選ぶ':'取得中の探索強化',`${expeditionPerks.contract?.remaining>0?`<p>道の効果：あと${expeditionPerks.contract.remaining}戦 / 敵ATK ×${expeditionPerks.contract.atk}・獲得G ×${expeditionPerks.contract.gold}。素材率は通常です。</p>`:''}<p>今回の探索で二人を強化（${expeditionPerks.selected.length}/8）${expeditionName().map(n=>'《'+n+'》').join('')}${state.screen==='battle'?'／戦闘中は閲覧のみ':''}</p>${list.map(id=>pending.length?`<button class="perk-choice" onclick="chooseExpeditionPerk('${id}')">${expeditionPerkDescription(id)}<span class="perk-acquire">${expeditionPerks.selected.length>=8?'交換を検討':'獲得'}</span></button>`:`<article class="forge-recipe">${expeditionPerkDescription(id)}</article>`).join('')||'<p>3戦の撃破ごとに、3候補から1つ選べます。</p>'}`,pending.length?(expeditionPerks.selected.length>=8?`<button class="btn btn-sub" onclick="skipExpeditionPerk(${expeditionOfferSerial})">今回は見送る（8枠を維持）</button>`:''):'<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
  document.querySelector('#modal-layer .update-notes-card')?.classList.add('expedition-perk-modal');
+ if(state.screen==='battle')document.querySelector('#modal-layer .update-notes-body').insertAdjacentHTML('afterbegin',expeditionUnits().map(unit=>{const lines=explorationDecisionStates(unit);return lines.length?`<section><b>${unit===state?'主人公':'エルナ'}：次の行動</b>${lines.map(s=>`<p>${uiEscape(s)}</p>`).join('')}</section>`:'';}).join(''));
 }
 function deferExpeditionPerks(){expeditionPerks.dismissed=true;closeGenericModal();}
-function expeditionPerkButton(){return `<button class="expedition-perk-button" onclick="openExpeditionPerks()">${expeditionPerksPending()?'✦ 探索ボーナス 未選択！':'強化 '+expeditionPerks.selected.length}${expeditionPerks.contract?.remaining>0?' / 道'+expeditionPerks.contract.remaining+'戦':''}</button>`;}
+function expeditionPerkButton(){return `<button class="expedition-perk-button" onclick="openExpeditionPerks()">${state.screen!=='battle'&&expeditionPerksPending()?'探索ボーナス 未選択':'探索強化 '+expeditionPerks.selected.length}${expeditionPerks.contract?.remaining>0?' / 道'+expeditionPerks.contract.remaining+'戦':''}</button>`;}
 function prepareExpeditionEncounter(enemy){
  if(!expeditionPerks.active||enemy.expeditionPrepared)return;
  enemy.expeditionPrepared=true;

@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>探索候補・交換再監査</title><pre id="results">RUNNING</pre><iframe src="index.html"></iframe><script>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>探索候補・交換再監査</title><pre id="results">RUNNING</pre><iframe src="index.html"></iframe><script>
 const backup=localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
 window.onload=()=>{try{const w=document.querySelector('iframe').contentWindow;const result=w.eval(`(()=>{
  enterGameFromHome();closeGenericModal();state.chapter.pending=null;state.chapter.mode='skip';state.chapter.contract=true;state.chapter.owned.elna=true;state.chapter.companion='elna';migrateCompanionEquipment();partyMember('elna');state.equipped=emptyEquipmentSlots();state.chapter.equipment.elna=emptyEquipmentSlots();state.screen='door_select';resetExpeditionPerks(true);

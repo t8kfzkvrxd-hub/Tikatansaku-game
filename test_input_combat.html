@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre><script>
 window.onload=async()=>{
  const w=document.querySelector('iframe').contentWindow,d=w.document,s=w.__gameDebug.state,out=[],wait=ms=>new Promise(r=>setTimeout(r,ms));
  const check=(v,n)=>{if(!v)throw Error(n);out.push('PASS '+n)};

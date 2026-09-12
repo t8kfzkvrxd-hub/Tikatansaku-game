@@ -1,0 +1,56 @@
+<!doctype html><script src="tests/fixture.js"></script><html lang="ja"><meta charset="utf-8"><title>Story asset regression</title>
+<h1>Story assets</h1><pre id="results">RUNNING</pre><iframe id="game" src="index.html#game" style="width:932px;height:430px"></iframe>
+<script>
+const backup=Object.fromEntries(['ABYSS_ROGUE_SAVED_V2','ABYSS_TUTORIAL_SEEN','lastSeenVersion'].map(k=>[k,localStorage.getItem(k)]));
+async function testStoryAssets(){
+ const rows=[],check=(name,ok)=>{rows.push({name,pass:!!ok});if(!ok)throw Error(name);};
+ const loaded=img=>new Promise(resolve=>{if(img.complete)resolve(img.naturalWidth>0);else{img.addEventListener('load',()=>resolve(true),{once:true});img.addEventListener('error',()=>resolve(false),{once:true});}});
+ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+ const manifest=await fetch('assets/story/manifest.json').then(r=>r.json());
+ check('27 PNGs / no deferred expressions',manifest.parts.length===27&&manifest.rejected.length===0);
+ for(const p of manifest.parts){const im=new Image();im.src='assets/story/'+p.file;check(p.file,await loaded(im)&&im.width===684&&im.height===919);}
+ for(const name of ['tavern','forge','warehouse','item-shop']){const im=new Image();im.src=`assets/story/backgrounds/${name}.png`;check('background '+name,await loaded(im));}
+ check('27 expression states registered',Object.values(MAIN_STORY_EXPRESSIONS).flat().length===27);
+ check('single portraits have dedicated paths',storyPortraitPath('player','serious').endsWith('/serious.png')&&storyPortraitPath('player','angry').endsWith('/angry.png'));
+ MainStory.active=null;state.chapter.pending=null;state.chapter.checkpoint=null;state.chapter.mainStory=newMainStoryState(true);state.chapter.mainStory.unlocked[2]=true;state.chapter.mainStory.noticeSeen=true;HomeScreen.active=false;
+ const fingerprint=JSON.stringify([state.storage,state.vaultGold,state.hp,state.chapter.equipment,state.summons,state.floor]);
+ const signature=()=>[...document.querySelectorAll('.story-portrait,.story-background')].map(e=>[e.getAttribute('src'),e.dataset.expression,e.classList.contains('speaking')]);
+ for(const [scene,data] of Object.entries(MAIN_STORY_SCENES)){
+  for(let page=0;page<data.lines.length;page++){
+   MainStory.active={scene,page,mode:'STORY',queue:[]};renderMainStory();const normal=signature();
+   MainStory.active.mode='REPLAY';renderMainStory();check(scene+' '+page+' identical replay imagery',JSON.stringify(normal)===JSON.stringify(signature()));
+   const speaker=storySpeakerId(data.lines[page][0]);
+   check(scene+' '+page+' speaker',document.querySelectorAll('.story-portrait.speaking').length===(STORY_PORTRAITS[speaker]?1:0));
+  }
+ }
+ check('presentation never mutates gameplay/save data',fingerprint===JSON.stringify([state.storage,state.vaultGold,state.hp,state.chapter.equipment,state.summons,state.floor]));
+ const box=document.createElement('div');document.body.append(box);
+ for(const expression of MAIN_STORY_EXPRESSIONS.player){
+  box.innerHTML=storyPortraitMarkup({cast:['player'],speaker:'player',expressions:{player:expression}});
+  bindStoryImages(box,'',false);const portrait=box.firstElementChild;await loaded(portrait);
+  check('player '+expression+' loaded without fallback',portrait.naturalWidth===684&&!portrait.dataset.fallback&&portrait.getAttribute('src').endsWith('/'+expression+'.png')&&portrait.classList.contains('speaking'));
+ }
+ for(const expression of ['serious','angry']){
+  box.innerHTML=storyPortraitMarkup({cast:['player'],speaker:'player',expressions:{player:expression}});
+  const portrait=box.firstElementChild;portrait.dataset.storySrc='assets/story/missing-'+expression+'.png';bindStoryImages(box,'',false);await sleep(600);
+  check('player '+expression+' failure falls back once',portrait.dataset.fallback==='normal'&&portrait.naturalWidth===684&&!portrait.hidden);
+ }
+ box.innerHTML=storyPortraitMarkup({cast:['elna'],speaker:'elna',expressions:{elna:'smile'}});
+ let im=box.firstElementChild;im.dataset.storySrc='assets/story/missing-expression.png';bindStoryImages(box,'',false);await sleep(600);
+ check('missing expression -> normal',im.dataset.fallback==='normal'&&im.complete&&im.naturalWidth>0&&!im.hidden);
+ box.innerHTML=storyPortraitMarkup({cast:['elna'],speaker:'elna',expressions:{}});im=box.firstElementChild;
+ im.dataset.storySrc='assets/story/missing.png';im.dataset.normalSrc='assets/story/missing-normal.png';bindStoryImages(box,'',false);await sleep(600);
+ check('missing normal -> hidden, no recursion',im.hidden&&im.dataset.fallback==='hidden'&&!im.hasAttribute('src'));
+ box.innerHTML='<img class="story-background">';bindStoryImages(box,'assets/story/missing-background.png',true);await sleep(600);
+ check('missing background -> existing CSS background',box.firstElementChild.hidden&&box.firstElementChild.dataset.fallback==='existing');box.remove();
+ const page=MainStory.active.page;nextMainStory();check('dialogue continues after failed assets',!MainStory.active||MainStory.active.page!==page);
+ return rows;
+}
+document.getElementById('game').onload=async()=>{
+ const frame=document.getElementById('game'),w=frame.contentWindow;
+ try{for(let i=0;i<300&&!w.testStoryAssets;i++){if(w.eval('typeof storyVisualState==="function"'))break;await new Promise(r=>setTimeout(r,30));}
+ const rows=await w.eval('('+testStoryAssets.toString()+')()');document.getElementById('results').textContent='PASS\n'+JSON.stringify(rows,null,2);
+ }catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}
+ finally{frame.remove();for(const [k,v]of Object.entries(backup)){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}}
+};
+</script></html>

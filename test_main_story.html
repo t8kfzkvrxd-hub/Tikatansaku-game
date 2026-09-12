@@ -1,0 +1,56 @@
+<!doctype html><script src="tests/fixture.js"></script><html lang="ja"><meta charset="utf-8"><title>Main story regression</title>
+<h1>1〜10F story regression</h1><pre id="results">RUNNING</pre><iframe id="game" src="index.html#game" style="width:932px;height:430px"></iframe>
+<script>
+const storyTestBackup=Object.fromEntries(['ABYSS_ROGUE_SAVED_V2','ABYSS_TUTORIAL_SEEN','lastSeenVersion'].map(key=>[key,localStorage.getItem(key)]));
+async function runMainStoryTests(){
+ const results=[],check=(name,ok)=>{results.push({name,pass:!!ok});if(!ok)throw Error(name);},wait=()=>new Promise(r=>setTimeout(r,40));
+ const finish=()=>{let count=0;while(MainStory.active&&count++<200)nextMainStory();check('有限の会話送り',count<200);};
+ const close=()=>{MainStory.active=null;state.chapter.pending=null;state.chapter.checkpoint=null;document.getElementById('modal-layer').style.display='none';};
+ close();resetGameSave(false);HomeScreen.active=false;syncMainStory();
+ check('新規は冒頭から',MainStory.active?.scene==='opening');
+ const originalConfirm=window.confirm;window.confirm=()=>false;skipMainStory();window.confirm=originalConfirm;check('未読スキップのキャンセル',MainStory.active?.scene==='opening'&&MainStory.active.page===0);
+ const support=state.vaultGold;finish();await wait();check('同行登録・初期支援は一度',state.chapter.contract&&state.vaultGold===support+200);
+ startDungeonRun();await wait();check('1Fへ出発',state.floor===1);
+ for(const floor of [1,2,3]){state.floor=floor;startNormalBattle();check(floor+'F戦闘案内',!!document.querySelector('.main-story-tip'));}
+ state.currentEnemy=null;state.floor=4;generateDoorsForFloor();await wait();check('4F幼馴染会話',MainStory.active?.scene==='childhood');
+ const doors=JSON.stringify(state.currentDoors);const saved=JSON.parse(localStorage.getItem(SAVE_KEY));
+ MainStory.active=null;migrateChapter(saved.chapter);document.getElementById('modal-layer').style.display='none';syncMainStory();
+ check('途中再開と選択肢保持',MainStory.active?.scene==='childhood'&&JSON.stringify(state.currentDoors)===doors);finish();
+ state.floor=5;generateDoorsForFloor();await wait();check('5Fポータル会話',MainStory.active?.scene==='portal');finish();check('5F既存帰還門',state.screen==='safe_point');
+ const greed=state.greedLevel;inputSafety.until=0;continueReturnPortal();await new Promise(r=>setTimeout(r,450));
+ check('続行は6F・GREED+1',state.floor===6&&state.greedLevel===greed+1);
+ check('6F素材会話は抽選結果に依存しない',MainStory.active?.scene==='material');finish();startNormalBattle();const drops=dropMonsterMaterials(state.currentEnemy,()=>0);check('6F既存素材抽選',drops.length>0);state.currentEnemy=null;state.floor=7;generateDoorsForFloor();await wait();
+ check('7F通常敵導線',state.currentDoors[0].type==='battle_normal');startNormalBattle();await wait();
+ check('既存腕部位の敵',ensureEnemyParts(state.currentEnemy).some(p=>p.id==='arm'));check('部位会話',MainStory.active?.scene==='parts');
+ const hp=state.currentEnemy.hp;playerCombatAction('attack');check('会話中は戦闘入力無効',state.currentEnemy.hp===hp);finish();
+ state.currentEnemy=null;state.screen='door_select';expeditionPerks.active=true;expeditionPerks.pending=1;openExpeditionPerks();
+ check('探索強化へ会話接続',MainStory.active?.scene==='perk');finish();check('既存3択表示',!!document.querySelector('.perk-choice'));closeGenericModal();resetExpeditionPerks(true);
+ state.floor=9;generateDoorsForFloor();await wait();check('9F会話',MainStory.active?.scene==='beforeBoss');finish();
+ state.floor=10;startBossBattle(getCurrentArea().boss);check('10F既存ボス',state.currentEnemy.isBoss);state.bossFirstKills[10]=true;state.returnResolved=false;
+ const gold=state.vaultGold,lootId=state.inventory[0]?.id;state.dungeonGold=137;afterChapterBoss(10);check('初回撃破会話',MainStory.active?.scene==='afterBoss');
+ finish();await wait();check('初回強制帰還',state.screen==='town'&&state.floor===0);check('G・素材保持',state.vaultGold===gold+137&&state.storage.some(i=>i.id===lootId));
+ check('帰還後checkpointに未清算素材なし',state.chapter.checkpoint?.screen==='town'&&state.chapter.checkpoint.inventory.length===0);check('酒場が先',MainStory.active?.scene==='tavern');finish();await wait();finish();await wait();
+ check('鍛冶場stage',mainStoryState().stage==='forge');const recipe=mainStoryRecipe();check('通常素材で作れる武器',!!recipe);check('実際に製作',craftEquipment(recipe));const crafted=mainStoryState().craftedId;closeGenericModal();await wait();finish();await wait();
+ check('倉庫を実際に開く',MainStory.facilityVisit==='warehouse'&&!!document.getElementById('lobby-facility-content'));closeGenericModal();await wait();finish();await wait();
+ check('道具屋を実際に開く',MainStory.facilityVisit==='shop'&&document.getElementById('modal-layer').innerText.includes('薬'));closeGenericModal();await wait();finish();await wait();
+ check('装備操作stage',MainStory.facilityVisit==='equipment');closeGenericModal();await wait();check('装備前には終了しない',mainStoryState().stage==='equipment');
+ check('作成武器を装備',setCharacterEquipment('elna','weapon',crafted));closeGenericModal();await wait();finish();await wait();check('終了・自由操作',mainStoryState().stage==='free');
+ const fingerprint=()=>JSON.stringify([state.storage,state.equipped,state.chapter.equipment,state.vaultGold,state.deepestFloorReached,state.summons,state.bossFirstKills,state.hp,state.floor,state.screen,state.chapter.characters]);
+ const before=fingerprint();replayMainStory(1,true);finish();check('全回想で攻略状態無変更',fingerprint()===before);
+ check('2話既読保存',mainStoryState().read[1]&&mainStoryState().read[2]);close();const g=state.vaultGold;finalizeSafeReturn();check('帰還二重報酬なし',state.vaultGold===g);
+ state.floor=10;state.screen='battle';state.returnResolved=false;afterChapterBoss(10);check('2回目10Fは11Fへ',state.floor===11&&!MainStory.active);
+ close();state.screen='town';state.floor=0;state.deepestFloorReached=100;saveState();
+ const old=structuredClone(state.chapter);delete old.mainStory;old.pending=null;old.checkpoint=null;const items=JSON.stringify([state.storage,state.equipped,state.chapter.equipment,state.vaultGold,state.summons]);migrateChapter(old);syncMainStory();
+ check('旧セーブは両話解放',mainStoryState().legacy&&mainStoryState().unlocked[1]&&mainStoryState().unlocked[2]);
+ check('更新案内',document.getElementById('modal-layer').innerText.includes('新しくなりました'));ackMainStoryNotice(false);check('後でを保存',mainStoryState().noticeSeen);syncMainStory();
+ check('旧所持品・召喚無変更',items===JSON.stringify([state.storage,state.equipped,state.chapter.equipment,state.vaultGold,state.summons]));
+ check('旧プレイヤー施設強制なし',!mainStoryTownRequired());
+ state.floor=100;state.screen='battle';state.currentEnemy=null;afterChapterBoss(100);check('100Fで旧台本や退場を再生しない',state.floor===101&&!MainStory.active);
+ const elna=Object.values(MAIN_STORY_SCENES).flatMap(s=>s.lines).filter(l=>l[0]==='elna').map(l=>l[1]);
+ check('直接返答定型なし',elna.every(t=>!/(うん|そうだね|違う|分かった|それは|言った通り|さっき言って)/.test(t)));
+ check('新台本にミナなし',!JSON.stringify(MAIN_STORY_SCENES).includes('ミナ'));
+ check('装備1531維持',Object.keys(CRAFT_RECIPES).length===1531);check('探索強化24維持',EXPEDITION_PERKS.length===24);
+ return results;
+}
+document.getElementById('game').onload=async()=>{const out=document.getElementById('results');try{const result=await document.getElementById('game').contentWindow.eval('('+runMainStoryTests.toString()+')()');out.textContent=JSON.stringify(result,null,2)+'\nALL TESTS PASSED';}catch(e){out.textContent='FAIL '+e.stack;}finally{document.getElementById('game').remove();for(const [key,value]of Object.entries(storyTestBackup))value===null?localStorage.removeItem(key):localStorage.setItem(key,value);}};
+</script></html>

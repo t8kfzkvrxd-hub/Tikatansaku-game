@@ -1,0 +1,45 @@
+<!doctype html><script src="tests/fixture.js"></script><html lang="ja"><meta charset="utf-8"><title>Facility art regression</title><h1>Facility art</h1><pre id="results">RUNNING</pre><iframe id="game" src="index.html#game"></iframe>
+<script>
+const backup=Object.fromEntries(['ABYSS_ROGUE_SAVED_V2','ABYSS_TUTORIAL_SEEN','lastSeenVersion'].map(k=>[k,localStorage.getItem(k)]));
+async function facilityTests(){
+ const rows=[],check=(name,ok)=>{rows.push({name,pass:!!ok});if(!ok)throw Error(name);},tick=()=>new Promise(r=>setTimeout(r,40));
+ MainStory.active=null;state.chapter.pending=null;state.chapter.checkpoint=null;state.chapter.mainStory=newMainStoryState(true);state.chapter.mainStory.noticeSeen=true;state.chapter.mainStory.unlocked[2]=true;state.chapter.contract=true;state.chapter.owned.elna=true;state.chapter.mode='skip';HomeScreen.active=false;state.screen='town';state.bossFirstKills[10]=true;state.bossFirstKills[30]=true;state.bossFirstKills[50]=true;state.bossFirstKills[100]=true;state.vaultGold=10000;state.preparedItems=[];render();
+ const art=()=>document.getElementById('facility-art'),expression=()=>art()?.querySelector('.facility-npc')?.dataset.expression;
+ for(let i=0;i<20;i++){
+  const id=['town-blacksmith','town-shop','town-tavern','warehouse'][i%4];openLobbyFacility(id);await tick();
+  check('entry '+i,!!art());closeGenericModal();await tick();check('exit '+i,!art()&&!FacilityArt.id);
+ }
+ openLobbyFacility('town-shop');await tick();const g=state.vaultGold;
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches)check('reduced motion: no entry animation',getComputedStyle(art()).animationName==='none');
+ document.querySelector('#lobby-facility-content button[onclick*="buyExpeditionSupply(\'potion\')"]').click();await tick();
+ check('purchase unchanged: 30G / one potion',state.vaultGold===g-30&&state.preparedItems.filter(i=>i.type==='potion').length===1);
+ check('purchase smile',expression()==='smile');
+ state.vaultGold=0;state.preparedItems=[];openLobbyFacility('town-shop');buyExpeditionSupply('potion');check('insufficient G: no item',state.preparedItems.length===0&&state.vaultGold===0);
+ document.querySelector('#lobby-facility-content button[onclick*="buyExpeditionSupply(\'charm\')"]').click();await tick();check('insufficient G reaction',expression()==='worried');
+ state.vaultGold=10000;openLobbyFacility('town-tavern');
+ state.bounty.completed=true;const reward=getTavernReward(),gold=state.vaultGold;render();
+ document.querySelector('#lobby-facility-content button[onclick*="claimTavernBounty"]').click();await tick();
+ check('bounty reward unchanged',state.vaultGold===gold+reward&&!state.bounty.completed);
+ document.querySelector('#lobby-facility-content button[onclick*="selectTavernContract(\'boss\')"]').click();await tick();check('dangerous contract serious',state.bounty.type==='boss'&&expression()==='serious');
+ selectTavernContract('elite');check('existing contract',state.bounty.type==='elite');
+ openLobbyFacility('warehouse');check('warehouse panel and no fabricated NPC',!!document.getElementById('lobby-facility-content')&&!art().querySelector('.facility-npc'));
+ openRecipeDetail('iron_sword');check('forge detail art',FacilityArt.id==='forge');
+ const r=CRAFT_RECIPES.iron_sword;
+ for(const [key,n] of Object.entries(r.materials))for(let i=0;i<n;i++)state.storage.push({id:crypto.randomUUID(),type:'material',key,name:MATERIALS[key].name,rarity:MATERIALS[key].rarity});
+ state.vaultGold=10000;const before=state.craftProgress.crafted.iron_sword||0;check('craft existing API',craftEquipment('iron_sword'));
+ check('one craft, existing cost',state.craftProgress.crafted.iron_sword===before+1&&state.vaultGold===10000-r.gold);check('craft success confident',expression()==='confident');
+ openWeaponTree('iron_sword');check('derivation tree preserved',!!document.querySelector('.forge-tree-modal')&&!!art());
+ const missing=FORGE_INDEX.find(({id,r})=>forgeRecipeRevealed(id)&&Object.entries(r.materials).some(([k,n])=>materialCount(k)<n));
+ check('missing material fixture',!!missing);openRecipeDetail(missing.id);check('missing material serious',expression()==='serious');
+ const unavailable=FORGE_INDEX.find(({id})=>forgeRecipeRevealed(id)&&forgeBranchState(id).group==='future');
+ if(unavailable){openRecipeDetail(unavailable.id);check('locked recipe serious',expression()==='serious');}
+ const inventory=JSON.stringify([state.storage,state.vaultGold,state.preparedItems,state.bounty,state.chapter.equipment]);
+ art().querySelector('.facility-background').src='assets/not-present-bg.png';art().querySelector('.facility-npc').src='assets/not-present-npc.png';await new Promise(r=>setTimeout(r,500));
+ check('background fallback',art().querySelector('.facility-background').hidden);check('NPC fallback',art().querySelector('.facility-npc').hidden);check('fallback retains buttons',!!document.querySelector('.update-notes-actions button'));
+ closeGenericModal();await tick();replayMainStory(2);let guard=0;while(MainStory.active&&guard++<100)nextMainStory();openLobbyFacility('town-shop');await tick();
+ check('facility after replay',!!art()&&FacilityArt.id==='town-shop');check('art/replay preserve inventory',inventory===JSON.stringify([state.storage,state.vaultGold,state.preparedItems,state.bounty,state.chapter.equipment]));
+ check('equipment catalog unchanged',Object.keys(CRAFT_RECIPES).length===1531);check('build tags unchanged',Object.keys(BUILD_CATALOG).length===47);check('25 completed builds unchanged',COMPLETED_BUILDS.length===25);
+ return rows;
+}
+document.getElementById('game').onload=async()=>{const f=document.getElementById('game');try{const rows=await f.contentWindow.eval('('+facilityTests.toString()+')()');document.getElementById('results').textContent='PASS\n'+JSON.stringify(rows,null,2);}catch(e){document.getElementById('results').textContent='FAIL '+e.stack;}finally{f.remove();for(const[k,v]of Object.entries(backup))v===null?localStorage.removeItem(k):localStorage.setItem(k,v);}};
+</script></html>

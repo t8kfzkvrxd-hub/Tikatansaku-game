@@ -8,6 +8,8 @@ function battleBackground(area=explorationArea()){
 function openBattleMenu(){
  const extra=[...document.querySelectorAll('.battle2 .combat-actions button')].slice(4).map(b=>{const clone=b.cloneNode(true);clone.setAttribute('onclick',clone.getAttribute('onclick')+';closeGenericModal()');return clone.outerHTML;}).join('');
  showChapterModal('戦闘メニュー',`<p>スキル：${uiEscape(document.querySelector('.battle2 .combat-actions button:nth-child(4)')?.textContent||'—')}</p><p>${state.currentEnemy?.acting?'行動処理中：次のターンまでお待ちください。':'追加行動'}</p>${extra||'<p>現在使える特殊行動はありません。</p>'}<p>${state.currentEnemy?.isBoss?'煙玉：ボス戦では使用不可':'煙玉：所持している時のみ使用可能'}</p><button class="btn" onclick="openExplorationPanel('bag')">アイテム・所持品</button><button class="btn" onclick="openExplorationPanel('codex')">図鑑</button>`,`<button class="btn" onclick="closeGenericModal()">戦闘へ戻る</button>`);
+ document.querySelector('.update-notes-body > p').textContent=`スキル：${getEquippedSkillInfo().name} / ${getEquippedSkillInfo().desc} / ${getEquippedSkillInfo().cost}`;
+ document.querySelector('#modal-layer .update-notes-card').classList.add('battle-menu-modal');
 }
 function openBattleLog(){
  const content=document.querySelector('.battle2 .battle-feed ol')?.outerHTML||'';
@@ -55,6 +57,7 @@ renderCombatReadout=function(){
  const actions=root.querySelector('.combat-actions');
  const skill=actions?.querySelector('button:nth-child(4)');if(skill){skill.setAttribute('aria-label',skill.textContent);skill.innerHTML=`<span class="battle-skill-label">${uiEscape(skill.textContent)}</span>`;}
  if(actions)for(const b of actions.querySelectorAll('button')){if(enemy.acting)b.setAttribute('aria-description','行動処理中：次のターンまでお待ちください');}
+ decorateBattleDecision(root,enemy);
 };
 const battleFloatingBase=spawnFloatingFx;
 spawnFloatingFx=function(text,...args){if(state.screen==='battle'&&/GUARD|ガード/.test(text))battleNotice(text);return battleFloatingBase(text,...args);};

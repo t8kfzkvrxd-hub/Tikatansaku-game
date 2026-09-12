@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html" style="border:0;width:1280px;height:720px"></iframe><pre id="results">RUNNING</pre>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html" style="border:0;width:1280px;height:720px"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=async()=>{
  const frame=document.querySelector('iframe'),out=[];let w=frame.contentWindow;
@@ -33,7 +33,7 @@ window.onload=async()=>{
   w.openHomeSettings();click('背景演出');check(w.getComputedStyle(w.document.querySelector('.home-mist')).animationName==='none','設定でモーション停止');
   click('データ管理');check(w.localStorage.getItem(key)===null,'データ管理を開くだけでは変更しない');click('セーブデータ初期化');click('キャンセル');check(w.localStorage.getItem(key)===null,'初期化キャンセル');
   w.newGameFromHome();check(!w.document.body.classList.contains('at-home')&&w.__gameDebug.state.screen==='town','新規ホーム→ロビー');
-  check(w.document.getElementById('modal-layer').textContent.includes('冒険のはじまり'),'新規チュートリアル接続');w.chooseTutorialMode('skip');w.registerFirstContract();
+  check(w.eval('MainStory.active?.scene')==='opening','新規ストーリー接続');let pages=0;while(w.eval('MainStory.active')&&pages++<100)w.nextMainStory();check(pages<100,'冒頭会話完了');
   const s=w.__gameDebug.state;s.vaultGold=54321;w.saveState();const saved=w.localStorage.getItem(key);w.showHomeScreen();
   check(!w.document.getElementById('home-continue').disabled&&w.document.getElementById('home-continue').classList.contains('home-primary'),'セーブありは続きが主ボタン');
   w.newGameFromHome();check(w.localStorage.getItem(key)===saved,'既存セーブ上書き前に確認');click('キャンセル');check(w.localStorage.getItem(key)===saved,'新規キャンセルで保持');

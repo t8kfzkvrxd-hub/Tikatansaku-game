@@ -169,7 +169,7 @@
 
       const hasObserver = equippedAccessories().some(i=>i.key === 'abyssal_observer');
       state.currentDoors = decorateExpeditionDoors(chooseExplorationDoors(doorPool,hasObserver?4:3));
-      if(state.chapter?.contract&&!state.chapter.read[10]&&state.chapter.mode!=='skip'&&TUTORIAL_STEPS[state.floor]){
+      if(!state.chapter?.mainStory&&state.chapter?.contract&&!state.chapter.read[10]&&state.chapter.mode!=='skip'&&TUTORIAL_STEPS[state.floor]){
         const training=doorPool.find(d=>d.type===TUTORIAL_STEPS[state.floor][2]);
         if(training)state.currentDoors=[{...training,sign:'🌻 '+training.sign}];
       }

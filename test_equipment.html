@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>Seven slot equipment tests</title>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>Seven slot equipment tests</title>
 <iframe src="index.html#game"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=()=>setTimeout(()=>{
@@ -11,7 +11,7 @@ window.onload=()=>setTimeout(()=>{
   check(Object.keys(s.equipped).length===7&&s.equipped.armor.id==='old-a'&&s.equipped.accessory.id==='old-r','旧3枠→7枠移行');
   check(s.storage.some(i=>i.id==='odd')&&s.equipped.weapon.id==='old-w','旧装備・移行不能品の消失なし');
   w.saveState();w.loadState();check(s.storage.length===1&&s.equipped.weapon.tags.length,'再読み込みで重複なし・タグ補完');
-  s.screen='town';s.camp.vaultSize=1000;s.camp.blacksmith=2;s.vaultGold=100000;s.abyssCores=100;
+  s.screen='town';s.camp.vaultSize=1000;s.camp.blacksmith=2;s.bossFirstKills[10]=true;s.vaultGold=100000;s.abyssCores=100;
   for(const slot of d.slots)w.unequipItem(slot.k);
   const empty=w.getPlayerStats();
   for(const slot of d.slots){

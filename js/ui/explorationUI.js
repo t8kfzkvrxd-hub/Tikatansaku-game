@@ -1,8 +1,8 @@
 const ExplorationScreen={doors:null,visual:null,pending:false};
 function explorationRouteCard(d,i,title){
- const risk=d.runRisk==='bold'?'次の3戦：敵ATK +30% / G +50%':d.runRisk==='safe'?'次の1戦：敵ATK −15% / G −25%':'';
  const meta=d.type==='deep_area_event'&&state.floor>100?{kind:'採取',reward:'素材 / 休息も選択可能',tone:'gather',icon:'💎'}:EXPLORATION_ROUTES[d.type]||{kind:'イベント',reward:'探索先で確認',tone:'event'};
- return `<button class="exploration-route ${meta.tone}" onclick="selectExplorationRoute(${i})"><span class="route-label"><span class="route-icon">${meta.icon||d.icon}</span>${meta.kind}</span><strong>${uiEscape(title)}</strong><small>${uiEscape(risk||d.desc)}</small><span class="route-risk">危険度：${uiEscape(d.runRisk==='bold'?'敵ATK +30%・3戦':d.runRisk==='safe'?'敵ATK −15%・1戦':d.riskText||'不明')}</span><span class="route-reward">報酬：${uiEscape(d.runRisk==='bold'?'素材通常 / G +50%':d.runRisk==='safe'?'素材通常 / G −25%':meta.reward)}</span></button>`;
+ const risks={cursed_chest:'開封で最大HP減少',golden_stairs:'契約すると敵が強化',elite_battle:'強敵との戦闘',heal_spring:'回復選択時は次の宝箱に代償',emergency_portal:'戦利品の半分を失う',sealed_vault:'鍵を消費',merchant:'購入にG必要'},rewards={battle_normal:'G・素材 / 撃破で探索強化へ',cursed_chest:'解禁済みの希少素材',golden_stairs:'契約中の獲得G 3倍'};
+ return `<button class="exploration-route ${meta.tone}" onclick="selectExplorationRoute(${i})"><span class="route-label"><span class="route-icon">${meta.icon||d.icon}</span>${meta.kind}</span><strong>${uiEscape(title)}</strong><span class="route-risk">危険：${uiEscape(d.runRisk==='bold'?'敵ATK +30%・3戦':d.runRisk==='safe'?'敵ATK −15%・1戦':risks[d.type]||d.riskText||'不明')}</span><span class="route-reward">見返り：${uiEscape(d.runRisk==='bold'?'G +50% / 素材通常':d.runRisk==='safe'?'G −25% / 素材通常':rewards[d.type]||meta.reward)}</span></button>`;
 }
 function openExplorationPanel(tab='bag'){
  setTab(tab);

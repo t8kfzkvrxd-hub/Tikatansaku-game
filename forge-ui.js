@@ -50,7 +50,7 @@ function renderForgeResults(){
  const target=document.getElementById('forge-results');if(!target)return;
  if(forgeTab==='create'&&forgeView==='recommended'){
   const rows=forgeRecommendations(forgeFilters.character,1531).filter(row=>row.r.type==='weapon').slice(0,3);
-  target.innerHTML='<h3>次に作るおすすめ</h3>'+(rows.length?forgeRecommendationHtml(rows[0])+(rows.length>1?`<details class="forge-alternatives"><summary>他の候補 ${rows.length-1}件</summary>${rows.slice(1).map(forgeRecommendationHtml).join('')}</details>`:''):'<p>推薦候補はありません。「すべて」から探せます。</p>')+weaponTargetHtml();
+  target.innerHTML='<h3>次に作るおすすめ</h3>'+(rows.length?forgeRecommendationHtml(rows[0])+(rows.length>1?`<details class="forge-alternatives"><summary>他の候補 ${rows.length-1}件</summary>${rows.slice(1).map(forgeRecommendationHtml).join('')}</details>`:''):forgeEmptyHtml())+weaponTargetHtml();
   document.getElementById('forge-paging').innerHTML='';return;
  }
  const rows=filteredForgeRecipes(),pages=Math.max(1,Math.ceil(rows.length/FORGE_PAGE_SIZE));forgeFilters.page=Math.min(Math.max(0,forgeFilters.page),pages-1);

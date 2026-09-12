@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><iframe src="index.html#game" style="border:0"></iframe><pre id="results">RUNNING</pre>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><iframe src="index.html#game" style="border:0"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=async()=>{
  const frame=document.querySelector('iframe'),w=frame.contentWindow,out=[],s=w.__gameDebug.state;
@@ -12,7 +12,7 @@ window.onload=async()=>{
    frame.style.width=width+'px';frame.style.height=height+'px';await pause();w.closeGenericModal();w.render();await pause();
    check(w.getComputedStyle(w.document.getElementById('rotate-guide')).display==='none',width+' 横向き案内なし');
    check(w.document.documentElement.scrollWidth<=width+1,width+' ページ横スクロールなし');
-   for(const id of ['viewport','sub-panel']){const e=w.document.getElementById(id);check(e.clientHeight>30&&e.scrollWidth<=e.clientWidth+1,width+' '+id+' 使用可能');}
+   for(const id of ['lobby-screen']){const e=w.document.getElementById(id);check(e.clientHeight>30&&e.scrollWidth<=e.clientWidth+1,width+' '+id+' 使用可能');}
    for(const tab of ['equip','bag']){w.setTab(tab);await pause();const e=w.document.getElementById('sub-panel');check(e.scrollWidth<=e.clientWidth+1,width+' '+tab+' 横はみ出しなし');}
    s.floor=1;w.startNormalBattle();await pause();check(w.document.getElementById('viewport').scrollWidth<=w.document.getElementById('viewport').clientWidth+1,width+' 戦闘表示');s.currentEnemy=null;s.floor=0;s.screen='town';w.render();
    for(const render of [()=>w.showUpdateNotes(false),()=>w.openHomeSettings(),()=>w.showResetSaveConfirmation(),()=>w.openCrafting('create'),()=>w.openCharacterEquipment('elna'),()=>w.showChapterModal('物語','<p>長い物語</p>'.repeat(50),'<button class="btn">次へ</button>')]){render();await pause();modalCheck(width+'×'+height);}
@@ -31,7 +31,7 @@ window.onload=async()=>{
    check(!w.document.getElementById('modal-layer').inert,'反復回転 横 '+i);
   }
   for(const height of [320,390,300,390]){
-   frame.style.height=height+'px';await pause();w.openCrafting('create');await pause();modalCheck('アドレスバー相当 '+height);
+   frame.style.height=height+'px';await pause();w.selectForgeView('all');await pause();modalCheck('アドレスバー相当 '+height);
    const body=w.document.querySelector('.update-notes-body');body.scrollTop=body.scrollHeight;
    check(body.scrollTop>0,'長い作成一覧スクロール '+height);
   }

@@ -2,6 +2,12 @@
       resetBattleBuilds();
       const area = getCurrentArea();
       let enemyTemplate = isElite ? area.elite : area.enemies[Math.floor(Math.random() * area.enemies.length)];
+      if (!isElite && typeof mainStoryTutorial==='function' && mainStoryTutorial() && state.floor>=1 && state.floor<=3) {
+        enemyTemplate=area.enemies[state.floor-1]||enemyTemplate;
+      }
+      if (!isElite && typeof mainStoryTutorial==='function' && mainStoryTutorial() && state.floor===7) {
+        enemyTemplate=area.enemies.find(e=>ENEMY_PART_DEFINITIONS[e.materialSource]?.family==='humanoid')||area.enemies.find(e=>ENEMY_PART_DEFINITIONS[e.materialSource]?.parts.includes('arm'))||enemyTemplate;
+      }
       
       const scaled=scaledEnemyStats(enemyTemplate,area,state.floor,isElite?'elite':'normal',{enemyAtkMult:state.modifiers.enemyAtkMult,greed:state.greedLevel});
       state.currentEnemy = {
@@ -26,7 +32,7 @@
       recordCodex('enemy', state.currentEnemy);
       state.screen = 'battle';
       applyEnemyPulse(state.currentEnemy);
-      if(state.chapter?.contract&&!state.chapter.read[10]&&state.floor===7&&state.chapter.mode!=='skip'){state.statusEffects.poison=2;addLog('🌻 エルナ：毒を受けたらバッグの万能解毒薬を使おう。','info');}
+      if(!state.chapter?.mainStory&&state.chapter?.contract&&!state.chapter.read[10]&&state.floor===7&&state.chapter.mode!=='skip'){state.statusEffects.poison=2;addLog('🌻 エルナ：毒を受けたらバッグの万能解毒薬を使おう。','info');}
       state.playerExposed = false;
       state.playerAttackBuff = 1.0;
       state.guardFatigue = 0; state.guardStamina = 100; state.guardBroken = false;

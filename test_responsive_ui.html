@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>Responsive geometry regression</title>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>Responsive geometry regression</title>
 <iframe src="index.html#game" style="width:740px;height:360px;border:0"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=async()=>{
@@ -30,6 +30,7 @@ window.onload=async()=>{
  s.floor=10;w.startBossBattle(w.getCurrentArea().boss);w.render();await wait();
  separate('.battle-unit,.enemy-parts,.combat-actions,.combat-number-space,#sub-tabs');
  for(const b of d.querySelectorAll('.combat-actions button,.enemy-parts button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height,'battle controls bounds');}
+ const parts=d.querySelector('.battle-parts-disclosure');if(parts){parts.open=true;await wait();w.selectEnemyPart(s.currentEnemy.parts.at(-1).id);await wait();separate('.battle-unit,.enemy-parts,.combat-actions,.part-detail-button,.battle-parts-disclosure summary');for(const b of d.querySelectorAll('.enemy-parts button,.part-detail-button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&r.width>=44&&r.height>=44,'selected part tappable');}}
  }
  out.push('PASS '+width+'x'+height+' : 3 rotation/home cycles, facility modals, equipment, lobby overlaps');
  }

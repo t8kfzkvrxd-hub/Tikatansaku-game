@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>Companion and workshop tests</title>
+<!doctype html><script src="tests/fixture.js"></script><meta charset="utf-8"><title>Companion and workshop tests</title>
 <iframe src="index.html#game" style="border:0;width:1280px;height:720px"></iframe><pre id="results">RUNNING</pre>
 <script>
 window.onload=async()=>{
@@ -10,7 +10,7 @@ window.onload=async()=>{
  const click=text=>{const button=[...w.document.querySelectorAll('#modal-layer button')].find(b=>b.textContent.includes(text));check(button&&!button.disabled,'UIボタン '+text);button.click();};
  try{
   w.confirm=()=>true;w.closeGenericModal();s.screen='town';s.chapter.owned={elna:true};s.chapter.contract=true;s.chapter.mode='skip';s.chapter.pending=null;s.chapter.checkpoint=null;w.migrateCompanionEquipment();
-  s.camp.vaultSize=500;s.camp.vaultLevel=49;s.camp.blacksmith=2;s.vaultGold=100000;s.storage=[];
+  s.camp.vaultSize=500;s.camp.vaultLevel=49;s.camp.blacksmith=2;s.bossFirstKills[10]=true;s.vaultGold=100000;s.storage=[];
   const heroBefore=JSON.stringify(s.equipped),ids=[];
   for(const slot of w.__equipmentDebug.slots){
    const r=Object.values(w.__equipmentDebug.recipes).find(r=>r.slot===(slot.k==='accessory2'?'accessory':slot.k)&&!r.parent);
@@ -36,7 +36,7 @@ window.onload=async()=>{
   s.chapter.pending=null;s.chapter.checkpoint=null;s.screen='town';w.closeGenericModal();
   for(const slot of w.__equipmentDebug.slots){check(w.removeCharacterEquipment('elna',slot.k),'同行装備解除 '+slot.label);}
   check(ids.every(id=>s.storage.some(i=>i.id===id)),'解除して倉庫へ全数返却');
-  w.openCrafting('create');
+  w.selectForgeView('all');
   check(Object.keys(w.__equipmentDebug.recipes).length>1000&&w.document.querySelectorAll('[data-recipe]').length===12,'1000超レシピを12件だけ描画');
   const first=w.document.querySelector('[data-recipe]').dataset.recipe;w.forgePage(1);check(w.document.querySelector('[data-recipe]').dataset.recipe!==first,'ページ切替');
   const select=(label,value)=>{const el=w.document.querySelector(`[aria-label="${label}"]`);el.value=value;el.dispatchEvent(new w.Event('change'));};
@@ -49,7 +49,7 @@ window.onload=async()=>{
   w.resetForgeFilters();s.storage=[];s.abyssCores=0;w.setForgeFilter('available',true);check(w.filteredForgeRecipes().length===2&&w.filteredForgeRecipes().every(x=>['iron_sword','starter_w'].includes(x.id)),'作成可能のみ・素材不足除外');
   w.resetForgeFilters();w.toggleRecipeFavorite(rid);w.setForgeFilter('favorite',true);check(w.filteredForgeRecipes().length===1&&w.filteredForgeRecipes()[0].id===rid,'お気に入り');
   w.saveState();await reload();s.screen='town';w.closeGenericModal();check(s.craftProgress.favorites[rid],'お気に入り保存');
-  w.openCrafting('create');w.setForgeFilter('uncrafted',true);s.craftProgress.crafted[rid]=1;check(!w.filteredForgeRecipes().some(x=>x.id===rid),'未作成のみ');
+  w.selectForgeView('all');w.setForgeFilter('uncrafted',true);s.craftProgress.crafted[rid]=1;check(!w.filteredForgeRecipes().some(x=>x.id===rid),'未作成のみ');
   w.resetForgeFilters();w.setForgeFilter('newOnly',true);w.acknowledgeRecipes();check(w.filteredForgeRecipes().every(x=>!s.craftProgress.seen[x.id]),'新規解放・確認済みを区別');
   w.openMaterialRecipes(key);check(w.filteredForgeRecipes().length>0&&w.filteredForgeRecipes().every(x=>x.r.materials[key]),'素材から全使用レシピを逆引き');
   s.craftProgress.materials[key]=true;s.activeTab='codex';w.renderSubPanel();check(w.document.querySelector(`#sub-panel button[onclick="openMaterialRecipes('${key}')"]`),'素材図鑑から鍛冶屋へのリンク');
@@ -74,8 +74,8 @@ window.onload=async()=>{
     for(const b of w.document.querySelectorAll('.update-notes-actions button')){const r=b.getBoundingClientRect();check(r.top>=0&&r.bottom<=height&&w.document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b,width+'×'+height+' 固定操作ボタンを押せる');}
    }
   }
-  w.closeGenericModal();w.render();check(w.document.querySelectorAll('.home-shortcuts button').length===8,'地上の8導線');
-  check(w.document.querySelector('button[onclick="showResetSaveConfirmation()"]').closest('details'),'初期化を設定へ分離');
+  w.closeGenericModal();w.render();check(w.document.querySelectorAll('.lobby-hotspot').length===8,'施設の8導線');
+  w.openHomeSettings();check(w.document.getElementById('modal-layer').textContent.includes('データ管理'),'初期化を設定へ分離');
   out.push('ALL TESTS PASSED');
  }catch(e){out.push('FAIL: '+e.stack);}
  document.getElementById('results').textContent=out.join('\n');

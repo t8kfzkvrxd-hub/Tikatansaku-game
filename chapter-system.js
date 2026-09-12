@@ -11,9 +11,10 @@ function migrateChapter(saved) {
  if(c.pending&&c.checkpoint)Object.assign(state,c.checkpoint);
  migrateCompanionEquipment();
 }
-function checkpointChapter() {
+function checkpointChapter(extra={}) {
  const keys=['screen','floor','inventory','dungeonGold','hp','maxHp','currentEnemy','runKills','greedLevel','modifiers','statusEffects','skillCooldown','bossFirstKills','maxUnlockedFloor'];
  state.chapter.checkpoint=Object.fromEntries(keys.map(k=>[k,JSON.parse(JSON.stringify(state[k]??null))]));
+ Object.assign(state.chapter.checkpoint,extra);
  saveState();
 }
 function showChapterModal(title,body,actions) {
