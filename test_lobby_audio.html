@@ -5,5 +5,26 @@ window.onload=async()=>{const w=document.querySelector('iframe').contentWindow,o
  a.currentTime=a.duration-.15;await wait(900);check(!a.paused&&a.currentTime<2,'end loops to beginning');
  w.toggleSound();check(a.paused,'sound OFF pauses');w.toggleSound();await wait(100);check(!a.paused,'sound ON resumes');
  s.screen='door_select';w.syncLobbyScreen();check(a.paused,'exploration pauses');s.screen='town';w.syncLobbyScreen();await wait(100);check(!a.paused,'lobby resumes');w.showHomeScreen();check(a.paused,'home pauses');
+ w.enterGameFromHome();s.chapter.mainStory=w.newMainStoryState(true);s.chapter.mainStory.noticeSeen=true;s.screen='town';w.syncLobbyAudio();await wait(100);w.setBgmVolume(.23);
+ const position=a.currentTime;w.replayMainStory(1);await wait(450);check(a.paused&&a.volume===.23,'replay fades to silence / retains volume');
+ w.syncLobbyAudio();w.document.body.click();await wait(50);check(a.paused,'click and render cannot restart lobby during replay');
+ w.nextMainStory();check(a.paused,'next page stays silent');w.cancelMainStoryReplay();await wait(450);check(!a.paused&&a.volume===.23&&a.currentTime>=position,'cancel restores original audio and volume');
+ w.replayMainStory(1);await wait(450);w.toggleSound();w.cancelMainStoryReplay();await wait(450);check(a.paused,'muted exit stays silent');w.toggleSound();await wait(100);check(!a.paused,'unmute resumes');
+ w.replayMainStory(1);for(let i=0;i<30&&w.eval('MainStory.active');i++)w.finishMainStoryScene();await wait(450);check(!a.paused,'normal replay completion restores');
+ for(let i=0;i<5;i++){w.replayMainStory(1);w.cancelMainStoryReplay();}await wait(450);check(!a.paused&&w.eval('bgmFade')===null,'rapid start cancel leaves no fade timer');
+ check(w.eval('currentBgmScene()')==='lobby','scene restored');
+ const audioKey=w.eval('AUDIO_SETTINGS_KEY'),savedGame=localStorage.getItem('ABYSS_ROGUE_SAVED_V2');
+ w.setSeVolume(.42);w.initAudio();check(w.eval('seMasterGain.gain.value')>.419&&w.eval('seMasterGain.gain.value')<.421,'SE output gain connected');
+ check(JSON.parse(localStorage.getItem(audioKey)).seVolume===.42,'SE saved immediately');
+ w.setMasterMute(true);check(w.eval('seMasterGain.gain.value')===0&&a.paused&&JSON.parse(localStorage.getItem(audioKey)).mute,'mute applied / saved immediately');
+ w.setMasterMute(false);check(localStorage.getItem('ABYSS_ROGUE_SAVED_V2')===savedGame,'audio changes never write game save');
+ for(let i=0;i<15;i++){
+  for(const raw of ['{','null','[]','{"mute":true,"bgmVolume":null,"seVolume":0.42}','{"mute":false,"bgmVolume":-1,"seVolume":2}']){
+   localStorage.setItem(audioKey,raw);const settings=w.readAudioSettings();check(Number.isFinite(settings.bgmVolume)&&settings.bgmVolume>=0&&settings.bgmVolume<=1&&Number.isFinite(settings.seVolume),'malformed safe '+i+' '+raw);
+   if(raw.includes('0.42'))check(settings.mute&&settings.bgmVolume===.35&&settings.seVolume===.42,'only bad field defaults');
+   if(raw.includes('-1'))check(settings.bgmVolume===0&&settings.seVolume===1,'clamps finite volumes');
+  }
+ }
+ w.setAudioSettings({mute:false,bgmVolume:.35,seVolume:1});
  out.push('ALL TESTS PASSED');}catch(e){out.push('FAIL: '+(e.stack||e.name+': '+e.message))}document.getElementById('results').textContent=out.join('\n')};
 </script>

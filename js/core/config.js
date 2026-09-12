@@ -1,8 +1,10 @@
     const MAX_DUNGEON_FLOOR = 200;
     const BOSS_FLOORS = Array.from({length:MAX_DUNGEON_FLOOR/10},(_,i)=>(i+1)*10);
     const SAFE_RETURN_FLOORS = BOSS_FLOORS.map(f=>f-5);
-    const GAME_VERSION = '0.35.4';
+    const GAME_VERSION = '0.35.6';
     const UPDATE_NOTES = [
+      'ミュート・BGM音量・SE音量をゲームセーブと分離して即時保存。起動時に復元し、回想のフェード値は保存しません',
+      '施設NPCの短文を名前付き会話帯へ整理。回想中はロビーBGMをフェード停止し、終了・中断後に復帰。音源・SE・ゲーム進行は変更なし',
       '倉庫の素材説明がない場合にundefinedが表示される不具合を修正。既存の説明・素材・抽選・セーブ仕様は変更なし',
       '主人公のserious／angryを単体の正式画像へ接続。9表情対応、読込失敗時のみnormalへ代替。台詞・進行・セーブ仕様は変更なし',
       '鍛冶場・酒場・道具屋・倉庫の通常画面に共通施設背景を接続。店主の表情と短い反応を追加。価格・報酬・作成・解禁・セーブ仕様は変更なし',

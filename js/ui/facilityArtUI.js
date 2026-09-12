@@ -11,7 +11,7 @@ function facilityReaction(expression,text){
  if(!root||!data)return;
  const img=root.querySelector('.facility-npc');
  if(img){const path=storyPortraitPath(data.npc,expression);if(img.getAttribute('src')!==path){img.hidden=false;img.onerror=()=>{img.onerror=null;img.hidden=true;};img.src=path;}img.dataset.expression=expression;}
- const caption=root.querySelector('.facility-reaction');if(caption&&caption.textContent!==text)caption.textContent=text;
+ const caption=root.querySelector('.facility-reaction-text');if(caption&&caption.textContent!==text)caption.textContent=text;
 }
 function clearFacilityArt(){
  const m=document.getElementById('modal-layer'),root=document.getElementById('facility-art');
@@ -29,7 +29,7 @@ function decorateFacility(id){
  document.getElementById('facility-art')?.remove();
  FacilityArt.id=id;FacilityArt.card=card;m.classList.add('facility-art-modal');m.dataset.facilityArt=id;
  const art=document.createElement('div');art.id='facility-art';art.className=entering?'facility-enter':'';art.setAttribute('aria-hidden','true');
- art.innerHTML=`<img class="facility-background" alt=""><aside class="facility-person">${data.npc?'<img class="facility-npc" alt="">':''}<p class="facility-reaction"></p></aside>`;
+ art.innerHTML=`<img class="facility-background" alt=""><aside class="facility-person">${data.npc?`<img class="facility-npc" alt=""><div class="facility-reaction"><b>${uiEscape(STORY_PORTRAITS[data.npc].name)}</b><span class="facility-reaction-text"></span></div>`:''}</aside>`;
  m.prepend(art);
  const bg=art.querySelector('.facility-background');bg.onerror=()=>{bg.onerror=null;bg.hidden=true;};bg.src=`assets/story/backgrounds/${data.background}.png`;
  facilityReaction('normal',data.greeting);

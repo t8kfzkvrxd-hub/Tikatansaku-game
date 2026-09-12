@@ -10,6 +10,9 @@ async function facilityTests(){
   check('entry '+i,!!art());closeGenericModal();await tick();check('exit '+i,!art()&&!FacilityArt.id);
  }
  openLobbyFacility('town-shop');await tick();const g=state.vaultGold;
+ const band=art().querySelector('.facility-reaction'),captionStyle=getComputedStyle(band);
+ check('named contrast band',band.querySelector('b').textContent==='道具屋店主'&&parseFloat(captionStyle.fontSize)>=13&&captionStyle.backgroundColor==='rgba(8, 17, 28, 0.94)');
+ check('caption stays outside operation panel',band.getBoundingClientRect().left>=document.querySelector('.update-notes-card').getBoundingClientRect().right);
  if(matchMedia('(prefers-reduced-motion:reduce)').matches)check('reduced motion: no entry animation',getComputedStyle(art()).animationName==='none');
  document.querySelector('#lobby-facility-content button[onclick*="buyExpeditionSupply(\'potion\')"]').click();await tick();
  check('purchase unchanged: 30G / one potion',state.vaultGold===g-30&&state.preparedItems.filter(i=>i.type==='potion').length===1);

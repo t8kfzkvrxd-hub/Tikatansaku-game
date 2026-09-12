@@ -41,6 +41,7 @@ assert (ROOT/'js/data/craftingCatalog.js').read_text() == section(original('craf
 html = (ROOT/'index.html').read_text()
 scripts = re.findall(r'<script src="([^"]+)"', html)
 assert len(scripts) == len(set(scripts))
+assert scripts.index('js/ui/audioSettings.js') < scripts.index('js/ui/lobbyAudio.js')
 assert all((ROOT/path).is_file() for path in scripts)
 for before, after in [('js/core/config.js','js/core/state.js'), ('js/data/areas.js','chapter-data.js'), ('chapter-data.js','js/data/craftingCatalog.js'), ('js/data/craftingCatalog.js','crafting.js'), ('crafting.js','equipment.js'), ('equipment.js','forge-ui.js')]:
     assert scripts.index(before) < scripts.index(after), (before, after)

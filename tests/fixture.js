@@ -2,7 +2,7 @@
 // an explicit story-complete component fixture (story tests own their progression).
 (() => {
  const mode=new URLSearchParams(location.search).get('saveProfile')||'new';
- const keys=['ABYSS_ROGUE_SAVED_V2','ABYSS_TUTORIAL_SEEN','lastSeenVersion'];
+ const keys=['ABYSS_ROGUE_SAVED_V2','ABYSS_TUTORIAL_SEEN','lastSeenVersion','ABYSS_ROGUE_AUDIO_SETTINGS_V1'];
  const backup=Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]));
  window.addEventListener('pagehide',()=>{for(const [k,v]of Object.entries(backup))v===null?localStorage.removeItem(k):localStorage.setItem(k,v);},{once:true});
  window.fixtureResults=[];

@@ -18,6 +18,7 @@ function playMainStory(scene,mode='STORY',queue=[]){
  const data=MAIN_STORY_SCENES[scene],s=mainStoryState();if(!data||!s||MainStory.active)return;
  if(mode==='REPLAY'&&!s.unlocked[data.episode])return;
  MainStory.active={scene,page:0,mode,queue:[...queue]};
+ if(mode==='REPLAY')syncLobbyAudio();
  if(mode!=='REPLAY')state.chapter.pending={kind:'mainStory',...MainStory.active};
  persistMainStory();renderMainStory();
 }
@@ -29,6 +30,7 @@ function renderMainStory(){
  const m=document.getElementById('modal-layer');m.style.display='flex';m.className='legendary-modal main-story-modal';
  m.innerHTML=`<section class="main-story-scene" role="dialog" aria-modal="true" aria-label="${uiEscape(data.title)}" style="background-image:url('${mainStoryBackground(data.place)}')">${visual.background?'<img class="story-background" alt="" aria-hidden="true">':''}<header class="story-heading">第1章 ふたりで潜る理由 / ${uiEscape(data.title)}${a.mode==='REPLAY'?' ― 回想':''}</header><div class="story-portraits">${storyPortraitMarkup(visual)}</div><div class="story-dialog"><h2 class="story-speaker">${uiEscape(names[speaker]||speaker||'　')}</h2><div class="story-text" tabindex="0" onclick="nextMainStory()">${uiEscape(text)}</div><footer class="story-actions"><small>${a.page+1} / ${data.lines.length}</small><button class="btn btn-sub" onclick="skipMainStory()">${mainStoryState().seen[a.scene]?'既読スキップ':'会話をスキップ'}</button><button class="btn btn-gold" onclick="nextMainStory()">次へ ▼</button></footer></div></section>`;
  bindStoryImages(m,visual.background,a.page===0);
+ if(a.mode==='REPLAY')m.querySelector('.story-actions').insertAdjacentHTML('beforeend','<button class="btn btn-sub" onclick="cancelMainStoryReplay()">回想を終了</button>');
  m.querySelector('.story-text').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextMainStory();}};
  m.querySelector('.main-story-scene').classList.toggle('is-entering',a.page===0);
  m.onkeydown=e=>{if(e.key!=='Tab'||!MainStory.active)return;const focusables=[...m.querySelectorAll('button,[tabindex="0"]')],first=focusables[0],last=focusables.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}};
@@ -49,7 +51,7 @@ function finishMainStoryScene(){
  if(a.mode!=='REPLAY'){state.chapter.pending=null;state.chapter.checkpoint=null;}
  const m=document.getElementById('modal-layer');m.style.display='none';m.className='';m.innerHTML='';
  if(a.mode==='REPLAY'){
-  saveState();if(a.queue.length){const [next,...queue]=a.queue;playMainStory(next,'REPLAY',queue);}else openMemoryArchive();return;
+  saveState();if(a.queue.length){const [next,...queue]=a.queue;playMainStory(next,'REPLAY',queue);}else {syncLobbyAudio();openMemoryArchive();}return;
  }
  if(a.scene==='opening'){s.stage='dungeon';state.chapter.mode='skip';if(!state.chapter.contract)registerFirstContract();}
  if(a.scene==='afterBoss'){
@@ -69,6 +71,10 @@ function replayMainStory(episode=1,all=false){
  const s=mainStoryState();if(!s?.unlocked[episode]||MainStory.active)return;
  const scenes=[...MAIN_STORY_EPISODES[episode],...(all&&s.unlocked[2]?MAIN_STORY_EPISODES[2]:[])];
  playMainStory(scenes.shift(),'REPLAY',scenes);
+}
+function cancelMainStoryReplay(){
+ if(MainStory.active?.mode!=='REPLAY')return;
+ MainStory.active=null;syncLobbyAudio();openMemoryArchive();
 }
 function scheduleMainStory(){
  if(MainStory.scheduled)return;MainStory.scheduled=true;
