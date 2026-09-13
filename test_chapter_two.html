@@ -1,0 +1,84 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><script src="tests/fixture.js"></script>
+<title>Chapter two completion</title><pre id="results">RUNNING</pre><iframe id="game" src="index.html#game" style="width:932px;height:430px"></iframe>
+<script>
+async function chapterTwoTests(){
+ const results=[],check=(name,pass)=>{results.push({name,pass:!!pass});if(!pass)throw Error(name);},wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const clear=()=>{MainStory.active=null;state.chapter.pending=null;state.chapter.checkpoint=null;document.getElementById('modal-layer').style.display='none';};
+ const finish=()=>{let n=0;while(MainStory.active&&n++<100)nextMainStory();check('有限会話',n<100);};
+ const wealth=()=>JSON.stringify([state.inventory,state.storage,state.equipped,state.vaultGold,state.dungeonGold,state.abyssCores,state.bossFirstKills]);
+ clear();HomeScreen.active=false;state.chapter.mainStory=newMainStoryState(false);mainStoryState().stage='free';mainStoryState().noticeSeen=true;
+ check('200F上限維持',MAX_DUNGEON_FLOOR===200);
+ check('第2章10話 / 第1章9milestones維持',CHAPTER_TWO_MILESTONES.length===10&&MAIN_STORY_MILESTONES.length===9);
+ const bytes=await (await fetch('js/data/mainStory.js')).arrayBuffer(),hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');
+ check('第1章台本ハッシュ固定',hash==='d392856bbc2febd6711ab455569f2c95eae997d9586d8535fb652a5716188009');
+ state.floor=101;state.screen='door_select';syncMainStory();check('101章開始1ページ',MainStory.active?.scene==='chapterTwoStart'&&MAIN_STORY_SCENES.chapterTwoStart.lines.length===1);finish();
+ check('章開始で階層加算なし',state.floor===101);clear();syncMainStory();check('開始重複なし',!MainStory.active);
+ for(const m of CHAPTER_TWO_MILESTONES){
+  clear();state.floor=m.floor;state.screen='battle';state.returnResolved=false;state.bossFirstKills[m.floor]=true;
+  const before=wealth();afterChapterBoss(m.floor);
+  check(m.floor+'初回',MainStory.active?.scene===m.scene);
+  for(let i=0;i<20;i++)afterChapterBoss(m.floor);
+  check('連打20でページ不変',MainStory.active.page===0&&state.floor===m.floor);
+  nextMainStory();const raw=structuredClone(state.chapter);migrateChapter(raw);document.getElementById('modal-layer').style.display='none';syncMainStory();
+  check('checkpoint再開',MainStory.active?.scene===m.scene&&MainStory.active.page===1);
+  if(m.floor===200){MainStory.active.page=MAIN_STORY_SCENES[m.scene].lines.length-1;renderMainStory();check('COMPLETE / 第3章予告',document.querySelector('.story-text').textContent.includes('COMPLETE')&&document.querySelector('.story-text').textContent.includes('201F〜'));}
+  finish();
+  check('既読と初回記録',mainStoryState().read[m.episode]&&mainStoryState().firstPlayed[m.scene]);
+  if(m.floor<200)check('次階 / 所持品不変',state.floor===m.floor+1&&wealth()===before);
+  else check('200終了は町',state.screen==='town'&&state.floor===0);
+  clear();state.floor=m.floor;state.screen='door_select';state.returnResolved=false;afterChapterBoss(m.floor);check('再撃破は再生なし',!MainStory.active);
+ }
+ for(const floor of [100,109,110,165,199,200]){
+  clear();state.deepestFloorReached=floor;state.bossFirstKills={};state.screen='town';state.floor=0;
+  const old=structuredClone(state.chapter);old.mainStory=newMainStoryState(false);old.mainStory.stage='free';delete old.mainStory.seen.chapterTwoStart;
+  const before=wealth();migrateChapter(old);check('旧所持品維持',wealth()===before);
+  for(const m of CHAPTER_TWO_MILESTONES)check('解放 '+floor+'/'+m.floor,!!mainStoryState().unlocked[m.episode]===(floor>=m.floor));
+  check('旧進行維持',state.deepestFloorReached===floor&&state.floor===0);
+  if(floor>=110){const m=CHAPTER_TWO_MILESTONES.findLast(m=>m.floor<=floor);state.floor=m.floor;state.screen='door_select';state.returnResolved=false;afterChapterBoss(m.floor);check('旧到達は回想限定',!MainStory.active);}
+ }
+ clear();state.deepestFloorReached=165;state.bossFirstKills={};const old=structuredClone(state.chapter);old.mainStory=newMainStoryState(true);delete old.mainStory.seen.chapterTwoStart;migrateChapter(old);state.floor=170;state.screen='door_select';afterChapterBoss(170);check('旧165次の170初回あり',MainStory.active?.scene==='oneDescendingLine');finish();
+ // Exercise real victory and the existing atomic return, not a replacement reward path.
+ clear();state.chapter.mainStory=newMainStoryState(false);mainStoryState().stage='free';mainStoryState().noticeSeen=true;
+ state.floor=200;state.screen='battle';state.returnResolved=false;state.inventory=[];state.bossFirstKills={};state.currentEnemy={name:'200F検証ボス',isBoss:true,hp:0,maxHp:100,atk:10,def:5};
+ const gold=state.vaultGold;onEnemyKilled();check('実撃破→最終話',MainStory.active?.scene==='lostThings'&&state.bossFirstKills[200]);
+ const earned=state.dungeonGold,loot=wealth();for(let i=0;i<20;i++)onEnemyKilled();check('報酬二重取得なし',wealth()===loot);finish();
+ check('報酬持ち帰り',state.vaultGold===gold+earned&&state.inventory.length===0&&state.screen==='town');
+ const after=wealth();for(let i=0;i<20;i++)returnToTown(true);check('帰還重複なし',wealth()===after);
+ saveState();loadState();check('再読込で200クリア維持',state.bossFirstKills[200]&&mainStoryState().firstPlayed.lostThings&&state.maxUnlockedFloor<=200);
+ check('201ワープ不可',!canWarpTo(201));state.floor=201;generateDoorsForFloor();check('201直接指定も200に制限',state.floor===200);state.currentEnemy=null;
+ clear();state.screen='town';state.floor=0;mainStoryState().noticeSeen=true;for(const m of CHAPTER_TWO_MILESTONES)mainStoryState().unlocked[m.episode]=true;
+ for(const m of CHAPTER_TWO_MILESTONES){
+  clear();const before=JSON.stringify([wealth(),state.floor,state.screen,state.deepestFloorReached,mainStoryState().firstPlayed]);
+  replayMainStory(m.episode);check('REPLAY '+m.floor,MainStory.active?.scene===m.scene);finish();
+  check('回想で報酬進行不変',JSON.stringify([wealth(),state.floor,state.screen,state.deepestFloorReached,mainStoryState().firstPlayed])===before);
+ }
+ for(const muted of [true,false]){
+  clear();setMasterMute(muted);setBgmVolume(.27);render();await wait(350);replayMainStory(21);await wait(350);check('BGM停止',lobbyBgm.paused);finish();await wait(350);check('BGM復帰',lobbyBgm.paused===muted&&lobbyBgm.volume===.27);
+  replayMainStory(12);await wait(350);cancelMainStoryReplay();await wait(350);check('中断音声復帰',lobbyBgm.paused===muted);
+ }
+ const lines=CHAPTER_TWO_DATA.flatMap(x=>x.lines);
+ check('公開文の禁止語なし',lines.every(l=>!/(死者|蘇生|魂|幽霊|聞いてる|無視|発狂)/.test(l[1])));
+ check('話者と表情',lines.every(l=>['','player','elna'].includes(l[0])&&(!l[2]||['normal','smile','serious'].includes(l[2]))));
+ check('装備強化保護',Object.keys(CRAFT_RECIPES).length===1531&&EXPEDITION_PERKS.length===24);
+ return results;
+}
+document.getElementById('game').onload=async()=>{
+ const frame=document.getElementById('game'),w=frame.contentWindow,out=document.getElementById('results');
+ try{
+  const results=await w.eval('('+chapterTwoTests.toString()+')()');
+  for(const [width,height]of [[740,360],[844,390],[932,430],[1366,768],[1920,1080]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';
+   await new Promise(r=>setTimeout(r,120));
+   const checks=await w.eval(`(async()=>{const checks=[];for(const m of CHAPTER_TWO_MILESTONES){MainStory.active=null;replayMainStory(m.episode);for(let i=0;i<MAIN_STORY_SCENES[m.scene].lines.length;i++){
+    MainStory.active.page=i;renderMainStory();await Promise.all([...document.querySelectorAll('.story-portrait,.story-background')].map(img=>img.decode()));
+    const dialog=document.querySelector('.story-dialog').getBoundingClientRect(),portraits=[...document.querySelectorAll('.story-portrait')];
+    const pass=portraits.every(img=>img.naturalWidth>0&&!img.dataset.fallback&&img.getBoundingClientRect().bottom<=dialog.top+1)&&[...document.querySelectorAll('.story-actions button')].every(b=>{const r=b.getBoundingClientRect();return r.height>=44&&r.right<=innerWidth&&r.bottom<=innerHeight;})&&document.documentElement.scrollWidth<=innerWidth;
+    checks.push({name:'${width}x${height} '+m.scene+'/'+i,pass});
+   }cancelMainStoryReplay();}return checks;})()`);
+   results.push(...checks);
+  }
+  if(results.some(x=>!x.pass))throw Error(JSON.stringify(results.filter(x=>!x.pass)));
+  out.textContent=JSON.stringify(results,null,2)+'\nALL TESTS PASSED';
+ }catch(e){out.textContent='FAIL '+e.stack;}finally{frame.remove();}
+};
+</script></html>

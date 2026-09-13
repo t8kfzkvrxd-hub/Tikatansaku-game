@@ -1,7 +1,7 @@
 // New chapter progression is isolated inside the existing chapter save envelope.
 const MainStory={active:null,scheduled:false,closing:false,facilityVisit:null};
 function mainStoryState(){return state.chapter?.mainStory;}
-function newMainStoryState(legacy=false){return {version:2,legacy,stage:legacy?'free':'opening',seen:{},read:{},unlocked:{1:true},firstPlayed:{},autoplaySkipped:{},noticeSeen:false,craftedId:null,visited:{}};}
+function newMainStoryState(legacy=false){return {version:2,legacy,stage:legacy?'free':'opening',seen:{chapterTwoStart:false},read:{},unlocked:{1:true},firstPlayed:{},autoplaySkipped:{},noticeSeen:false,craftedId:null,visited:{}};}
 function mainStoryTutorial(){const s=mainStoryState();return !!s&&!s.legacy&&s.stage!=='free';}
 function mainStoryTownRequired(){return mainStoryTutorial()&&['tavern','forge','warehouse','shop','equipment','ending','return'].includes(mainStoryState().stage);}
 function persistMainStory(){
@@ -29,7 +29,7 @@ function renderMainStory(){
  if(!line){finishMainStoryScene();return;}
  const [speaker,text]=line,names={player:'主人公',elna:'エルナ'},visual=storyVisualState(a.scene,a.page);
  const m=document.getElementById('modal-layer');m.style.display='flex';m.className='legendary-modal main-story-modal';
- m.innerHTML=`<section class="main-story-scene" role="dialog" aria-modal="true" aria-label="${uiEscape(data.title)}" style="background-image:url('${mainStoryBackground(data.place,data.floor)}')">${visual.background?'<img class="story-background" alt="" aria-hidden="true">':''}<header class="story-heading">第1章 ふたりで潜る理由 / ${uiEscape(data.title)}${a.mode==='REPLAY'?' ― 回想':''}</header><div class="story-portraits">${storyPortraitMarkup(visual)}</div><div class="story-dialog"><h2 class="story-speaker">${uiEscape(names[speaker]||speaker||'　')}</h2><div class="story-text" tabindex="0" onclick="nextMainStory()">${uiEscape(text)}</div><footer class="story-actions"><small>${a.page+1} / ${data.lines.length}</small><button class="btn btn-sub" onclick="skipMainStory()">${mainStoryState().seen[a.scene]?'既読スキップ':'会話をスキップ'}</button><button class="btn btn-gold" onclick="nextMainStory()">次へ ▼</button></footer></div></section>`;
+ m.innerHTML=`<section class="main-story-scene" role="dialog" aria-modal="true" aria-label="${uiEscape(data.title)}" style="background-image:url('${mainStoryBackground(data.place,data.floor)}')">${visual.background?'<img class="story-background" alt="" aria-hidden="true">':''}<header class="story-heading">${uiEscape(data.chapterTitle||'第1章 ふたりで潜る理由')} / ${uiEscape(data.title)}${a.mode==='REPLAY'?' ― 回想':''}</header><div class="story-portraits">${storyPortraitMarkup(visual)}</div><div class="story-dialog"><h2 class="story-speaker">${uiEscape(names[speaker]||speaker||'　')}</h2><div class="story-text" tabindex="0" onclick="nextMainStory()">${uiEscape(text)}</div><footer class="story-actions"><small>${a.page+1} / ${data.lines.length}</small><button class="btn btn-sub" onclick="skipMainStory()">${mainStoryState().seen[a.scene]?'既読スキップ':'会話をスキップ'}</button><button class="btn btn-gold" onclick="nextMainStory()">次へ ▼</button></footer></div></section>`;
  bindStoryImages(m,visual.background,a.page===0);
  if(a.mode==='REPLAY')m.querySelector('.story-actions').insertAdjacentHTML('beforeend','<button class="btn btn-sub" onclick="cancelMainStoryReplay()">回想を終了</button>');
  m.querySelector('.story-text').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextMainStory();}};
@@ -54,6 +54,7 @@ function finishMainStoryScene(){
  if(a.mode==='REPLAY'){
   saveState();if(a.queue.length){const [next,...queue]=a.queue;playMainStory(next,'REPLAY',queue);}else {syncLobbyAudio();openMemoryArchive();}return;
  }
+ if(data.entry){saveState();render();return;}
  if(data.floor){advanceAfterMainStoryBoss(data.floor);return;}
  if(a.scene==='opening'){s.stage='dungeon';state.chapter.mode='skip';if(!state.chapter.contract)registerFirstContract();}
  if(a.scene==='afterBoss'){
@@ -90,6 +91,7 @@ function syncMainStory(){
  }
  if(state.chapter.pending?.kind==='return'){returnToTown(true);return;}
  if(s.stage==='return'){returnToTown(true);return;}
+ if(state.floor===101&&state.screen==='door_select'&&!s.seen.chapterTwoStart){playMainStory('chapterTwoStart');return;}
  if(s.legacy){
   if((state.deepestFloorReached>=10||state.bossFirstKills[10])&&!s.noticeSeen&&state.screen==='town'){
    s.unlocked[2]=true;
@@ -140,10 +142,12 @@ migrateChapter=function(saved){
  state.chapter.mainStory={...newMainStoryState(legacy),...(raw||{}),seen:{...(raw?.seen||{})},read:{...(raw?.read||{})},unlocked:{1:true,...(raw?.unlocked||{})},firstPlayed:{...(raw?.firstPlayed||{})},autoplaySkipped:{...(raw?.autoplaySkipped||{})},visited:{...(raw?.visited||{})}};
  if(state.deepestFloorReached>=10||state.bossFirstKills[10])state.chapter.mainStory.unlocked[2]=true;
  const story=mainStoryState(),reached=Math.max(Number(state.deepestFloorReached)||0,...Object.keys(state.bossFirstKills||{}).filter(f=>state.bossFirstKills[f]).map(Number));
- for(const m of MAIN_STORY_MILESTONES)if(reached>=m.floor){
+ const previousChapterTwo=!Object.prototype.hasOwnProperty.call(raw?.seen||{},'chapterTwoStart');
+ if(!Object.prototype.hasOwnProperty.call(story.seen,'chapterTwoStart'))story.seen.chapterTwoStart=reached>=101;
+ for(const m of ALL_MAIN_STORY_MILESTONES)if(reached>=m.floor){
   story.unlocked[m.episode]=true;
   // Existing progress is archive-only, never a backlog of forced scenes.
-  if(!raw||Number(raw.version||1)<2)story.autoplaySkipped[m.scene]=true;
+  if(!raw||Number(raw.version||1)<2||(m.episode>=12&&previousChapterTwo))story.autoplaySkipped[m.scene]=true;
  }
  story.version=2;
  // Archive-era progress is retained, but its retired scenes never autoplay.
@@ -163,7 +167,7 @@ resumeChapter=function(){if(state.chapter.pending?.kind==='return')returnToTown(
 openMemoryArchive=function(){
  const s=mainStoryState();if(!s)return;
  const entries=[{episode:1,title:'始まり〜10階・町の支度',floor:1},...MAIN_STORY_MILESTONES];
- showChapterModal('記憶の書庫 ― 第1章 ふたりで潜る理由',entries.map((m,i)=>`<p><button class="btn btn-sub" ${s.unlocked[m.episode]?'':'disabled'} onclick="replayMainStoryChapterEpisode(${i+1})">第${i+1}話「${m.title}」 / ${(i===0?s.read[1]&&s.read[2]:s.read[m.episode])?'既読':s.unlocked[m.episode]?'未読':m.floor+'F到達で解放'}</button></p>`).join('')+'<p>到達済みの話を回想できます。回想で装備・素材・攻略進行は変わりません。</p>','<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
+ showChapterModal('記憶の書庫','<h3>第1章 ふたりで潜る理由</h3>'+entries.map((m,i)=>`<p><button class="btn btn-sub" ${s.unlocked[m.episode]?'':'disabled'} onclick="replayMainStoryChapterEpisode(${i+1})">第${i+1}話「${m.title}」 / ${(i===0?s.read[1]&&s.read[2]:s.read[m.episode])?'既読':s.unlocked[m.episode]?'未読':m.floor+'F到達で解放'}</button></p>`).join('')+'<h3>第2章 地図のない先</h3>'+CHAPTER_TWO_MILESTONES.map((m,i)=>`<p><button class="btn btn-sub" ${s.unlocked[m.episode]?'':'disabled'} onclick="replayMainStory(${m.episode})">第${i+1}話「${uiEscape(m.title)}」 / ${s.read[m.episode]?'既読':s.unlocked[m.episode]?'未読':m.floor+'F到達で解放'}</button></p>`).join('')+'<p>到達済みの話を回想できます。回想で装備・素材・攻略進行は変わりません。</p>','<button class="btn btn-sub" onclick="closeGenericModal()">閉じる</button>');
 };
 function replayMainStoryChapterEpisode(number){
  if(number!==1){const m=MAIN_STORY_MILESTONES[number-2];if(m)replayMainStory(m.episode);return;}
@@ -181,7 +185,7 @@ afterChapterBoss=function(floor){
  state.currentEnemy=null;state.chapter.unlocked[floor]=true;
  const s=mainStoryState();if(floor>=10)s.unlocked[2]=true;
  if(floor===10&&mainStoryTutorial()&&s.stage==='dungeon'){playBossMainStory('afterBoss');return;}
- const milestone=MAIN_STORY_MILESTONES.find(m=>m.floor===floor);
+ const milestone=ALL_MAIN_STORY_MILESTONES.find(m=>m.floor===floor);
  if(milestone){
   s.unlocked[milestone.episode]=true;
   if(!s.firstPlayed[milestone.scene]&&!s.autoplaySkipped[milestone.scene]){playBossMainStory(milestone.scene);return;}

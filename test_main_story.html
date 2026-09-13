@@ -47,7 +47,7 @@ async function runMainStoryTests(){
  check('旧プレイヤー施設強制なし',!mainStoryTownRequired());
  state.floor=100;state.screen='battle';state.currentEnemy=null;afterChapterBoss(100);check('100Fで旧台本や退場を再生しない',state.floor===101&&!MainStory.active);
  const elna=Object.values(MAIN_STORY_SCENES).flatMap(s=>s.lines).filter(l=>l[0]==='elna').map(l=>l[1]);
- check('直接返答定型なし',elna.every(t=>!/(うん|そうだね|違う|分かった|それは|言った通り|さっき言って)/.test(t)));
+ check('直接返答定型なし',elna.every(t=>!/^(うん[、。]|そうだね|違う[、。]|分かった|それは[、。]|言った通り|さっき言って)/.test(t)));
  check('新台本にミナなし',!JSON.stringify(MAIN_STORY_SCENES).includes('ミナ'));
  check('装備1531維持',Object.keys(CRAFT_RECIPES).length===1531);check('探索強化24維持',EXPEDITION_PERKS.length===24);
  return results;

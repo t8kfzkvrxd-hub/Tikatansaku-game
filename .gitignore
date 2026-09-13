@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+# Local-only story production notes; never publish these documents.
+docs/chapter-one-elna-hidden-script-v0.36.1.md
+docs/chapter-two-elna-hidden-script-v0.37.0.md
